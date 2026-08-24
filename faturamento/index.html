@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.5</title>
+    <title>Sintercan - Controle de Faturamento V1.7</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -61,7 +61,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-400">Controle de Faturamento <span class="text-blue-400 font-mono">V1.5</span></p>
+                    <p class="text-xs text-slate-400">Controle de Faturamento <span class="text-blue-400 font-mono">V1.7</span></p>
                 </div>
             </div>
 
@@ -130,6 +130,16 @@
                 <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
                 <input type="text" id="searchInput" oninput="renderCalendar()" placeholder="Pesquisar (OS, Orçamento, Cliente, Descrição, NF...)" 
                        class="w-full text-xs bg-transparent text-white focus:outline-none placeholder-slate-500">
+            </div>
+
+            <!-- Filtro por Status (Faturado / Pendente) -->
+            <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-slate-400"></i>
+                <select id="statusFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-white focus:outline-none cursor-pointer max-w-[150px] font-bold">
+                    <option value="" class="bg-slate-900">Todos os Status</option>
+                    <option value="faturado" class="bg-slate-900">🟢 Somente Faturados</option>
+                    <option value="pendente" class="bg-slate-900">🟡 Somente Pendentes</option>
+                </select>
             </div>
 
             <!-- Filtro por Cliente -->
@@ -214,7 +224,6 @@
             if (icon) icon.classList.add('animate-spin');
 
             try {
-                // Bypass de cache com timestamp
                 const response = await fetch(`${API_URL}?_t=${Date.now()}`, {
                     method: 'GET',
                     headers: { 'ngrok-skip-browser-warning': '69420' },
@@ -257,6 +266,7 @@
         function clearAllFilters() {
             document.getElementById('searchInput').value = '';
             document.getElementById('clientFilter').value = '';
+            document.getElementById('statusFilter').value = '';
             renderCalendar();
         }
 
@@ -317,6 +327,7 @@
 
             const search = document.getElementById('searchInput').value.toLowerCase().trim();
             const selectedClient = document.getElementById('clientFilter').value;
+            const selectedStatus = document.getElementById('statusFilter').value;
 
             const selectedYear = currentDate.getFullYear();
             const selectedMonth = currentDate.getMonth();
@@ -324,16 +335,23 @@
             const now = new Date();
             const isMesPassado = (selectedYear < now.getFullYear()) || (selectedYear === now.getFullYear() && selectedMonth < now.getMonth());
 
-            // Filtragem utilizando exclusivamente a entrega_normalizada
             let filtered = rawData.filter(item => {
                 const fat = parseValue(item.vl_faturado);
                 const temNF = item.numero_nf && String(item.numero_nf).trim() !== '' && String(item.numero_nf) !== 'None';
                 const isFaturado = fat > 0 || temNF;
 
-                // Se for mês histórico/passado, oculta os não faturados
-                if (isMesPassado && !isFaturado) {
-                    return false;
+                // FILTRO DE STATUS (Faturado / Pendente)
+                if (selectedStatus === 'faturado' && !isFaturado) return false;
+                if (selectedStatus === 'pendente' && isFaturado) return false;
+
+                // Se não tem nota emitida E a qtde_a_faturar for 0, NÃO MOSTRA
+                if (!isFaturado) {
+                    const qtdAFaturar = parseValue(item.qtde_a_faturar);
+                    if (qtdAFaturar <= 0) return false;
                 }
+
+                // Se for mês histórico/passado, oculta os não faturados
+                if (isMesPassado && !isFaturado) return false;
 
                 // USO EXCLUSIVO DA ENTREGA NORMALIZADA PARA FILTRAR O MÊS
                 const dtRefStr = item.entrega_normalizada;
@@ -399,7 +417,7 @@
                 grid.innerHTML = `
                     <div class="bg-slate-900 p-8 text-center rounded-2xl border border-slate-800 text-slate-400">
                         <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 opacity-50"></i>
-                        Nenhum registro de faturamento encontrado para este mês.
+                        Nenhum registro de faturamento encontrado para os filtros selecionados.
                     </div>
                 `;
                 lucide.createIcons();
@@ -417,7 +435,6 @@
                     const temNfB = b.numero_nf && String(b.numero_nf).trim() !== '' && String(b.numero_nf) !== 'None';
                     const isFaturadoB = fatB > 0 || temNfB;
 
-                    // 1. Se ambas possuem Nota Fiscal emitida
                     if (isFaturadoA && isFaturadoB) {
                         const timeEmissaoA = a.dt_emissao ? new Date(a.dt_emissao).getTime() : 0;
                         const timeEmissaoB = b.dt_emissao ? new Date(b.dt_emissao).getTime() : 0;
@@ -430,7 +447,6 @@
                         return numNfA - numNfB;
                     }
 
-                    // 2. Se nenhuma possui Nota Fiscal emitida
                     if (!isFaturadoA && !isFaturadoB) {
                         const dateStrA = a.dt_prevista_fat || a.entrega_normalizada;
                         const dateStrB = b.dt_prevista_fat || b.entrega_normalizada;
@@ -645,6 +661,7 @@
 
             const search = document.getElementById('searchInput').value.toLowerCase().trim();
             const selectedClient = document.getElementById('clientFilter').value;
+            const selectedStatus = document.getElementById('statusFilter').value;
             const selectedYear = currentDate.getFullYear();
             const selectedMonth = currentDate.getMonth();
 
@@ -655,6 +672,14 @@
                 const fat = parseValue(item.vl_faturado);
                 const temNF = item.numero_nf && String(item.numero_nf).trim() !== '' && String(item.numero_nf) !== 'None';
                 const isFaturado = fat > 0 || temNF;
+
+                if (selectedStatus === 'faturado' && !isFaturado) return false;
+                if (selectedStatus === 'pendente' && isFaturado) return false;
+
+                if (!isFaturado) {
+                    const qtdAFaturar = parseValue(item.qtde_a_faturar);
+                    if (qtdAFaturar <= 0) return false;
+                }
 
                 if (isMesPassado && !isFaturado) return false;
 
