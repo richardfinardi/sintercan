@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.3</title>
+    <title>Sintercan - Controle de Faturamento V1.4</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -61,7 +61,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-400">Controle de Faturamento <span class="text-blue-400 font-mono">V1.3</span></p>
+                    <p class="text-xs text-slate-400">Controle de Faturamento <span class="text-blue-400 font-mono">V1.4</span></p>
                 </div>
             </div>
 
@@ -423,9 +423,8 @@
                         const timeEmissaoB = b.dt_emissao ? new Date(b.dt_emissao).getTime() : 0;
 
                         if (timeEmissaoA !== timeEmissaoB) {
-                            return timeEmissaoA - timeEmissaoB; // dt_emissao mais antiga primeiro
+                            return timeEmissaoA - timeEmissaoB;
                         }
-                        // Em caso de empate na data, ordena por numero_nf
                         const numNfA = parseValue(a.numero_nf);
                         const numNfB = parseValue(b.numero_nf);
                         return numNfA - numNfB;
@@ -439,25 +438,56 @@
                         const timeA = dateStrA ? new Date(dateStrA).getTime() : Infinity;
                         const timeB = dateStrB ? new Date(dateStrB).getTime() : Infinity;
 
-                        return timeA - timeB; // dt_prevista_fat ou entrega_normalizada mais antiga primeiro
+                        return timeA - timeB;
                     }
 
-                    // Se uma for faturada e a outra pendente, coloca as faturadas primeiro
                     return isFaturadoA ? -1 : 1;
                 });
 
-                const weekTotal = week.items.reduce((acc, i) => {
-                    const isFat = parseValue(i.vl_faturado) > 0 || (i.numero_nf && String(i.numero_nf).trim() !== '' && String(i.numero_nf) !== 'None');
-                    return acc + (isFat ? parseValue(i.vl_faturado) : parseValue(i.vl_a_faturar));
-                }, 0);
+                // CALCULOS ESPECÍFICOS DO CABEÇALHO DA SEMANA
+                let weekFaturadoVal = 0;
+                let weekAFaturarVal = 0;
+                const notasSet = new Set();
+
+                week.items.forEach(i => {
+                    const fat = parseValue(i.vl_faturado);
+                    const temNF = i.numero_nf && String(i.numero_nf).trim() !== '' && String(i.numero_nf) !== 'None';
+                    const isFaturado = fat > 0 || temNF;
+
+                    if (isFaturado) {
+                        weekFaturadoVal += fat;
+                        if (temNF) {
+                            notasSet.add(String(i.numero_nf).trim());
+                        }
+                    } else {
+                        weekAFaturarVal += parseValue(i.vl_a_faturar);
+                    }
+                });
+
+                const qtdNotas = notasSet.size;
 
                 const card = document.createElement('div');
                 card.className = 'bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-sm';
 
                 card.innerHTML = `
-                    <div class="bg-blue-600 text-slate-950 px-4 py-2.5 font-black text-xs flex justify-between items-center border-b border-blue-700">
-                        <span>${week.label}</span>
-                        <span class="bg-slate-950 text-white px-2.5 py-0.5 rounded-full text-[10px] font-mono font-normal">${week.items.length} Itens</span>
+                    <div class="bg-blue-600 text-slate-950 px-4 py-2.5 font-black text-xs flex flex-wrap justify-between items-center gap-2 border-b border-blue-700">
+                        <div class="flex items-center gap-3">
+                            <span>${week.label}</span>
+                            <span class="bg-slate-950 text-white px-2.5 py-0.5 rounded-full text-[10px] font-mono font-normal">${week.items.length} Itens</span>
+                        </div>
+
+                        <!-- INDICADORES RESUMIDOS DA SEMANA -->
+                        <div class="flex items-center gap-2 sm:gap-3 flex-wrap text-[11px] font-mono">
+                            <span class="bg-slate-950/80 text-blue-300 px-2 py-0.5 rounded border border-blue-900/50">
+                                📜 <strong>${qtdNotas}</strong> NF${qtdNotas === 1 ? '' : 's'}
+                            </span>
+                            <span class="bg-slate-950/80 text-emerald-400 px-2 py-0.5 rounded border border-emerald-900/50">
+                                Faturado: <strong>${formatBRL(weekFaturadoVal)}</strong>
+                            </span>
+                            <span class="bg-slate-950/80 text-amber-300 px-2 py-0.5 rounded border border-amber-900/50">
+                                A Faturar: <strong>${formatBRL(weekAFaturarVal)}</strong>
+                            </span>
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto custom-scroll">
