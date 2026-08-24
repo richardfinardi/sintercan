@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.4</title>
+    <title>Sintercan - Controle de Faturamento V1.5</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -61,7 +61,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-400">Controle de Faturamento <span class="text-blue-400 font-mono">V1.4</span></p>
+                    <p class="text-xs text-slate-400">Controle de Faturamento <span class="text-blue-400 font-mono">V1.5</span></p>
                 </div>
             </div>
 
@@ -531,10 +531,12 @@
                                             <td class="p-3 text-center font-bold ${isFaturado ? 'text-emerald-400' : 'text-blue-400'}">${formatDateOnly(item.entrega_normalizada)}</td>
                                             <td class="p-3 text-right font-mono font-bold ${isFaturado ? 'text-emerald-400' : 'text-slate-200'}">${formatBRL(valorExibir)}</td>
                                             <td class="p-3 text-center">
-                                                <button onclick='openEditModal(${payload})' class="p-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-500/20 transition flex items-center justify-center gap-1 mx-auto font-bold text-[10px]">
-                                                    <i data-lucide="calendar-cog" class="w-3.5 h-3.5"></i>
-                                                    <span>Renegociar</span>
-                                                </button>
+                                                ${!isFaturado ? `
+                                                    <button onclick='openEditModal(${payload})' class="p-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-500/20 transition flex items-center justify-center gap-1 mx-auto font-bold text-[10px]">
+                                                        <i data-lucide="calendar-cog" class="w-3.5 h-3.5"></i>
+                                                        <span>Renegociar</span>
+                                                    </button>
+                                                ` : '<span class="text-slate-600 font-bold">-</span>'}
                                             </td>
                                         </tr>
                                     `;
