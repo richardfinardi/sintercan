@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.2</title>
+    <title>Sintercan - Controle de Faturamento V1.3</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -61,7 +61,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-400">Controle de Faturamento <span class="text-blue-400 font-mono">V1.2</span></p>
+                    <p class="text-xs text-slate-400">Controle de Faturamento <span class="text-blue-400 font-mono">V1.3</span></p>
                 </div>
             </div>
 
@@ -335,7 +335,7 @@
                     return false;
                 }
 
-                // USO EXCLUSIVO DA ENTREGA NORMALIZADA PARA TUDO
+                // USO EXCLUSIVO DA ENTREGA NORMALIZADA PARA FILTRAR O MÊS
                 const dtRefStr = item.entrega_normalizada;
                 if (!dtRefStr) return false;
 
@@ -407,6 +407,45 @@
             }
 
             sortedWeeks.forEach(week => {
+                // REGRA DE ORDENAÇÃO DENTRO DA SEMANA
+                week.items.sort((a, b) => {
+                    const fatA = parseValue(a.vl_faturado);
+                    const temNfA = a.numero_nf && String(a.numero_nf).trim() !== '' && String(a.numero_nf) !== 'None';
+                    const isFaturadoA = fatA > 0 || temNfA;
+
+                    const fatB = parseValue(b.vl_faturado);
+                    const temNfB = b.numero_nf && String(b.numero_nf).trim() !== '' && String(b.numero_nf) !== 'None';
+                    const isFaturadoB = fatB > 0 || temNfB;
+
+                    // 1. Se ambas possuem Nota Fiscal emitida
+                    if (isFaturadoA && isFaturadoB) {
+                        const timeEmissaoA = a.dt_emissao ? new Date(a.dt_emissao).getTime() : 0;
+                        const timeEmissaoB = b.dt_emissao ? new Date(b.dt_emissao).getTime() : 0;
+
+                        if (timeEmissaoA !== timeEmissaoB) {
+                            return timeEmissaoA - timeEmissaoB; // dt_emissao mais antiga primeiro
+                        }
+                        // Em caso de empate na data, ordena por numero_nf
+                        const numNfA = parseValue(a.numero_nf);
+                        const numNfB = parseValue(b.numero_nf);
+                        return numNfA - numNfB;
+                    }
+
+                    // 2. Se nenhuma possui Nota Fiscal emitida
+                    if (!isFaturadoA && !isFaturadoB) {
+                        const dateStrA = a.dt_prevista_fat || a.entrega_normalizada;
+                        const dateStrB = b.dt_prevista_fat || b.entrega_normalizada;
+
+                        const timeA = dateStrA ? new Date(dateStrA).getTime() : Infinity;
+                        const timeB = dateStrB ? new Date(dateStrB).getTime() : Infinity;
+
+                        return timeA - timeB; // dt_prevista_fat ou entrega_normalizada mais antiga primeiro
+                    }
+
+                    // Se uma for faturada e a outra pendente, coloca as faturadas primeiro
+                    return isFaturadoA ? -1 : 1;
+                });
+
                 const weekTotal = week.items.reduce((acc, i) => {
                     const isFat = parseValue(i.vl_faturado) > 0 || (i.numero_nf && String(i.numero_nf).trim() !== '' && String(i.numero_nf) !== 'None');
                     return acc + (isFat ? parseValue(i.vl_faturado) : parseValue(i.vl_a_faturar));
