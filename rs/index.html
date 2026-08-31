@@ -18,6 +18,7 @@
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        th { user-select: none; }
     </style>
 </head>
 <body class="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
@@ -80,7 +81,7 @@
                 </div>
             </div>
 
-            <!-- 3. Ano/Mês (Filtra ano atual por padrão) -->
+            <!-- 3. Ano/Mês -->
             <div>
                 <label class="block text-slate-400 font-medium mb-1">Ano / Mês</label>
                 <select id="filterAnoMes" onchange="applyFilters()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-amber-500">
@@ -111,34 +112,51 @@
         <div id="htmlView" class="h-full w-full flex flex-col p-3 overflow-hidden">
             <div class="flex-1 border border-slate-800 rounded-xl bg-slate-900/50 overflow-auto shadow-2xl relative">
                 <table id="mainTable" class="w-full text-left text-xs whitespace-nowrap border-collapse">
-                    <thead class="bg-slate-900 text-slate-300 sticky top-0 z-10 border-b border-slate-800 font-semibold">
+                    <thead class="bg-slate-900 text-slate-300 sticky top-0 z-10 border-b border-slate-800 font-semibold cursor-pointer">
                         <tr>
-                            <th class="p-2 border-r border-slate-800/60">Orçamento</th>
-                            <th class="p-2 border-r border-slate-800/60">OS</th>
-                            <th class="p-2 border-r border-slate-800/60">Cliente</th>
-                            <th class="p-2 border-r border-slate-800/60">Código</th>
-                            <th class="p-2 border-r border-slate-800/60">N. Pedido</th>
-                            <th class="p-2 border-r border-slate-800/60">Item</th>
-                            <th class="p-2 border-r border-slate-800/60">SC</th>
-                            <th class="p-2 border-r border-slate-800/60 min-w-[250px]">Descrição</th>
-                            <th class="p-2 text-right border-r border-slate-800/60">Qtde.</th>
-                            <th class="p-2 text-center border-r border-slate-800/60">Aprovação</th>
-                            <th class="p-2 text-center border-r border-slate-800/60">Prazo</th>
-                            <th class="p-2 text-right border-r border-slate-800/60">Vl. unitário</th>
-                            <th class="p-2 text-right">Vl. Total</th>
+                            <th onclick="sortTable('n_orcamento')" class="p-2 border-r border-slate-800/60 hover:bg-slate-800/80 transition">Orçamento <span id="sort_n_orcamento"></span></th>
+                            <th onclick="sortTable('n_os')" class="p-2 border-r border-slate-800/60 hover:bg-slate-800/80 transition">OS <span id="sort_n_os"></span></th>
+                            <th onclick="sortTable('cliente')" class="p-2 border-r border-slate-800/60 hover:bg-slate-800/80 transition">Cliente <span id="sort_cliente"></span></th>
+                            <th onclick="sortTable('cod_interno')" class="p-2 border-r border-slate-800/60 hover:bg-slate-800/80 transition">Código <span id="sort_cod_interno"></span></th>
+                            <th onclick="sortTable('pedido_cliente')" class="p-2 border-r border-slate-800/60 hover:bg-slate-800/80 transition">N. Pedido <span id="sort_pedido_cliente"></span></th>
+                            <th onclick="sortTable('item')" class="p-2 border-r border-slate-800/60 hover:bg-slate-800/80 transition">Item <span id="sort_item"></span></th>
+                            <th onclick="sortTable('referencia')" class="p-2 border-r border-slate-800/60 hover:bg-slate-800/80 transition">SC <span id="sort_referencia"></span></th>
+                            <th onclick="sortTable('descricao')" class="p-2 border-r border-slate-800/60 min-w-[250px] hover:bg-slate-800/80 transition">Descrição <span id="sort_descricao"></span></th>
+                            <th onclick="sortTable('qtde')" class="p-2 text-right border-r border-slate-800/60 hover:bg-slate-800/80 transition">Qtde. <span id="sort_qtde"></span></th>
+                            <th onclick="sortTable('dt_aprovacao')" class="p-2 text-center border-r border-slate-800/60 hover:bg-slate-800/80 transition">Aprovação <span id="sort_dt_aprovacao">▼</span></th>
+                            <th onclick="sortTable('dt_previsao_entrega')" class="p-2 text-center border-r border-slate-800/60 hover:bg-slate-800/80 transition">Prazo <span id="sort_dt_previsao_entrega"></span></th>
+                            <th onclick="sortTable('vl_unitario')" class="p-2 text-right border-r border-slate-800/60 hover:bg-slate-800/80 transition">Vl. unitário <span id="sort_vl_unitario"></span></th>
+                            <th onclick="sortTable('vl_total')" class="p-2 text-right hover:bg-slate-800/80 transition">Vl. Total <span id="sort_vl_total"></span></th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-800/40 text-slate-300 font-mono text-[11px]">
                         <tr>
-                            <td colspan="13" class="p-8 text-center text-slate-400 font-sans animate-pulse">Carregando dados...</td>
+                            <td colspan="13" class="p-8 text-center text-slate-400 font-sans">Carregando dados...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- RODAPÉ DE TOTAIS -->
-            <div class="bg-slate-900 border border-slate-800 mt-2 p-2.5 rounded-xl flex justify-between items-center text-xs font-bold text-slate-200 flex-shrink-0">
-                <span>Registros Exibidos: <span id="totalLinhas" class="text-amber-400">0</span></span>
+            <!-- BARRA DE CONTROLE, CARREGAR MAIS REGISTROS E TOTAIS -->
+            <div class="bg-slate-900 border border-slate-800 mt-2 p-2.5 rounded-xl flex flex-wrap justify-between items-center text-xs font-bold text-slate-200 gap-4 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <span>Exibindo <span id="renderedCount" class="text-amber-400">0</span> de <span id="totalLinhas" class="text-amber-400">0</span> registros</span>
+                    
+                    <!-- Botão Carregar Mais Registros -->
+                    <button id="btnLoadMore" onclick="loadMoreRecords()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                        <span>Carregar + 50</span>
+                    </button>
+
+                    <!-- Opção de Limite Inicial -->
+                    <select id="pageSizeSelect" onchange="changePageSize()" class="bg-slate-950 border border-slate-700 text-slate-300 px-2 py-1 rounded-lg">
+                        <option value="50">50 por vez</option>
+                        <option value="100">100 por vez</option>
+                        <option value="250">250 por vez</option>
+                        <option value="999999">Exibir Todos</option>
+                    </select>
+                </div>
+
                 <div class="flex gap-6">
                     <span>Quantidade Total: <span id="totalQtde" class="text-amber-400">0</span></span>
                     <span>Valor Total: <span id="totalValor" class="text-emerald-400">R$ 0,00</span></span>
@@ -153,7 +171,7 @@
 
     </main>
 
-    <!-- ABAS -->
+    <!-- NAVEGAÇÃO ENTRE ABAS -->
     <nav class="bg-slate-900 border-t border-slate-800 px-2 py-1.5 flex gap-1.5 overflow-x-auto text-xs font-medium flex-shrink-0">
         <button class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap">RS</button>
         <button class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Gráfico</button>
@@ -167,7 +185,7 @@
     </nav>
 
     <script>
-        // 1. NAVEGAÇÃO VOLTAR
+        // 1. VOLTAR
         function goBack() {
             if (window.history.length > 1) {
                 window.history.back();
@@ -176,7 +194,7 @@
             }
         }
 
-        // 2. SEGURANÇA E SESSÃO
+        // 2. SEGURANÇA
         const sessionData = localStorage.getItem('sintercan_user');
         if (sessionData) {
             try {
@@ -207,33 +225,35 @@
             }
         }
 
-        // 4. CONSUMO DE DADOS COM FILTRO INICIAL DO ANO ATUAL
+        // 4. DADOS, ORDENAÇÃO E PAGINAÇÃO
         let fullData = [];
         let filteredData = [];
         let allClientes = [];
         let filterTimeout = null;
         const currentYear = new Date().getFullYear();
 
+        // Controle de Exibição
+        let currentRenderLimit = 50;
+        let batchStep = 50;
+
+        // Estado da Ordenação (Padrão: dt_aprovacao DESC)
+        let sortColumn = 'dt_aprovacao';
+        let sortAsc = false;
+
         async function loadRsData() {
-            const endpoint = 'https://sintercan.consultoriarf.net/rs';
             try {
-                let response = await fetch(endpoint).catch(() => null);
-                if (!response || !response.ok) {
-                    response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(endpoint)}`);
-                }
-                if (!response.ok) throw new Error('Falha ao obter dados.');
+                const response = await fetch('https://sintercan.consultoriarf.net/rs');
+                if (!response.ok) throw new Error('Falha ao carregar dados');
 
                 fullData = await response.json();
 
                 setupClienteDropdown();
                 setupAnoMesOptions();
-                
-                // Aplica filtro inicial (Somente Ano Atual para ter máxima performance)
                 applyFilters();
             } catch (err) {
-                console.error(err);
+                console.error("Erro ao carregar RS:", err);
                 document.getElementById('tableBody').innerHTML = `
-                    <tr><td colspan="13" class="p-8 text-center text-rose-400 font-sans">Erro ao carregar dados do servidor.</td></tr>
+                    <tr><td colspan="13" class="p-8 text-center text-rose-400 font-sans">Erro ao conectar à API. Verifique a conexão com o servidor.</td></tr>
                 `;
             }
         }
@@ -243,57 +263,123 @@
             return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
-        function parseDate(str) {
-            if (!str) return null;
-            if (typeof str === 'string' && str.includes('/')) {
-                const p = str.split('/');
-                let yr = parseInt(p[2], 10);
-                if (yr < 100) yr += 2000;
-                return new Date(yr, p[1] - 1, p[0]);
+        function formatDateBR(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const date = new Date(dateStr);
+                if (isNaN(date)) return dateStr;
+                return date.toLocaleDateString('pt-BR');
+            } catch (e) {
+                return dateStr;
             }
-            return new Date(str);
         }
 
-        // RENDERIZAÇÃO ULTRA RÁPIDA (DocumentFragment)
-        function renderTable(data) {
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            const d = new Date(dateStr);
+            return isNaN(d) ? null : d;
+        }
+
+        // FUNÇÃO DE ORDENAÇÃO NOS CABEÇALHOS
+        function sortTable(columnKey) {
+            if (sortColumn === columnKey) {
+                sortAsc = !sortAsc;
+            } else {
+                sortColumn = columnKey;
+                sortAsc = true;
+            }
+
+            // Atualiza os ícones das colunas
+            const keys = ['n_orcamento', 'n_os', 'cliente', 'cod_interno', 'pedido_cliente', 'item', 'referencia', 'descricao', 'qtde', 'dt_aprovacao', 'dt_previsao_entrega', 'vl_unitario', 'vl_total'];
+            keys.forEach(k => {
+                const el = document.getElementById(`sort_${k}`);
+                if (el) el.textContent = '';
+            });
+
+            const activeEl = document.getElementById(`sort_${sortColumn}`);
+            if (activeEl) activeEl.textContent = sortAsc ? '▲' : '▼';
+
+            sortData();
+            renderTable();
+        }
+
+        function sortData() {
+            filteredData.sort((a, b) => {
+                let valA = a[sortColumn] ?? '';
+                let valB = b[sortColumn] ?? '';
+
+                // Trata ordenação numérica
+                if (['qtde', 'vl_unitario', 'vl_total', 'n_orcamento', 'n_os'].includes(sortColumn)) {
+                    valA = parseFloat(valA) || 0;
+                    valB = parseFloat(valB) || 0;
+                } 
+                // Trata ordenação por datas
+                else if (['dt_aprovacao', 'dt_previsao_entrega'].includes(sortColumn)) {
+                    valA = valA ? new Date(valA).getTime() : 0;
+                    valB = valB ? new Date(valB).getTime() : 0;
+                } 
+                // Texto
+                else {
+                    valA = valA.toString().toLowerCase();
+                    valB = valB.toString().toLowerCase();
+                }
+
+                if (valA < valB) return sortAsc ? -1 : 1;
+                if (valA > valB) return sortAsc ? 1 : -1;
+                return 0;
+            });
+        }
+
+        // RENDERIZAÇÃO DA TABELA
+        function renderTable() {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
 
-            if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-500 font-sans">Nenhum registro encontrado para este filtro.</td></tr>`;
+            const totalRows = filteredData.length;
+
+            if (totalRows === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-500 font-sans">Nenhum registro localizado.</td></tr>`;
                 document.getElementById('totalLinhas').textContent = '0';
+                document.getElementById('renderedCount').textContent = '0';
                 document.getElementById('totalQtde').textContent = '0';
                 document.getElementById('totalValor').textContent = 'R$ 0,00';
+                document.getElementById('btnLoadMore').classList.add('hidden');
                 return;
             }
 
-            const fragment = document.createDocumentFragment();
+            const limit = Math.min(currentRenderLimit, totalRows);
+            const pageData = filteredData.slice(0, limit);
+
+            // Totais gerais
             let totalQtde = 0;
             let totalValor = 0;
+            for (let i = 0; i < totalRows; i++) {
+                totalQtde += parseFloat(filteredData[i].qtde || 0);
+                totalValor += parseFloat(filteredData[i].vl_total || 0);
+            }
 
-            data.forEach((row, idx) => {
-                const qtde = parseFloat(row.qtde || row.Qtde || 0);
-                const vlTotal = parseFloat(row.vl_total || row.VlTotal || row['VI. Total'] || row['Vl. Total'] || 0);
-                const vlUnit = parseFloat(row.vl_unitario || row.VlUnitario || row['VI. unitário'] || row['Vl. unitário'] || 0);
+            const fragment = document.createDocumentFragment();
 
-                totalQtde += qtde;
-                totalValor += vlTotal;
+            pageData.forEach((row, idx) => {
+                const qtde = parseFloat(row.qtde || 0);
+                const vlUnit = parseFloat(row.vl_unitario || 0);
+                const vlTotal = parseFloat(row.vl_total || 0);
 
                 const tr = document.createElement('tr');
                 tr.className = (idx % 2 === 0 ? 'bg-slate-900/30' : 'bg-slate-950/40') + ' hover:bg-slate-800/50 transition';
 
                 tr.innerHTML = `
-                    <td class="p-2 border-r border-slate-800/60">${row.orcamento || row.Orcamento || ''}</td>
-                    <td class="p-2 border-r border-slate-800/60">${row.os || row.OS || ''}</td>
-                    <td class="p-2 border-r border-slate-800/60 font-sans font-medium text-slate-200">${row.cliente || row.Cliente || ''}</td>
-                    <td class="p-2 border-r border-slate-800/60">${row.codigo || row.Codigo || ''}</td>
-                    <td class="p-2 border-r border-slate-800/60">${row.n_pedido || row.NPedido || row['N. Pedido'] || ''}</td>
-                    <td class="p-2 border-r border-slate-800/60">${row.item || row.Item || ''}</td>
-                    <td class="p-2 border-r border-slate-800/60">${row.sc || row.SC || ''}</td>
-                    <td class="p-2 border-r border-slate-800/60 font-sans text-slate-300">${row.descricao || row.Descricao || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60">${row.n_orcamento || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60">${row.n_os || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60 font-sans font-medium text-slate-200">${row.cliente || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60">${row.cod_interno || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60">${row.pedido_cliente || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60">${row.item || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60">${row.referencia || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60 font-sans text-slate-300 max-w-[300px] truncate" title="${row.descricao || ''}">${row.descricao || ''}</td>
                     <td class="p-2 text-right border-r border-slate-800/60 font-bold">${qtde}</td>
-                    <td class="p-2 text-center border-r border-slate-800/60">${row.aprovacao || row.Aprovacao || ''}</td>
-                    <td class="p-2 text-center border-r border-slate-800/60">${row.prazo || row.Prazo || ''}</td>
+                    <td class="p-2 text-center border-r border-slate-800/60">${formatDateBR(row.dt_aprovacao)}</td>
+                    <td class="p-2 text-center border-r border-slate-800/60">${formatDateBR(row.dt_previsao_entrega)}</td>
                     <td class="p-2 text-right border-r border-slate-800/60">${formatCurrency(vlUnit)}</td>
                     <td class="p-2 text-right font-bold text-emerald-400">${formatCurrency(vlTotal)}</td>
                 `;
@@ -302,17 +388,38 @@
 
             tbody.appendChild(fragment);
 
-            document.getElementById('totalLinhas').textContent = data.length.toLocaleString('pt-BR');
+            // Atualiza Indicadores
+            document.getElementById('renderedCount').textContent = limit.toLocaleString('pt-BR');
+            document.getElementById('totalLinhas').textContent = totalRows.toLocaleString('pt-BR');
             document.getElementById('totalQtde').textContent = totalQtde.toLocaleString('pt-BR');
             document.getElementById('totalValor').textContent = formatCurrency(totalValor);
+
+            // Oculta botão se já tiver carregado tudo
+            const btnMore = document.getElementById('btnLoadMore');
+            if (limit >= totalRows) {
+                btnMore.classList.add('hidden');
+            } else {
+                btnMore.classList.remove('hidden');
+            }
         }
 
-        // DEBOUNCE PARA DIGITAÇÃO FLUIDA
+        function loadMoreRecords() {
+            currentRenderLimit += batchStep;
+            renderTable();
+        }
+
+        function changePageSize() {
+            const val = parseInt(document.getElementById('pageSizeSelect').value, 10);
+            batchStep = val;
+            currentRenderLimit = val;
+            renderTable();
+        }
+
         function debouncedApplyFilters() {
             clearTimeout(filterTimeout);
             filterTimeout = setTimeout(() => {
                 applyFilters();
-            }, 250);
+            }, 200);
         }
 
         // MOTOR DE FILTRAGEM
@@ -327,39 +434,41 @@
             const dateAte = dataAteVal ? new Date(dataAteVal + 'T23:59:59') : null;
 
             filteredData = fullData.filter(item => {
-                const d = parseDate(item.aprovacao || item.Aprovacao || item.prazo || item.Prazo);
+                const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
 
-                // 1. Filtro do Ano Atual ou Específico
+                // 1. Filtro Ano Atual ou Específico
                 if (anoMesVal === 'YEAR_CURRENT') {
-                    if (!d || isNaN(d) || d.getFullYear() !== currentYear) return false;
-                } else if (anoMesVal && d && !isNaN(d)) {
+                    if (!d || d.getFullYear() !== currentYear) return false;
+                } else if (anoMesVal && d) {
                     const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
                     if (ym !== anoMesVal) return false;
                 }
 
                 // 2. Pesquisa Geral
                 if (globalVal) {
-                    const str = Object.values(item).join(' ').toLowerCase();
+                    const str = `${item.n_orcamento || ''} ${item.n_os || ''} ${item.cliente || ''} ${item.pedido_cliente || ''} ${item.cod_interno || ''} ${item.descricao || ''}`.toLowerCase();
                     if (!str.includes(globalVal)) return false;
                 }
 
                 // 3. Cliente
-                const cliente = (item.cliente || item.Cliente || '').toLowerCase();
-                if (clienteVal && !cliente.includes(clienteVal)) return false;
+                if (clienteVal && !(item.cliente || '').toLowerCase().includes(clienteVal)) return false;
 
-                // 4. Intervalo por Data De/Até
+                // 4. Período De/Até
                 if (dateDe && d && d < dateDe) return false;
                 if (dateAte && d && d > dateAte) return false;
 
                 return true;
             });
 
-            renderTable(filteredData);
+            // Reordena e Reseta o Limite
+            sortData();
+            currentRenderLimit = batchStep;
+            renderTable();
         }
 
         // DROPDOWN CLIENTE
         function setupClienteDropdown() {
-            allClientes = [...new Set(fullData.map(i => i.cliente || i.Cliente))].filter(Boolean).sort();
+            allClientes = [...new Set(fullData.map(i => i.cliente))].filter(Boolean).sort();
             renderClienteOptions(allClientes);
 
             document.addEventListener('click', (e) => {
@@ -400,12 +509,12 @@
             applyFilters();
         }
 
-        // MONTA OPÇÕES DO DROPDOWN ANO/MÊS
+        // ANO / MÊS
         function setupAnoMesOptions() {
             const setAnosMeses = new Set();
             fullData.forEach(item => {
-                const d = parseDate(item.aprovacao || item.Aprovacao || item.prazo || item.Prazo);
-                if (d && !isNaN(d)) {
+                const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
+                if (d) {
                     setAnosMeses.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
                 }
             });
@@ -420,24 +529,24 @@
         // EXPORTAR EXCEL
         function exportToExcel() {
             if (!filteredData || filteredData.length === 0) {
-                alert("Sem dados visíveis para exportar.");
+                alert("Sem dados para exportar.");
                 return;
             }
 
             const exportData = filteredData.map(item => ({
-                "Orçamento": item.orcamento || item.Orcamento || '',
-                "OS": item.os || item.OS || '',
-                "Cliente": item.cliente || item.Cliente || '',
-                "Código": item.codigo || item.Codigo || '',
-                "N. Pedido": item.n_pedido || item.NPedido || item['N. Pedido'] || '',
-                "Item": item.item || item.Item || '',
-                "SC": item.sc || item.SC || '',
-                "Descrição": item.descricao || item.Descricao || '',
-                "Qtde": parseFloat(item.qtde || item.Qtde || 0),
-                "Aprovação": item.aprovacao || item.Aprovacao || '',
-                "Prazo": item.prazo || item.Prazo || '',
-                "Vl. Unitário": parseFloat(item.vl_unitario || item.VlUnitario || 0),
-                "Vl. Total": parseFloat(item.vl_total || item.VlTotal || 0)
+                "Orçamento": item.n_orcamento || '',
+                "OS": item.n_os || '',
+                "Cliente": item.cliente || '',
+                "Código": item.cod_interno || '',
+                "N. Pedido": item.pedido_cliente || '',
+                "Item": item.item || '',
+                "Referência": item.referencia || '',
+                "Descrição": item.descricao || '',
+                "Qtde": parseFloat(item.qtde || 0),
+                "Aprovação": formatDateBR(item.dt_aprovacao),
+                "Prazo": formatDateBR(item.dt_previsao_entrega),
+                "Vl. Unitário": parseFloat(item.vl_unitario || 0),
+                "Vl. Total": parseFloat(item.vl_total || 0)
             }));
 
             const worksheet = XLSX.utils.json_to_sheet(exportData);
