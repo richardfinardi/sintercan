@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RS - Sintercan</title>
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS (Para Exportar para Excel) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #090d16; color: #f8fafc; }
@@ -21,8 +25,10 @@
 </head>
 <body class="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
 
+    <!-- HEADER -->
     <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-md flex-shrink-0">
         <div class="w-full px-4 py-2 flex justify-between items-center gap-4">
+            <!-- Esquerda: Voltar + Logo + Título -->
             <div class="flex items-center gap-4">
                 <button onclick="goBack()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700 flex items-center justify-center cursor-pointer" title="Voltar ao Menu">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
@@ -39,7 +45,12 @@
                 </div>
             </div>
 
+            <!-- Direita: Ações (Limpar Filtros + Excel + Power BI) -->
             <div class="flex items-center gap-2">
+                <button onclick="resetAllFilters()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700 cursor-pointer">
+                    <i data-lucide="filter-x" class="w-4 h-4 text-amber-400"></i>
+                    <span>Limpar Filtros</span>
+                </button>
                 <button id="btnExport" onclick="exportToExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/10 cursor-pointer">
                     <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
                     <span>Exportar Excel</span>
@@ -52,9 +63,11 @@
         </div>
     </header>
 
+    <!-- BARRA DE FILTROS GERAIS -->
     <section id="filterSection" class="bg-slate-900/90 border-b border-slate-800 p-2.5 flex-shrink-0">
         <div class="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 text-xs">
             
+            <!-- 1. Pesquisa Geral -->
             <div>
                 <label class="block text-slate-400 font-medium mb-1">Pesquisa Geral</label>
                 <div class="relative">
@@ -63,6 +76,7 @@
                 </div>
             </div>
 
+            <!-- 2. Cliente -->
             <div class="relative">
                 <label class="block text-slate-400 font-medium mb-1">Cliente</label>
                 <input type="text" id="filterClienteInput" onfocus="openClienteDropdown()" oninput="filterClienteList()" placeholder="Selecione ou busque..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-amber-500">
@@ -73,6 +87,7 @@
                 </div>
             </div>
 
+            <!-- 3. Ano / Mês (Power BI Treeview) -->
             <div class="relative">
                 <label class="block text-slate-400 font-medium mb-1">Ano / Mês</label>
                 <button onclick="toggleAnoMesTree()" id="btnAnoMesLabel" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-left text-slate-200 focus:outline-none focus:border-amber-500 flex justify-between items-center cursor-pointer">
@@ -85,6 +100,7 @@
                 </div>
             </div>
 
+            <!-- 4. Período De / Até -->
             <div class="col-span-1 sm:col-span-2 grid grid-cols-2 gap-2">
                 <div>
                     <label class="block text-slate-400 font-medium mb-1">Data De</label>
@@ -99,151 +115,139 @@
         </div>
     </section>
 
+    <!-- CONTEÚDO PRINCIPAL (TABELA COM FILTROS DE COLUNA ESTILO EXCEL) -->
     <main class="flex-1 w-full h-full overflow-hidden relative bg-slate-950">
         
+        <!-- DASHBOARD TABELA HTML -->
         <div id="htmlView" class="h-full w-full flex flex-col p-2 overflow-hidden">
             <div class="flex-1 border border-slate-800 rounded-xl bg-slate-900/50 overflow-y-auto overflow-x-hidden shadow-2xl relative">
                 <table id="mainTable" class="w-full text-left text-[11px] border-collapse table-fixed">
                     <thead class="bg-slate-900 text-slate-300 sticky top-0 z-20 border-b border-slate-800 font-semibold">
                         <tr>
+                            <!-- 1. Orçamento -->
                             <th class="w-[5.5%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('n_orcamento')">
                                     <span class="truncate">Orçamento <span id="sort_n_orcamento"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('n_orcamento')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('n_orcamento')" id="btn_filter_n_orcamento" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_n_orcamento" class="col-filter-popover absolute left-0 top-full mt-1 w-40 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('n_orcamento', this.value)" placeholder="Filtrar Orçamento..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_n_orcamento" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
+                            <!-- 2. OS -->
                             <th class="w-[4.5%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('n_os')">
                                     <span class="truncate">OS <span id="sort_n_os"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('n_os')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('n_os')" id="btn_filter_n_os" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_n_os" class="col-filter-popover absolute left-0 top-full mt-1 w-36 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('n_os', this.value)" placeholder="Filtrar OS..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_n_os" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
+                            <!-- 3. Cliente -->
                             <th class="w-[15%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cliente')">
                                     <span class="truncate">Cliente <span id="sort_cliente"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cliente')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cliente')" id="btn_filter_cliente" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('cliente', this.value)" placeholder="Filtrar Cliente..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[7%] p-1.5 border-r border-slate-800/60 relative group">
+                            <!-- 4. Cód. Cliente/Nº Des. -->
+                            <th class="w-[8.5%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cod_mat_no_cliente')">
-                                    <span class="truncate">Código <span id="sort_cod_mat_no_cliente"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cod_mat_no_cliente')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <span class="truncate" title="Cód. Cliente/Nº Des.">Cód. Cliente/Nº Des. <span id="sort_cod_mat_no_cliente"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cod_mat_no_cliente')" id="btn_filter_cod_mat_no_cliente" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_cod_mat_no_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-40 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('cod_mat_no_cliente', this.value)" placeholder="Filtrar Código..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_cod_mat_no_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-56 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[7%] p-1.5 border-r border-slate-800/60 relative group">
+                            <!-- 5. N. Pedido -->
+                            <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('pedido_cliente')">
                                     <span class="truncate">N. Pedido <span id="sort_pedido_cliente"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('pedido_cliente')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('pedido_cliente')" id="btn_filter_pedido_cliente" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_pedido_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-40 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('pedido_cliente', this.value)" placeholder="Filtrar N. Pedido..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_pedido_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
+                            <!-- 6. Item -->
                             <th class="w-[4%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('item')">
                                     <span class="truncate">Item <span id="sort_item"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('item')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('item')" id="btn_filter_item" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_item" class="col-filter-popover absolute left-0 top-full mt-1 w-32 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('item', this.value)" placeholder="Filtrar Item..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_item" class="col-filter-popover absolute left-0 top-full mt-1 w-44 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[6%] p-1.5 border-r border-slate-800/60 relative group">
+                            <!-- 7. SC -->
+                            <th class="w-[5.5%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cod_interno')">
                                     <span class="truncate">SC <span id="sort_cod_interno"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cod_interno')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cod_interno')" id="btn_filter_cod_interno" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_cod_interno" class="col-filter-popover absolute left-0 top-full mt-1 w-36 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('cod_interno', this.value)" placeholder="Filtrar SC..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_cod_interno" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[20%] p-1.5 border-r border-slate-800/60 relative group">
+                            <!-- 8. Descrição -->
+                            <th class="w-[18.5%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('descricao')">
                                     <span class="truncate">Descrição <span id="sort_descricao"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('descricao')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('descricao')" id="btn_filter_descricao" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_descricao" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('descricao', this.value)" placeholder="Filtrar Descrição..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_descricao" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
+                            <!-- 9. Qtde -->
                             <th class="w-[4%] p-1.5 border-r border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('qtde')">
                                     <span class="truncate">Qtde. <span id="sort_qtde"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('qtde')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('qtde')" id="btn_filter_qtde" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_qtde" class="col-filter-popover absolute right-0 top-full mt-1 w-32 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('qtde', this.value)" placeholder="Filtrar Qtde..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_qtde" class="col-filter-popover absolute right-0 top-full mt-1 w-44 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
+                            <!-- 10. Aprovação -->
                             <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 text-center relative group">
                                 <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('dt_aprovacao')">
                                     <span class="truncate">Aprovação <span id="sort_dt_aprovacao">▼</span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('dt_aprovacao')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('dt_aprovacao')" id="btn_filter_dt_aprovacao" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_dt_aprovacao" class="col-filter-popover absolute left-0 top-full mt-1 w-36 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('dt_aprovacao', this.value)" placeholder="Ex: 02/12/2024" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_dt_aprovacao" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
+                            <!-- 11. Prazo -->
                             <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 text-center relative group">
                                 <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('dt_previsao_entrega')">
                                     <span class="truncate">Prazo <span id="sort_dt_previsao_entrega"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('dt_previsao_entrega')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('dt_previsao_entrega')" id="btn_filter_dt_previsao_entrega" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_dt_previsao_entrega" class="col-filter-popover absolute left-0 top-full mt-1 w-36 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('dt_previsao_entrega', this.value)" placeholder="Ex: 28/01/2025" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_dt_previsao_entrega" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
+                            <!-- 12. Vl. Unitário -->
                             <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('vl_unitario')">
                                     <span class="truncate">Vl. unit. <span id="sort_vl_unitario"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('vl_unitario')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('vl_unitario')" id="btn_filter_vl_unitario" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_vl_unitario" class="col-filter-popover absolute right-0 top-full mt-1 w-36 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('vl_unitario', this.value)" placeholder="Filtrar Valor..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_vl_unitario" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[7%] p-1.5 border-r border-slate-800/60 text-right relative group">
+                            <!-- 13. Vl. Total -->
+                            <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('vl_total')">
                                     <span class="truncate">Vl. Total <span id="sort_vl_total"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('vl_total')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('vl_total')" id="btn_filter_vl_total" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_vl_total" class="col-filter-popover absolute right-0 top-full mt-1 w-36 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('vl_total', this.value)" placeholder="Filtrar Total..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_vl_total" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[7.5%] p-1.5 text-center relative group">
+                            <!-- 14. PROD/MAN/IND -->
+                            <th class="w-[6.5%] p-1.5 text-center relative group">
                                 <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('PROD/MAN/IND')">
                                     <span class="truncate">PROD/MAN/IND <span id="sort_PROD/MAN/IND"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('PROD/MAN/IND')" class="text-slate-500 hover:text-amber-400 p-0.5"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('PROD/MAN/IND')" id="btn_filter_PROD/MAN/IND" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_PROD/MAN/IND" class="col-filter-popover absolute right-0 top-full mt-1 w-36 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal">
-                                    <input type="text" oninput="setColFilter('PROD/MAN/IND', this.value)" placeholder="Filtrar..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <div id="filter_popover_PROD/MAN/IND" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
                         </tr>
                     </thead>
@@ -255,6 +259,7 @@
                 </table>
             </div>
 
+            <!-- BARRA DE CONTROLE E TOTAIS -->
             <div class="bg-slate-900 border border-slate-800 mt-1.5 p-2 rounded-xl flex flex-wrap justify-between items-center text-xs font-bold text-slate-200 gap-3 flex-shrink-0">
                 <div class="flex items-center gap-3">
                     <span>Exibindo <span id="renderedCount" class="text-amber-400">0</span> de <span id="totalLinhas" class="text-amber-400">0</span> registros</span>
@@ -279,12 +284,14 @@
             </div>
         </div>
 
+        <!-- POWER BI -->
         <div id="pbiView" class="h-full w-full hidden">
             <div id="pbiContainer" class="w-full h-full"></div>
         </div>
 
     </main>
 
+    <!-- NAVEGAÇÃO DE ABAS -->
     <nav class="bg-slate-900 border-t border-slate-800 px-2 py-1 flex gap-1 overflow-x-auto text-xs font-medium flex-shrink-0">
         <button class="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap">RS</button>
         <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Gráfico</button>
@@ -309,7 +316,10 @@
         let fullData = [];
         let filteredData = [];
         let allClientes = [];
-        let columnFilters = {};
+        
+        // Estrutura de Filtros por Coluna Estilo Excel: { "cliente": Set(["A", "B"]), ... }
+        let columnSelections = {};
+        
         let filterTimeout = null;
         const currentYear = new Date().getFullYear();
 
@@ -322,29 +332,7 @@
         const monthNames = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
         let selectedAnoMes = {};
 
-        function toggleColumnFilter(colName) {
-            const el = document.getElementById(`filter_popover_${colName}`);
-            if (!el) return;
-            const isVisible = el.classList.contains('active');
-            
-            // Fecha todos os popovers
-            document.querySelectorAll('.col-filter-popover').forEach(p => p.classList.remove('active'));
-
-            if (!isVisible) {
-                el.classList.add('active');
-                const input = el.querySelector('input');
-                if (input) input.focus();
-            }
-        }
-
-        function setColFilter(colName, val) {
-            if (!val || val.trim() === '') {
-                delete columnFilters[colName];
-            } else {
-                columnFilters[colName] = val.trim().toLowerCase();
-            }
-            debouncedApplyFilters();
-        }
+        const allColumnsKeys = ['n_orcamento', 'n_os', 'cliente', 'cod_mat_no_cliente', 'pedido_cliente', 'item', 'cod_interno', 'descricao', 'qtde', 'dt_aprovacao', 'dt_previsao_entrega', 'vl_unitario', 'vl_total', 'PROD/MAN/IND'];
 
         async function loadRsData() {
             try {
@@ -390,6 +378,139 @@
             return isNaN(d) ? null : d;
         }
 
+        // LIMPAR TODOS OS FILTROS
+        function resetAllFilters() {
+            document.getElementById('filterGlobal').value = '';
+            document.getElementById('filterClienteInput').value = '';
+            document.getElementById('filterDataDe').value = '';
+            document.getElementById('filterDataAte').value = '';
+
+            // Reseta Seleção de Anos/Meses para o Ano Atual
+            selectedAnoMes = {};
+            selectedAnoMes[currentYear] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+            updateTreeUI();
+
+            // Reseta Filtros de Colunas Excel
+            columnSelections = {};
+            allColumnsKeys.forEach(key => updateFilterIconState(key));
+
+            applyFilters();
+        }
+
+        // POPOVER EXCEL-STYLE DE FILTRO POR COLUNA
+        function toggleColumnFilter(colKey) {
+            const el = document.getElementById(`filter_popover_${colKey}`);
+            if (!el) return;
+            const isVisible = el.classList.contains('active');
+            
+            document.querySelectorAll('.col-filter-popover').forEach(p => p.classList.remove('active'));
+
+            if (!isVisible) {
+                buildExcelFilterPopover(colKey);
+                el.classList.add('active');
+            }
+        }
+
+        function buildExcelFilterPopover(colKey) {
+            const popover = document.getElementById(`filter_popover_${colKey}`);
+            if (!popover) return;
+
+            // Extrai valores únicos presentes na coluna
+            let rawValues = fullData.map(item => {
+                if (colKey === 'PROD/MAN/IND') return item['PROD/MAN/IND'] || item.prod_man_ind || '(Vazio)';
+                if (colKey === 'dt_aprovacao' || colKey === 'dt_previsao_entrega') return formatDateBR(item[colKey]) || '(Vazio)';
+                if (colKey === 'vl_unitario' || colKey === 'vl_total') return formatCurrency(item[colKey]) || '(Vazio)';
+                return (item[colKey] ?? '').toString() || '(Vazio)';
+            });
+
+            const uniqueValues = [...new Set(rawValues)].sort();
+
+            const selectedSet = columnSelections[colKey]; // Se undefined, significa todos selecionados
+            const isAllSelected = !selectedSet || selectedSet.size === uniqueValues.length;
+
+            popover.innerHTML = `
+                <div class="space-y-2">
+                    <input type="text" id="search_popover_${colKey}" oninput="filterExcelPopoverList('${colKey}')" placeholder="Pesquisar..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    
+                    <div class="max-h-40 overflow-y-auto space-y-1 text-xs font-sans py-1 border-t border-b border-slate-800" id="list_popover_${colKey}">
+                        <div class="flex items-center gap-2 px-1 hover:bg-slate-800 rounded">
+                            <input type="checkbox" id="chk_all_${colKey}" onchange="toggleSelectAllColumn('${colKey}', this.checked)" ${isAllSelected ? 'checked' : ''} class="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                            <label for="chk_all_${colKey}" class="text-amber-400 font-semibold cursor-pointer">(Selecionar Tudo)</label>
+                        </div>
+                        ${uniqueValues.map((val, i) => {
+                            const isChecked = !selectedSet || selectedSet.has(val);
+                            return `
+                                <div class="flex items-center gap-2 px-1 hover:bg-slate-800 rounded item-popover-row">
+                                    <input type="checkbox" value="${val.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="toggleSingleColumnVal('${colKey}')" class="chk_col_${colKey} rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                                    <label class="text-slate-300 truncate cursor-pointer" title="${val}">${val}</label>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+
+                    <div class="flex justify-end gap-1.5 pt-1">
+                        <button onclick="clearSingleColumnFilter('${colKey}')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] rounded cursor-pointer">Limpar</button>
+                        <button onclick="applyColumnFilterFromUI('${colKey}')" class="px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] rounded cursor-pointer">Aplicar</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function filterExcelPopoverList(colKey) {
+            const term = document.getElementById(`search_popover_${colKey}`).value.toLowerCase();
+            const rows = document.querySelectorAll(`#list_popover_${colKey} .item-popover-row`);
+            rows.forEach(r => {
+                const txt = r.textContent.toLowerCase();
+                r.style.display = txt.includes(term) ? 'flex' : 'none';
+            });
+        }
+
+        function toggleSelectAllColumn(colKey, isChecked) {
+            const chks = document.querySelectorAll(`.chk_col_${colKey}`);
+            chks.forEach(c => c.checked = isChecked);
+        }
+
+        function toggleSingleColumnVal(colKey) {
+            const chks = Array.from(document.querySelectorAll(`.chk_col_${colKey}`));
+            const allChecked = chks.every(c => c.checked);
+            const chkAll = document.getElementById(`chk_all_${colKey}`);
+            if (chkAll) chkAll.checked = allChecked;
+        }
+
+        function applyColumnFilterFromUI(colKey) {
+            const chks = Array.from(document.querySelectorAll(`.chk_col_${colKey}`));
+            const checkedVals = chks.filter(c => c.checked).map(c => c.value);
+
+            if (checkedVals.length === chks.length) {
+                delete columnSelections[colKey];
+            } else {
+                columnSelections[colKey] = new Set(checkedVals);
+            }
+
+            updateFilterIconState(colKey);
+            document.querySelectorAll('.col-filter-popover').forEach(p => p.classList.remove('active'));
+            applyFilters();
+        }
+
+        function clearSingleColumnFilter(colKey) {
+            delete columnSelections[colKey];
+            updateFilterIconState(colKey);
+            document.querySelectorAll('.col-filter-popover').forEach(p => p.classList.remove('active'));
+            applyFilters();
+        }
+
+        function updateFilterIconState(colKey) {
+            const btn = document.getElementById(`btn_filter_${colKey}`);
+            if (!btn) return;
+
+            if (columnSelections[colKey]) {
+                btn.className = "text-amber-400 bg-amber-500/20 p-0.5 rounded transition font-bold";
+            } else {
+                btn.className = "text-slate-500 hover:text-amber-400 p-0.5 rounded transition";
+            }
+        }
+
+        // ANO / MÊS TREE
         let availableYears = {};
 
         function buildAnoMesTree() {
@@ -524,8 +645,7 @@
                 sortAsc = true;
             }
 
-            const keys = ['n_orcamento', 'n_os', 'cliente', 'cod_mat_no_cliente', 'pedido_cliente', 'item', 'cod_interno', 'descricao', 'qtde', 'dt_aprovacao', 'dt_previsao_entrega', 'vl_unitario', 'vl_total', 'PROD/MAN/IND'];
-            keys.forEach(k => {
+            allColumnsKeys.forEach(k => {
                 const el = document.getElementById(`sort_${k}`);
                 if (el) el.textContent = '';
             });
@@ -649,6 +769,7 @@
             }, 200);
         }
 
+        // MOTOR PRINCIPAL DE FILTRAGEM
         function applyFilters() {
             const globalVal = document.getElementById('filterGlobal').value.toLowerCase();
             const clienteVal = document.getElementById('filterClienteInput').value.toLowerCase();
@@ -663,6 +784,7 @@
             filteredData = fullData.filter(item => {
                 const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
 
+                // 1. Filtro Ano/Mês
                 if (hasAnoMesFilter) {
                     if (!d) return false;
                     const y = d.getFullYear().toString();
@@ -670,28 +792,28 @@
                     if (!selectedAnoMes[y] || !selectedAnoMes[y].includes(m)) return false;
                 }
 
+                // 2. Pesquisa Geral
                 if (globalVal) {
                     const str = `${item.n_orcamento || ''} ${item.n_os || ''} ${item.cliente || ''} ${item.cod_mat_no_cliente || ''} ${item.pedido_cliente || ''} ${item.cod_interno || ''} ${item.descricao || ''} ${item['PROD/MAN/IND'] || ''}`.toLowerCase();
                     if (!str.includes(globalVal)) return false;
                 }
 
+                // 3. Cliente
                 if (clienteVal && !(item.cliente || '').toLowerCase().includes(clienteVal)) return false;
 
+                // 4. Período De/Até
                 if (dateDe && d && d < dateDe) return false;
                 if (dateAte && d && d > dateAte) return false;
 
-                // Filtros Individuais de Coluna
-                for (const [col, filterVal] of Object.entries(columnFilters)) {
-                    let rawVal = '';
-                    if (col === 'PROD/MAN/IND') {
-                        rawVal = item['PROD/MAN/IND'] || item.prod_man_ind || '';
-                    } else if (col === 'dt_aprovacao' || col === 'dt_previsao_entrega') {
-                        rawVal = formatDateBR(item[col]);
-                    } else {
-                        rawVal = (item[col] ?? '').toString();
-                    }
+                // 5. Filtros de Seleção por Coluna (Estilo Excel Checkboxes)
+                for (const [colKey, allowedSet] of Object.entries(columnSelections)) {
+                    let itemVal = '';
+                    if (colKey === 'PROD/MAN/IND') itemVal = item['PROD/MAN/IND'] || item.prod_man_ind || '(Vazio)';
+                    else if (colKey === 'dt_aprovacao' || colKey === 'dt_previsao_entrega') itemVal = formatDateBR(item[colKey]) || '(Vazio)';
+                    else if (colKey === 'vl_unitario' || colKey === 'vl_total') itemVal = formatCurrency(item[colKey]) || '(Vazio)';
+                    else itemVal = (item[colKey] ?? '').toString() || '(Vazio)';
 
-                    if (!rawVal.toLowerCase().includes(filterVal)) {
+                    if (!allowedSet.has(itemVal)) {
                         return false;
                     }
                 }
@@ -756,7 +878,7 @@
                 "Orçamento": item.n_orcamento || '',
                 "OS": item.n_os || '',
                 "Cliente": item.cliente || '',
-                "Código": item.cod_mat_no_cliente || '',
+                "Cód. Cliente/Nº Des.": item.cod_mat_no_cliente || '',
                 "N. Pedido": item.pedido_cliente || '',
                 "Item": item.item || '',
                 "SC": item.cod_interno || '',
