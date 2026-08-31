@@ -42,7 +42,7 @@
                 </div>
             </div>
 
-            <!-- Direita: Ações (Excel + Alternar Power BI) -->
+            <!-- Direita: Ações (Excel + Power BI) -->
             <div class="flex items-center gap-2">
                 <button id="btnExport" onclick="exportToExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/10 cursor-pointer">
                     <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
@@ -64,12 +64,12 @@
             <div>
                 <label class="block text-slate-400 font-medium mb-1">Pesquisa Geral</label>
                 <div class="relative">
-                    <input type="text" id="filterGlobal" oninput="applyFilters()" placeholder="Buscar em tudo..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-amber-500">
+                    <input type="text" id="filterGlobal" oninput="debouncedApplyFilters()" placeholder="Buscar em tudo..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-amber-500">
                     <i data-lucide="search" class="w-4 h-4 absolute left-2.5 top-2 text-slate-500"></i>
                 </div>
             </div>
 
-            <!-- 2. Cliente (Dropdown com Busca) -->
+            <!-- 2. Cliente (Dropdown Suspenso) -->
             <div class="relative">
                 <label class="block text-slate-400 font-medium mb-1">Cliente</label>
                 <input type="text" id="filterClienteInput" onfocus="openClienteDropdown()" oninput="filterClienteList()" placeholder="Selecione ou busque..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-amber-500">
@@ -88,7 +88,7 @@
                 </select>
             </div>
 
-            <!-- 4. Período (Data De / Data Até) -->
+            <!-- 4. Período -->
             <div class="col-span-1 sm:col-span-2 grid grid-cols-2 gap-2">
                 <div>
                     <label class="block text-slate-400 font-medium mb-1">Data De</label>
@@ -106,7 +106,7 @@
     <!-- CONTEÚDO PRINCIPAL -->
     <main class="flex-1 w-full h-full overflow-hidden relative bg-slate-950">
         
-        <!-- VISÃO DASHBOARD TABELA -->
+        <!-- DASHBOARD TABELA HTML -->
         <div id="htmlView" class="h-full w-full flex flex-col p-3 overflow-hidden">
             <div class="flex-1 border border-slate-800 rounded-xl bg-slate-900/50 overflow-auto shadow-2xl relative">
                 <table id="mainTable" class="w-full text-left text-xs whitespace-nowrap border-collapse">
@@ -129,16 +129,14 @@
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-800/40 text-slate-300 font-mono text-[11px]">
                         <tr>
-                            <td colspan="13" class="p-8 text-center text-slate-400 font-sans animate-pulse">
-                                Carregando dados...
-                            </td>
+                            <td colspan="13" class="p-8 text-center text-slate-400 font-sans">Carregando dados...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
             <!-- RODAPÉ DE TOTAIS -->
-            <div class="bg-slate-900 border border-slate-800 mt-2 p-2.5 rounded-xl flex justify-between items-center text-xs font-bold text-slate-200">
+            <div class="bg-slate-900 border border-slate-800 mt-2 p-2.5 rounded-xl flex justify-between items-center text-xs font-bold text-slate-200 flex-shrink-0">
                 <span>Registros Exibidos: <span id="totalLinhas" class="text-amber-400">0</span></span>
                 <div class="flex gap-6">
                     <span>Quantidade Total: <span id="totalQtde" class="text-amber-400">0</span></span>
@@ -147,14 +145,14 @@
             </div>
         </div>
 
-        <!-- VISÃO POWER BI (IFRAME CARREGADO SOB DEMANDA) -->
+        <!-- POWER BI -->
         <div id="pbiView" class="h-full w-full hidden">
             <div id="pbiContainer" class="w-full h-full"></div>
         </div>
 
     </main>
 
-    <!-- NAVEGAÇÃO DE ABAS (RODAPÉ) -->
+    <!-- ABAS -->
     <nav class="bg-slate-900 border-t border-slate-800 px-2 py-1.5 flex gap-1.5 overflow-x-auto text-xs font-medium flex-shrink-0">
         <button class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap">RS</button>
         <button class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Gráfico</button>
@@ -168,7 +166,7 @@
     </nav>
 
     <script>
-        // 1. NAVEGAÇÃO VOLTAR
+        // 1. VOLTAR
         function goBack() {
             if (window.history.length > 1) {
                 window.history.back();
@@ -177,208 +175,147 @@
             }
         }
 
-        // 2. SEGURANÇA E SESSÃO
+        // 2. SEGURANÇA
         const sessionData = localStorage.getItem('sintercan_user');
         if (sessionData) {
-            const currentUser = JSON.parse(sessionData);
-            if (Number(currentUser.u_rs) !== 1) {
-                alert("Acesso negado para este módulo.");
-                window.location.href = '../';
-            }
+            try {
+                const currentUser = JSON.parse(sessionData);
+                if (Number(currentUser.u_rs) !== 1) {
+                    alert("Acesso negado para este módulo.");
+                    window.location.href = '../';
+                }
+            } catch (e) {}
         }
 
-        // 3. ALTERNAR ENTRE DASHBOARD E POWER BI
+        // 3. POWER BI vs HTML
         let isPbiOpen = false;
         const PBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiZGVhNmFkYTMtYjZiZS00MDA5LTkwZTUtYjQwZjEzYTRlNTlkIiwidCI6ImQ2OWIzZmE3LTBhMGEtNDhhZC1hNDZmLWVhYmM5YzFiMDRjOCJ9";
 
         function toggleView() {
             isPbiOpen = !isPbiOpen;
-            const htmlView = document.getElementById('htmlView');
-            const pbiView = document.getElementById('pbiView');
-            const filterSection = document.getElementById('filterSection');
-            const btnExport = document.getElementById('btnExport');
-            const btnToggleText = document.getElementById('btnToggleText');
+            document.getElementById('htmlView').classList.toggle('hidden', isPbiOpen);
+            document.getElementById('filterSection').classList.toggle('hidden', isPbiOpen);
+            document.getElementById('btnExport').classList.toggle('hidden', isPbiOpen);
+            document.getElementById('pbiView').classList.toggle('hidden', !isPbiOpen);
+            
+            document.getElementById('btnToggleText').textContent = isPbiOpen ? "Voltar ao Dashboard" : "Acessar Power BI";
+
             const pbiContainer = document.getElementById('pbiContainer');
-
-            if (isPbiOpen) {
-                htmlView.classList.add('hidden');
-                filterSection.classList.add('hidden');
-                btnExport.classList.add('hidden');
-                pbiView.classList.remove('hidden');
-                
-                // Texto solicitado: sem a palavra HTML
-                btnToggleText.textContent = "Voltar ao Dashboard";
-
-                // Carrega o iframe do Power BI apenas se ainda não estiver injetado
-                if (!pbiContainer.innerHTML.trim()) {
-                    pbiContainer.innerHTML = `<iframe title="RS Power BI" class="w-full h-full border-0" src="${PBI_URL}" allowFullScreen="true"></iframe>`;
-                }
-            } else {
-                htmlView.classList.remove('hidden');
-                filterSection.classList.remove('hidden');
-                btnExport.classList.remove('hidden');
-                pbiView.classList.add('hidden');
-                
-                btnToggleText.textContent = "Acessar Power BI";
+            if (isPbiOpen && !pbiContainer.innerHTML.trim()) {
+                pbiContainer.innerHTML = `<iframe title="RS Power BI" class="w-full h-full border-0" src="${PBI_URL}" allowFullScreen="true"></iframe>`;
             }
         }
 
-        // 4. CONSUMO DE DADOS JSON
+        // 4. GESTÃO DE DADOS OTIMIZADA
         let fullData = [];
         let filteredData = [];
         let allClientes = [];
+        let filterTimeout = null;
 
         async function loadRsData() {
             const endpoint = 'https://sintercan.consultoriarf.net/rs';
             try {
                 let response = await fetch(endpoint).catch(() => null);
-
-                // Tentativa via Proxy se o servidor bloquear CORS no browser
                 if (!response || !response.ok) {
                     response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(endpoint)}`);
                 }
-
-                if (!response.ok) throw new Error('Erro ao obter dados do servidor.');
+                if (!response.ok) throw new Error('Falha ao conectar no endpoint');
 
                 fullData = await response.json();
-                filteredData = [...fullData];
+                filteredData = fullData;
 
                 setupClienteDropdown();
                 setupAnoMesOptions();
                 renderTable(filteredData);
             } catch (err) {
-                console.error("Erro no carregamento:", err);
+                console.error(err);
                 document.getElementById('tableBody').innerHTML = `
-                    <tr>
-                        <td colspan="13" class="p-8 text-center text-rose-400 font-sans">
-                            Erro ao conectar na API (${endpoint}). Verifique as permissões de CORS no servidor backend.
-                        </td>
-                    </tr>
+                    <tr><td colspan="13" class="p-8 text-center text-rose-400 font-sans">Erro ao carregar os dados do servidor.</td></tr>
                 `;
             }
         }
 
-        // FORMATADORES
         function formatCurrency(val) {
-            const number = parseFloat(val) || 0;
-            return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const num = parseFloat(val) || 0;
+            return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
         function parseDate(str) {
             if (!str) return null;
             if (typeof str === 'string' && str.includes('/')) {
-                const parts = str.split('/');
-                let yr = parseInt(parts[2], 10);
+                const p = str.split('/');
+                let yr = parseInt(p[2], 10);
                 if (yr < 100) yr += 2000;
-                return new Date(yr, parts[1] - 1, parts[0]);
+                return new Date(yr, p[1] - 1, p[0]);
             }
             return new Date(str);
         }
 
-        // DROPDOWN DE CLIENTE
-        function setupClienteDropdown() {
-            allClientes = [...new Set(fullData.map(i => i.cliente || i.Cliente))].filter(Boolean).sort();
-            renderClienteOptions(allClientes);
-
-            document.addEventListener('click', (e) => {
-                const dropdown = document.getElementById('clienteDropdown');
-                const input = document.getElementById('filterClienteInput');
-                if (dropdown && !dropdown.contains(e.target) && e.target !== input) {
-                    dropdown.classList.add('hidden');
-                }
-            });
-        }
-
-        function openClienteDropdown() {
-            document.getElementById('clienteDropdown').classList.remove('hidden');
-        }
-
-        function filterClienteList() {
-            const term = document.getElementById('filterClienteInput').value.toLowerCase();
-            const filtered = allClientes.filter(c => c.toLowerCase().includes(term));
-            renderClienteOptions(filtered);
-            applyFilters();
-        }
-
-        function renderClienteOptions(list) {
-            const container = document.getElementById('clienteListOptions');
-            container.innerHTML = '';
-            list.forEach(c => {
-                container.innerHTML += `<div onclick="selectCliente('${c.replace(/'/g, "\\'")}')" class="p-2 hover:bg-slate-800 cursor-pointer text-slate-300 font-sans">${c}</div>`;
-            });
-        }
-
-        function selectCliente(val) {
-            document.getElementById('filterClienteInput').value = val;
-            document.getElementById('clienteDropdown').classList.add('hidden');
-            applyFilters();
-        }
-
-        // OPÇÕES ANO/MÊS
-        function setupAnoMesOptions() {
-            const setAnosMeses = new Set();
-            fullData.forEach(item => {
-                const d = parseDate(item.aprovacao || item.Aprovacao || item.prazo || item.Prazo);
-                if (d && !isNaN(d)) {
-                    const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                    setAnosMeses.add(ym);
-                }
-            });
-
-            const select = document.getElementById('filterAnoMes');
-            Array.from(setAnosMeses).sort().reverse().forEach(ym => {
-                const [y, m] = ym.split('-');
-                select.innerHTML += `<option value="${ym}">${m}/${y}</option>`;
-            });
-        }
-
-        // RENDERIZAR TABELA
+        // RENDERIZAÇÃO ALTA PERFORMANCE COM DOCUMENTFRAGMENT
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
 
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-500 font-sans">Nenhum registro encontrado.</td></tr>`;
+                document.getElementById('totalLinhas').textContent = '0';
+                document.getElementById('totalQtde').textContent = '0';
+                document.getElementById('totalValor').textContent = 'R$ 0,00';
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
             let totalQtde = 0;
             let totalValor = 0;
 
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-500 font-sans">Nenhum registro localizado com esses filtros.</td></tr>`;
-            } else {
-                data.forEach((row, idx) => {
-                    const qtde = parseFloat(row.qtde || row.Qtde || 0);
-                    const vlTotal = parseFloat(row.vl_total || row.VlTotal || row['VI. Total'] || row['Vl. Total'] || 0);
-                    const vlUnit = parseFloat(row.vl_unitario || row.VlUnitario || row['VI. unitário'] || row['Vl. unitário'] || 0);
+            // Renderiza no máximo 1000 linhas pra evitar travar o navegador se houver milhares de itens
+            const limit = Math.min(data.length, 1000);
 
-                    totalQtde += qtde;
-                    totalValor += vlTotal;
+            for (let idx = 0; idx < limit; idx++) {
+                const row = data[idx];
+                const qtde = parseFloat(row.qtde || row.Qtde || 0);
+                const vlTotal = parseFloat(row.vl_total || row.VlTotal || row['VI. Total'] || row['Vl. Total'] || 0);
+                const vlUnit = parseFloat(row.vl_unitario || row.VlUnitario || row['VI. unitário'] || row['Vl. unitário'] || 0);
 
-                    const bgClass = idx % 2 === 0 ? 'bg-slate-900/30' : 'bg-slate-950/40';
+                totalQtde += qtde;
+                totalValor += vlTotal;
 
-                    tbody.innerHTML += `
-                        <tr class="${bgClass} hover:bg-slate-800/50 transition">
-                            <td class="p-2 border-r border-slate-800/60">${row.orcamento || row.Orcamento || ''}</td>
-                            <td class="p-2 border-r border-slate-800/60">${row.os || row.OS || ''}</td>
-                            <td class="p-2 border-r border-slate-800/60 font-sans font-medium text-slate-200">${row.cliente || row.Cliente || ''}</td>
-                            <td class="p-2 border-r border-slate-800/60">${row.codigo || row.Codigo || ''}</td>
-                            <td class="p-2 border-r border-slate-800/60">${row.n_pedido || row.NPedido || row['N. Pedido'] || ''}</td>
-                            <td class="p-2 border-r border-slate-800/60">${row.item || row.Item || ''}</td>
-                            <td class="p-2 border-r border-slate-800/60">${row.sc || row.SC || ''}</td>
-                            <td class="p-2 border-r border-slate-800/60 font-sans text-slate-300">${row.descricao || row.Descricao || ''}</td>
-                            <td class="p-2 text-right border-r border-slate-800/60 font-bold">${qtde}</td>
-                            <td class="p-2 text-center border-r border-slate-800/60">${row.aprovacao || row.Aprovacao || ''}</td>
-                            <td class="p-2 text-center border-r border-slate-800/60">${row.prazo || row.Prazo || ''}</td>
-                            <td class="p-2 text-right border-r border-slate-800/60">${formatCurrency(vlUnit)}</td>
-                            <td class="p-2 text-right font-bold text-emerald-400">${formatCurrency(vlTotal)}</td>
-                        </tr>
-                    `;
-                });
+                const tr = document.createElement('tr');
+                tr.className = (idx % 2 === 0 ? 'bg-slate-900/30' : 'bg-slate-950/40') + ' hover:bg-slate-800/50 transition';
+
+                tr.innerHTML = `
+                    <td class="p-2 border-r border-slate-800/60">${row.orcamento || row.Orcamento || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60">${row.os || row.OS || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60 font-sans font-medium text-slate-200">${row.cliente || row.Cliente || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60">${row.codigo || row.Codigo || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60">${row.n_pedido || row.NPedido || row['N. Pedido'] || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60">${row.item || row.Item || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60">${row.sc || row.SC || ''}</td>
+                    <td class="p-2 border-r border-slate-800/60 font-sans text-slate-300">${row.descricao || row.Descricao || ''}</td>
+                    <td class="p-2 text-right border-r border-slate-800/60 font-bold">${qtde}</td>
+                    <td class="p-2 text-center border-r border-slate-800/60">${row.aprovacao || row.Aprovacao || ''}</td>
+                    <td class="p-2 text-center border-r border-slate-800/60">${row.prazo || row.Prazo || ''}</td>
+                    <td class="p-2 text-right border-r border-slate-800/60">${formatCurrency(vlUnit)}</td>
+                    <td class="p-2 text-right font-bold text-emerald-400">${formatCurrency(vlTotal)}</td>
+                `;
+                fragment.appendChild(tr);
             }
+
+            tbody.appendChild(fragment);
 
             document.getElementById('totalLinhas').textContent = data.length;
             document.getElementById('totalQtde').textContent = totalQtde.toLocaleString('pt-BR');
             document.getElementById('totalValor').textContent = formatCurrency(totalValor);
         }
 
-        // APLICAR FILTROS
+        // DEBOUNCE
+        function debouncedApplyFilters() {
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(() => {
+                applyFilters();
+            }, 250);
+        }
+
         function applyFilters() {
             const globalVal = document.getElementById('filterGlobal').value.toLowerCase();
             const clienteVal = document.getElementById('filterClienteInput').value.toLowerCase();
@@ -391,8 +328,8 @@
 
             filteredData = fullData.filter(item => {
                 if (globalVal) {
-                    const itemContent = Object.values(item).join(' ').toLowerCase();
-                    if (!itemContent.includes(globalVal)) return false;
+                    const str = Object.values(item).join(' ').toLowerCase();
+                    if (!str.includes(globalVal)) return false;
                 }
 
                 const cliente = (item.cliente || item.Cliente || '').toLowerCase();
@@ -414,10 +351,70 @@
             renderTable(filteredData);
         }
 
+        // DROPDOWN CLIENTE
+        function setupClienteDropdown() {
+            allClientes = [...new Set(fullData.map(i => i.cliente || i.Cliente))].filter(Boolean).sort();
+            renderClienteOptions(allClientes);
+
+            document.addEventListener('click', (e) => {
+                const dropdown = document.getElementById('clienteDropdown');
+                const input = document.getElementById('filterClienteInput');
+                if (dropdown && !dropdown.contains(e.target) && e.target !== input) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        function openClienteDropdown() {
+            document.getElementById('clienteDropdown').classList.remove('hidden');
+        }
+
+        function filterClienteList() {
+            const term = document.getElementById('filterClienteInput').value.toLowerCase();
+            const filtered = allClientes.filter(c => c.toLowerCase().includes(term));
+            renderClienteOptions(filtered);
+            debouncedApplyFilters();
+        }
+
+        function renderClienteOptions(list) {
+            const container = document.getElementById('clienteListOptions');
+            container.innerHTML = '';
+            list.slice(0, 100).forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'p-2 hover:bg-slate-800 cursor-pointer text-slate-300 font-sans';
+                div.textContent = c;
+                div.onclick = () => selectCliente(c);
+                container.appendChild(div);
+            });
+        }
+
+        function selectCliente(val) {
+            document.getElementById('filterClienteInput').value = val;
+            document.getElementById('clienteDropdown').classList.add('hidden');
+            applyFilters();
+        }
+
+        // MÊS / ANO
+        function setupAnoMesOptions() {
+            const setAnosMeses = new Set();
+            fullData.forEach(item => {
+                const d = parseDate(item.aprovacao || item.Aprovacao || item.prazo || item.Prazo);
+                if (d && !isNaN(d)) {
+                    setAnosMeses.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+                }
+            });
+
+            const select = document.getElementById('filterAnoMes');
+            Array.from(setAnosMeses).sort().reverse().forEach(ym => {
+                const [y, m] = ym.split('-');
+                select.innerHTML += `<option value="${ym}">${m}/${y}</option>`;
+            });
+        }
+
         // EXPORTAR EXCEL
         function exportToExcel() {
-            if (filteredData.length === 0) {
-                alert("Não há dados visíveis para exportar.");
+            if (!filteredData || filteredData.length === 0) {
+                alert("Sem dados para exportar.");
                 return;
             }
 
@@ -445,7 +442,7 @@
 
         // INICIALIZAÇÃO
         document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
             loadRsData();
         });
     </script>
