@@ -293,8 +293,8 @@
 
     <!-- NAVEGAÇÃO DE ABAS -->
     <nav class="bg-slate-900 border-t border-slate-800 px-2 py-1 flex gap-1 overflow-x-auto text-xs font-medium flex-shrink-0">
-        <button class="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap">RS</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Gráfico</button>
+        <a href="../rs/" class="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap">RS</a>
+        <a href="../grafico/" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Gráfico</a>
         <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Mensal</button>
         <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Mensal por cliente</button>
         <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Classificação de vendas</button>
@@ -317,9 +317,7 @@
         let filteredData = [];
         let allClientes = [];
         
-        // Estrutura de Filtros por Coluna Estilo Excel: { "cliente": Set(["A", "B"]), ... }
         let columnSelections = {};
-        
         let filterTimeout = null;
         const currentYear = new Date().getFullYear();
 
@@ -378,26 +376,22 @@
             return isNaN(d) ? null : d;
         }
 
-        // LIMPAR TODOS OS FILTROS
         function resetAllFilters() {
             document.getElementById('filterGlobal').value = '';
             document.getElementById('filterClienteInput').value = '';
             document.getElementById('filterDataDe').value = '';
             document.getElementById('filterDataAte').value = '';
 
-            // Reseta Seleção de Anos/Meses para o Ano Atual
             selectedAnoMes = {};
             selectedAnoMes[currentYear] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
             updateTreeUI();
 
-            // Reseta Filtros de Colunas Excel
             columnSelections = {};
             allColumnsKeys.forEach(key => updateFilterIconState(key));
 
             applyFilters();
         }
 
-        // POPOVER EXCEL-STYLE DE FILTRO POR COLUNA
         function toggleColumnFilter(colKey) {
             const el = document.getElementById(`filter_popover_${colKey}`);
             if (!el) return;
@@ -411,12 +405,65 @@
             }
         }
 
+        // RETORNA OS DADOS FILTRADOS IGNORANDO APENAS A PRÓPRIA COLUNA ABERTA (FILTRO EM CASCATA)
+        function getFilteredDataExcludingColumn(excludeColKey) {
+            const globalVal = document.getElementById('filterGlobal').value.toLowerCase();
+            const clienteVal = document.getElementById('filterClienteInput').value.toLowerCase();
+            const dataDeVal = document.getElementById('filterDataDe').value;
+            const dataAteVal = document.getElementById('filterDataAte').value;
+
+            const dateDe = dataDeVal ? new Date(dataDeVal + 'T00:00:00') : null;
+            const dateAte = dataAteVal ? new Date(dataAteVal + 'T23:59:59') : null;
+
+            const hasAnoMesFilter = Object.keys(selectedAnoMes).length > 0;
+
+            return fullData.filter(item => {
+                const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
+
+                if (hasAnoMesFilter) {
+                    if (!d) return false;
+                    const y = d.getFullYear().toString();
+                    const m = d.getMonth();
+                    if (!selectedAnoMes[y] || !selectedAnoMes[y].includes(m)) return false;
+                }
+
+                if (globalVal) {
+                    const str = `${item.n_orcamento || ''} ${item.n_os || ''} ${item.cliente || ''} ${item.cod_mat_no_cliente || ''} ${item.pedido_cliente || ''} ${item.cod_interno || ''} ${item.descricao || ''} ${item['PROD/MAN/IND'] || ''}`.toLowerCase();
+                    if (!str.includes(globalVal)) return false;
+                }
+
+                if (clienteVal && !(item.cliente || '').toLowerCase().includes(clienteVal)) return false;
+
+                if (dateDe && d && d < dateDe) return false;
+                if (dateAte && d && d > dateAte) return false;
+
+                for (const [colKey, selectedSet] of Object.entries(columnSelections)) {
+                    if (colKey === excludeColKey) continue;
+                    if (!selectedSet) continue;
+
+                    let itemVal = '';
+                    if (colKey === 'PROD/MAN/IND') itemVal = item['PROD/MAN/IND'] || item.prod_man_ind || '(Vazio)';
+                    else if (colKey === 'dt_aprovacao' || colKey === 'dt_previsao_entrega') itemVal = formatDateBR(item[colKey]) || '(Vazio)';
+                    else if (colKey === 'vl_unitario' || colKey === 'vl_total') itemVal = formatCurrency(item[colKey]) || '(Vazio)';
+                    else itemVal = (item[colKey] ?? '').toString() || '(Vazio)';
+
+                    if (!selectedSet.has(itemVal)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+        }
+
+        // CONSTRUÇÃO DO POPOVER ESTILO EXCEL (EXIBE SOMENTE VALORES VISÍVEIS)
         function buildExcelFilterPopover(colKey) {
             const popover = document.getElementById(`filter_popover_${colKey}`);
             if (!popover) return;
 
-            // Extrai valores únicos presentes na coluna
-            let rawValues = fullData.map(item => {
+            const activeData = getFilteredDataExcludingColumn(colKey);
+
+            let rawValues = activeData.map(item => {
                 if (colKey === 'PROD/MAN/IND') return item['PROD/MAN/IND'] || item.prod_man_ind || '(Vazio)';
                 if (colKey === 'dt_aprovacao' || colKey === 'dt_previsao_entrega') return formatDateBR(item[colKey]) || '(Vazio)';
                 if (colKey === 'vl_unitario' || colKey === 'vl_total') return formatCurrency(item[colKey]) || '(Vazio)';
@@ -425,8 +472,8 @@
 
             const uniqueValues = [...new Set(rawValues)].sort();
 
-            const selectedSet = columnSelections[colKey]; // Se undefined, significa todos selecionados
-            const isAllSelected = !selectedSet || selectedSet.size === uniqueValues.length;
+            const selectedSet = columnSelections[colKey];
+            const isAllSelected = !selectedSet || uniqueValues.every(val => selectedSet.has(val));
 
             popover.innerHTML = `
                 <div class="space-y-2">
@@ -435,14 +482,14 @@
                     <div class="max-h-40 overflow-y-auto space-y-1 text-xs font-sans py-1 border-t border-b border-slate-800" id="list_popover_${colKey}">
                         <div class="flex items-center gap-2 px-1 hover:bg-slate-800 rounded">
                             <input type="checkbox" id="chk_all_${colKey}" onchange="toggleSelectAllColumn('${colKey}', this.checked)" ${isAllSelected ? 'checked' : ''} class="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
-                            <label for="chk_all_${colKey}" class="text-amber-400 font-semibold cursor-pointer">(Selecionar Tudo)</label>
+                            <label for="chk_all_${colKey}" class="text-amber-400 font-semibold cursor-pointer select-none">(Selecionar Tudo)</label>
                         </div>
-                        ${uniqueValues.map((val, i) => {
+                        ${uniqueValues.map((val) => {
                             const isChecked = !selectedSet || selectedSet.has(val);
                             return `
                                 <div class="flex items-center gap-2 px-1 hover:bg-slate-800 rounded item-popover-row">
                                     <input type="checkbox" value="${val.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="toggleSingleColumnVal('${colKey}')" class="chk_col_${colKey} rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
-                                    <label class="text-slate-300 truncate cursor-pointer" title="${val}">${val}</label>
+                                    <label onclick="this.previousElementSibling.click()" class="text-slate-300 truncate cursor-pointer select-none" title="${val}">${val}</label>
                                 </div>
                             `;
                         }).join('')}
@@ -459,29 +506,43 @@
         function filterExcelPopoverList(colKey) {
             const term = document.getElementById(`search_popover_${colKey}`).value.toLowerCase();
             const rows = document.querySelectorAll(`#list_popover_${colKey} .item-popover-row`);
+            
             rows.forEach(r => {
                 const txt = r.textContent.toLowerCase();
                 r.style.display = txt.includes(term) ? 'flex' : 'none';
             });
+
+            toggleSingleColumnVal(colKey);
         }
 
         function toggleSelectAllColumn(colKey, isChecked) {
-            const chks = document.querySelectorAll(`.chk_col_${colKey}`);
-            chks.forEach(c => c.checked = isChecked);
+            const visibleRows = document.querySelectorAll(`#list_popover_${colKey} .item-popover-row`);
+            visibleRows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const chk = row.querySelector(`.chk_col_${colKey}`);
+                    if (chk) chk.checked = isChecked;
+                }
+            });
         }
 
         function toggleSingleColumnVal(colKey) {
-            const chks = Array.from(document.querySelectorAll(`.chk_col_${colKey}`));
-            const allChecked = chks.every(c => c.checked);
+            const visibleChks = Array.from(document.querySelectorAll(`#list_popover_${colKey} .item-popover-row`))
+                .filter(r => r.style.display !== 'none')
+                .map(r => r.querySelector(`.chk_col_${colKey}`))
+                .filter(Boolean);
+
+            const allChecked = visibleChks.length > 0 && visibleChks.every(c => c.checked);
             const chkAll = document.getElementById(`chk_all_${colKey}`);
-            if (chkAll) chkAll.checked = allChecked;
+            if (chkAll) {
+                chkAll.checked = allChecked;
+            }
         }
 
         function applyColumnFilterFromUI(colKey) {
-            const chks = Array.from(document.querySelectorAll(`.chk_col_${colKey}`));
-            const checkedVals = chks.filter(c => c.checked).map(c => c.value);
+            const allChks = Array.from(document.querySelectorAll(`.chk_col_${colKey}`));
+            const checkedVals = allChks.filter(c => c.checked).map(c => c.value);
 
-            if (checkedVals.length === chks.length) {
+            if (checkedVals.length === allChks.length) {
                 delete columnSelections[colKey];
             } else {
                 columnSelections[colKey] = new Set(checkedVals);
@@ -510,7 +571,6 @@
             }
         }
 
-        // ANO / MÊS TREE
         let availableYears = {};
 
         function buildAnoMesTree() {
@@ -769,7 +829,6 @@
             }, 200);
         }
 
-        // MOTOR PRINCIPAL DE FILTRAGEM
         function applyFilters() {
             const globalVal = document.getElementById('filterGlobal').value.toLowerCase();
             const clienteVal = document.getElementById('filterClienteInput').value.toLowerCase();
@@ -784,7 +843,6 @@
             filteredData = fullData.filter(item => {
                 const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
 
-                // 1. Filtro Ano/Mês
                 if (hasAnoMesFilter) {
                     if (!d) return false;
                     const y = d.getFullYear().toString();
@@ -792,28 +850,24 @@
                     if (!selectedAnoMes[y] || !selectedAnoMes[y].includes(m)) return false;
                 }
 
-                // 2. Pesquisa Geral
                 if (globalVal) {
                     const str = `${item.n_orcamento || ''} ${item.n_os || ''} ${item.cliente || ''} ${item.cod_mat_no_cliente || ''} ${item.pedido_cliente || ''} ${item.cod_interno || ''} ${item.descricao || ''} ${item['PROD/MAN/IND'] || ''}`.toLowerCase();
                     if (!str.includes(globalVal)) return false;
                 }
 
-                // 3. Cliente
                 if (clienteVal && !(item.cliente || '').toLowerCase().includes(clienteVal)) return false;
 
-                // 4. Período De/Até
                 if (dateDe && d && d < dateDe) return false;
                 if (dateAte && d && d > dateAte) return false;
 
-                // 5. Filtros de Seleção por Coluna (Estilo Excel Checkboxes)
-                for (const [colKey, allowedSet] of Object.entries(columnSelections)) {
+                for (const [colKey, selectedSet] of Object.entries(columnSelections)) {
                     let itemVal = '';
                     if (colKey === 'PROD/MAN/IND') itemVal = item['PROD/MAN/IND'] || item.prod_man_ind || '(Vazio)';
                     else if (colKey === 'dt_aprovacao' || colKey === 'dt_previsao_entrega') itemVal = formatDateBR(item[colKey]) || '(Vazio)';
                     else if (colKey === 'vl_unitario' || colKey === 'vl_total') itemVal = formatCurrency(item[colKey]) || '(Vazio)';
                     else itemVal = (item[colKey] ?? '').toString() || '(Vazio)';
 
-                    if (!allowedSet.has(itemVal)) {
+                    if (!selectedSet.has(itemVal)) {
                         return false;
                     }
                 }
@@ -895,6 +949,24 @@
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "RS");
             XLSX.writeFile(workbook, `Relatorio_RS_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        }
+
+        let isPbiOpen = false;
+        const PBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiZGVhNmFkYTMtYjZiZS00MDA5LTkwZTUtYjQwZjEzYTRlNTlkIiwidCI6ImQ2OWIzZmE3LTBhMGEtNDhhZC1hNDZmLWVhYmM5YzFiMDRjOCJ9";
+
+        function toggleView() {
+            isPbiOpen = !isPbiOpen;
+            document.getElementById('htmlView').classList.toggle('hidden', isPbiOpen);
+            document.getElementById('filterSection').classList.toggle('hidden', isPbiOpen);
+            document.getElementById('btnExport').classList.toggle('hidden', isPbiOpen);
+            document.getElementById('pbiView').classList.toggle('hidden', !isPbiOpen);
+            
+            document.getElementById('btnToggleText').textContent = isPbiOpen ? "Voltar ao Dashboard" : "Acessar Power BI";
+
+            const pbiContainer = document.getElementById('pbiContainer');
+            if (isPbiOpen && !pbiContainer.innerHTML.trim()) {
+                pbiContainer.innerHTML = `<iframe title="RS Power BI" class="w-full h-full border-0" src="${PBI_URL}" allowFullScreen="true"></iframe>`;
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
