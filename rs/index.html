@@ -12,6 +12,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- SheetJS (Para Exportar para Excel) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js + Plugin Datalabels -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #090d16; color: #f8fafc; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -41,7 +43,7 @@
                 </div>
                 <div>
                     <h1 class="text-base font-extrabold tracking-wide text-white leading-tight">Sintercan</h1>
-                    <p class="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">Dashboard RS</p>
+                    <p id="headerSubtitle" class="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">Dashboard RS</p>
                 </div>
             </div>
 
@@ -55,7 +57,7 @@
                     <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
                     <span>Exportar Excel</span>
                 </button>
-                <button id="btnTogglePbi" onclick="toggleView()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/10 cursor-pointer">
+                <button id="btnTogglePbi" onclick="togglePowerBiView()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/10 cursor-pointer">
                     <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
                     <span id="btnToggleText">Acessar Power BI</span>
                 </button>
@@ -63,7 +65,7 @@
         </div>
     </header>
 
-    <!-- BARRA DE FILTROS GERAIS -->
+    <!-- BARRA DE FILTROS GERAIS (COMPARTILHADA ENTRE AS ABAS) -->
     <section id="filterSection" class="bg-slate-900/90 border-b border-slate-800 p-2.5 flex-shrink-0">
         <div class="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 text-xs">
             
@@ -115,16 +117,15 @@
         </div>
     </section>
 
-    <!-- CONTEÚDO PRINCIPAL (TABELA COM FILTROS DE COLUNA ESTILO EXCEL) -->
-    <main class="flex-1 w-full h-full overflow-hidden relative bg-slate-950">
+    <!-- CONTEÚDO PRINCIPAL (MÚLTIPLAS VISTAS) -->
+    <main class="flex-1 w-full h-full overflow-hidden relative bg-slate-950 p-2">
         
-        <!-- DASHBOARD TABELA HTML -->
-        <div id="htmlView" class="h-full w-full flex flex-col p-2 overflow-hidden">
+        <!-- 1. ABA RS (TABELA DETALHADA) -->
+        <div id="viewTabRS" class="h-full w-full flex flex-col overflow-hidden">
             <div class="flex-1 border border-slate-800 rounded-xl bg-slate-900/50 overflow-y-auto overflow-x-hidden shadow-2xl relative">
                 <table id="mainTable" class="w-full text-left text-[11px] border-collapse table-fixed">
                     <thead class="bg-slate-900 text-slate-300 sticky top-0 z-20 border-b border-slate-800 font-semibold">
                         <tr>
-                            <!-- 1. Orçamento -->
                             <th class="w-[5.5%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('n_orcamento')">
                                     <span class="truncate">Orçamento <span id="sort_n_orcamento"></span></span>
@@ -133,7 +134,6 @@
                                 <div id="filter_popover_n_orcamento" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 2. OS -->
                             <th class="w-[4.5%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('n_os')">
                                     <span class="truncate">OS <span id="sort_n_os"></span></span>
@@ -142,7 +142,6 @@
                                 <div id="filter_popover_n_os" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 3. Cliente -->
                             <th class="w-[15%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cliente')">
                                     <span class="truncate">Cliente <span id="sort_cliente"></span></span>
@@ -151,7 +150,6 @@
                                 <div id="filter_popover_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 4. Cód. Cliente/Nº Des. -->
                             <th class="w-[8.5%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cod_mat_no_cliente')">
                                     <span class="truncate" title="Cód. Cliente/Nº Des.">Cód. Cliente/Nº Des. <span id="sort_cod_mat_no_cliente"></span></span>
@@ -160,7 +158,6 @@
                                 <div id="filter_popover_cod_mat_no_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-56 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 5. N. Pedido -->
                             <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('pedido_cliente')">
                                     <span class="truncate">N. Pedido <span id="sort_pedido_cliente"></span></span>
@@ -169,7 +166,6 @@
                                 <div id="filter_popover_pedido_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 6. Item -->
                             <th class="w-[4%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('item')">
                                     <span class="truncate">Item <span id="sort_item"></span></span>
@@ -178,7 +174,6 @@
                                 <div id="filter_popover_item" class="col-filter-popover absolute left-0 top-full mt-1 w-44 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 7. SC -->
                             <th class="w-[5.5%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cod_interno')">
                                     <span class="truncate">SC <span id="sort_cod_interno"></span></span>
@@ -187,7 +182,6 @@
                                 <div id="filter_popover_cod_interno" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 8. Descrição -->
                             <th class="w-[18.5%] p-1.5 border-r border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('descricao')">
                                     <span class="truncate">Descrição <span id="sort_descricao"></span></span>
@@ -196,7 +190,6 @@
                                 <div id="filter_popover_descricao" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 9. Qtde -->
                             <th class="w-[4%] p-1.5 border-r border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('qtde')">
                                     <span class="truncate">Qtde. <span id="sort_qtde"></span></span>
@@ -205,7 +198,6 @@
                                 <div id="filter_popover_qtde" class="col-filter-popover absolute right-0 top-full mt-1 w-44 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 10. Aprovação -->
                             <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 text-center relative group">
                                 <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('dt_aprovacao')">
                                     <span class="truncate">Aprovação <span id="sort_dt_aprovacao">▼</span></span>
@@ -214,7 +206,6 @@
                                 <div id="filter_popover_dt_aprovacao" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 11. Prazo -->
                             <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 text-center relative group">
                                 <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('dt_previsao_entrega')">
                                     <span class="truncate">Prazo <span id="sort_dt_previsao_entrega"></span></span>
@@ -223,7 +214,6 @@
                                 <div id="filter_popover_dt_previsao_entrega" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 12. Vl. Unitário -->
                             <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('vl_unitario')">
                                     <span class="truncate">Vl. unit. <span id="sort_vl_unitario"></span></span>
@@ -232,7 +222,6 @@
                                 <div id="filter_popover_vl_unitario" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 13. Vl. Total -->
                             <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('vl_total')">
                                     <span class="truncate">Vl. Total <span id="sort_vl_total"></span></span>
@@ -241,13 +230,12 @@
                                 <div id="filter_popover_vl_total" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <!-- 14. PROD/MAN/IND -->
                             <th class="w-[6.5%] p-1.5 text-center relative group">
                                 <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('PROD/MAN/IND')">
                                     <span class="truncate">PROD/MAN/IND <span id="sort_PROD/MAN/IND"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('PROD/MAN/IND')" id="btn_filter_PROD/MAN/IND" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_PROD/MAN/IND" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_PROD_MAN_IND" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
                         </tr>
                     </thead>
@@ -259,7 +247,7 @@
                 </table>
             </div>
 
-            <!-- BARRA DE CONTROLE E TOTAIS -->
+            <!-- BARRA DE CONTROLE E TOTAIS RS -->
             <div class="bg-slate-900 border border-slate-800 mt-1.5 p-2 rounded-xl flex flex-wrap justify-between items-center text-xs font-bold text-slate-200 gap-3 flex-shrink-0">
                 <div class="flex items-center gap-3">
                     <span>Exibindo <span id="renderedCount" class="text-amber-400">0</span> de <span id="totalLinhas" class="text-amber-400">0</span> registros</span>
@@ -284,17 +272,59 @@
             </div>
         </div>
 
-        <!-- POWER BI -->
-        <div id="pbiView" class="h-full w-full hidden">
+        <!-- 2. ABA GRÁFICO (VISUALIZAÇÃO DE TOP 15 + OUTROS) -->
+        <div id="viewTabGrafico" class="h-full w-full hidden flex flex-col lg:flex-row gap-3 overflow-hidden">
+            <!-- ESQUERDA: TABELA RESUMO CLIENTES -->
+            <div class="w-full lg:w-1/3 h-full border border-slate-800 rounded-xl bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                <div class="p-2.5 border-b border-slate-800 bg-slate-900/80 flex justify-between items-center">
+                    <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wide">Faturamento por Cliente</h2>
+                    <span id="totalClientesCount" class="text-[11px] bg-slate-800 text-amber-400 px-2 py-0.5 rounded-full font-mono">0 clientes</span>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto">
+                    <table class="w-full text-left text-[11px] border-collapse">
+                        <thead class="bg-slate-900 text-slate-400 sticky top-0 z-10 border-b border-slate-800">
+                            <tr>
+                                <th class="p-2 font-semibold">Cliente</th>
+                                <th class="p-2 font-semibold text-right">Vl. Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyClientes" class="divide-y divide-slate-800/40 text-slate-300 font-sans">
+                            <tr><td colspan="2" class="p-4 text-center text-slate-500">Carregando dados...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-2.5 bg-slate-900 border-t border-slate-800 text-xs font-bold flex justify-between items-center text-slate-200">
+                    <span>Total Geral:</span>
+                    <span id="totalGeralTabela" class="text-emerald-400 font-mono text-sm">R$ 0,00</span>
+                </div>
+            </div>
+
+            <!-- DIREITA: GRÁFICO ROSCA (TOP 15 + OUTROS) -->
+            <div class="w-full lg:w-2/3 h-full border border-slate-800 rounded-xl bg-slate-900/60 p-4 flex flex-col justify-between overflow-hidden shadow-2xl">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wide">Pedidos por Clientes (Top 15 + Outros)</h2>
+                    <span class="text-[11px] text-slate-400 font-sans">Top 15 detalhados, demais somados em "Outros"</span>
+                </div>
+
+                <div class="flex-1 relative w-full h-full flex items-center justify-center p-2">
+                    <canvas id="chartPedidosCliente"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. VISÃO POWER BI -->
+        <div id="pbiView" class="h-full w-full hidden border border-slate-800 rounded-xl overflow-hidden">
             <div id="pbiContainer" class="w-full h-full"></div>
         </div>
 
     </main>
 
-    <!-- NAVEGAÇÃO DE ABAS -->
+    <!-- NAVEGAÇÃO DE ABAS NO RODAPÉ -->
     <nav class="bg-slate-900 border-t border-slate-800 px-2 py-1 flex gap-1 overflow-x-auto text-xs font-medium flex-shrink-0">
-        <a href="../rs/" class="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap">RS</a>
-        <a href="../grafico/" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Gráfico</a>
+        <button id="navBtnRS" onclick="switchMainTab('RS')" class="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer">RS</button>
+        <button id="navBtnGrafico" onclick="switchMainTab('Grafico')" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Gráfico</button>
         <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Mensal</button>
         <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Mensal por cliente</button>
         <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Classificação de vendas</button>
@@ -321,6 +351,9 @@
         let filterTimeout = null;
         const currentYear = new Date().getFullYear();
 
+        let activeTab = 'RS'; // 'RS' ou 'Grafico'
+        let myChart = null;
+
         let currentRenderLimit = 50;
         let batchStep = 50;
 
@@ -331,6 +364,17 @@
         let selectedAnoMes = {};
 
         const allColumnsKeys = ['n_orcamento', 'n_os', 'cliente', 'cod_mat_no_cliente', 'pedido_cliente', 'item', 'cod_interno', 'descricao', 'qtde', 'dt_aprovacao', 'dt_previsao_entrega', 'vl_unitario', 'vl_total', 'PROD/MAN/IND'];
+
+        const chartColors = [
+            '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+            '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#14b8a6',
+            '#6366f1', '#a855f7', '#d97706', '#059669', '#2563eb', '#64748b'
+        ];
+
+        // AUXILIAR PARA NORMALIZAR IDs DE COLUNAS
+        function getSafeColId(colKey) {
+            return colKey.replace(/[^a-zA-Z0-9_]/g, '_');
+        }
 
         async function loadRsData() {
             try {
@@ -376,6 +420,32 @@
             return isNaN(d) ? null : d;
         }
 
+        // TROCA DE ABA
+        function switchMainTab(tabName) {
+            activeTab = tabName;
+
+            const tabRS = document.getElementById('viewTabRS');
+            const tabGrafico = document.getElementById('viewTabGrafico');
+            const btnRS = document.getElementById('navBtnRS');
+            const btnGrafico = document.getElementById('navBtnGrafico');
+            const headerSubtitle = document.getElementById('headerSubtitle');
+
+            if (tabName === 'RS') {
+                tabRS.classList.remove('hidden');
+                tabGrafico.classList.add('hidden');
+                btnRS.className = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
+                btnGrafico.className = "px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
+                headerSubtitle.textContent = "Dashboard RS";
+            } else if (tabName === 'Grafico') {
+                tabRS.classList.add('hidden');
+                tabGrafico.classList.remove('hidden');
+                btnRS.className = "px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
+                btnGrafico.className = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
+                headerSubtitle.textContent = "Dashboard Gráfico";
+                renderGraficoView();
+            }
+        }
+
         function resetAllFilters() {
             document.getElementById('filterGlobal').value = '';
             document.getElementById('filterClienteInput').value = '';
@@ -393,7 +463,8 @@
         }
 
         function toggleColumnFilter(colKey) {
-            const el = document.getElementById(`filter_popover_${colKey}`);
+            const safeId = getSafeColId(colKey);
+            const el = document.getElementById(`filter_popover_${safeId}`);
             if (!el) return;
             const isVisible = el.classList.contains('active');
             
@@ -405,7 +476,6 @@
             }
         }
 
-        // RETORNA OS DADOS FILTRADOS IGNORANDO APENAS A PRÓPRIA COLUNA ABERTA (FILTRO EM CASCATA)
         function getFilteredDataExcludingColumn(excludeColKey) {
             const globalVal = document.getElementById('filterGlobal').value.toLowerCase();
             const clienteVal = document.getElementById('filterClienteInput').value.toLowerCase();
@@ -456,9 +526,10 @@
             });
         }
 
-        // CONSTRUÇÃO DO POPOVER ESTILO EXCEL (EXIBE SOMENTE VALORES VISÍVEIS)
+        // CONSTRUÇÃO E MANIPULAÇÃO DO FILTRO EXCEL
         function buildExcelFilterPopover(colKey) {
-            const popover = document.getElementById(`filter_popover_${colKey}`);
+            const safeId = getSafeColId(colKey);
+            const popover = document.getElementById(`filter_popover_${safeId}`);
             if (!popover) return;
 
             const activeData = getFilteredDataExcludingColumn(colKey);
@@ -477,18 +548,18 @@
 
             popover.innerHTML = `
                 <div class="space-y-2">
-                    <input type="text" id="search_popover_${colKey}" oninput="filterExcelPopoverList('${colKey}')" placeholder="Pesquisar..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    <input type="text" id="search_popover_${safeId}" oninput="filterExcelPopoverList('${colKey}')" placeholder="Pesquisar..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
                     
-                    <div class="max-h-40 overflow-y-auto space-y-1 text-xs font-sans py-1 border-t border-b border-slate-800" id="list_popover_${colKey}">
+                    <div class="max-h-40 overflow-y-auto space-y-1 text-xs font-sans py-1 border-t border-b border-slate-800" id="list_popover_${safeId}">
                         <div class="flex items-center gap-2 px-1 hover:bg-slate-800 rounded">
-                            <input type="checkbox" id="chk_all_${colKey}" onchange="toggleSelectAllColumn('${colKey}', this.checked)" ${isAllSelected ? 'checked' : ''} class="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
-                            <label for="chk_all_${colKey}" class="text-amber-400 font-semibold cursor-pointer select-none">(Selecionar Tudo)</label>
+                            <input type="checkbox" id="chk_all_${safeId}" onchange="toggleSelectAllColumn('${colKey}', this.checked)" ${isAllSelected ? 'checked' : ''} class="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                            <label for="chk_all_${safeId}" class="text-amber-400 font-semibold cursor-pointer select-none">(Selecionar Tudo)</label>
                         </div>
                         ${uniqueValues.map((val) => {
                             const isChecked = !selectedSet || selectedSet.has(val);
                             return `
                                 <div class="flex items-center gap-2 px-1 hover:bg-slate-800 rounded item-popover-row">
-                                    <input type="checkbox" value="${val.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="toggleSingleColumnVal('${colKey}')" class="chk_col_${colKey} rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                                    <input type="checkbox" value="${val.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="toggleSingleColumnVal('${colKey}')" class="chk_col_${safeId} rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
                                     <label onclick="this.previousElementSibling.click()" class="text-slate-300 truncate cursor-pointer select-none" title="${val}">${val}</label>
                                 </div>
                             `;
@@ -504,8 +575,9 @@
         }
 
         function filterExcelPopoverList(colKey) {
-            const term = document.getElementById(`search_popover_${colKey}`).value.toLowerCase();
-            const rows = document.querySelectorAll(`#list_popover_${colKey} .item-popover-row`);
+            const safeId = getSafeColId(colKey);
+            const term = document.getElementById(`search_popover_${safeId}`).value.toLowerCase();
+            const rows = document.querySelectorAll(`#list_popover_${safeId} .item-popover-row`);
             
             rows.forEach(r => {
                 const txt = r.textContent.toLowerCase();
@@ -516,30 +588,33 @@
         }
 
         function toggleSelectAllColumn(colKey, isChecked) {
-            const visibleRows = document.querySelectorAll(`#list_popover_${colKey} .item-popover-row`);
+            const safeId = getSafeColId(colKey);
+            const visibleRows = document.querySelectorAll(`#list_popover_${safeId} .item-popover-row`);
             visibleRows.forEach(row => {
                 if (row.style.display !== 'none') {
-                    const chk = row.querySelector(`.chk_col_${colKey}`);
+                    const chk = row.querySelector(`.chk_col_${safeId}`);
                     if (chk) chk.checked = isChecked;
                 }
             });
         }
 
         function toggleSingleColumnVal(colKey) {
-            const visibleChks = Array.from(document.querySelectorAll(`#list_popover_${colKey} .item-popover-row`))
+            const safeId = getSafeColId(colKey);
+            const visibleChks = Array.from(document.querySelectorAll(`#list_popover_${safeId} .item-popover-row`))
                 .filter(r => r.style.display !== 'none')
-                .map(r => r.querySelector(`.chk_col_${colKey}`))
+                .map(r => r.querySelector(`.chk_col_${safeId}`))
                 .filter(Boolean);
 
             const allChecked = visibleChks.length > 0 && visibleChks.every(c => c.checked);
-            const chkAll = document.getElementById(`chk_all_${colKey}`);
+            const chkAll = document.getElementById(`chk_all_${safeId}`);
             if (chkAll) {
                 chkAll.checked = allChecked;
             }
         }
 
         function applyColumnFilterFromUI(colKey) {
-            const allChks = Array.from(document.querySelectorAll(`.chk_col_${colKey}`));
+            const safeId = getSafeColId(colKey);
+            const allChks = Array.from(document.querySelectorAll(`.chk_col_${safeId}`));
             const checkedVals = allChks.filter(c => c.checked).map(c => c.value);
 
             if (checkedVals.length === allChks.length) {
@@ -810,6 +885,104 @@
             }
         }
 
+        // RENDERIZAÇÃO DA VISÃO GRÁFICO (TOP 15 + OUTROS + TABELA COMPLETA)
+        function renderGraficoView() {
+            const totalsByClient = {};
+            let grandTotal = 0;
+
+            filteredData.forEach(item => {
+                const client = (item.cliente || 'SEM CLIENTE').trim();
+                const val = parseFloat(item.vl_total || 0);
+                totalsByClient[client] = (totalsByClient[client] || 0) + val;
+                grandTotal += val;
+            });
+
+            const sortedClients = Object.entries(totalsByClient)
+                .map(([name, total]) => ({ name, total }))
+                .sort((a, b) => b.total - a.total);
+
+            // 1. Tabela Lateral
+            const tbody = document.getElementById('tableBodyClientes');
+            tbody.innerHTML = '';
+
+            document.getElementById('totalClientesCount').textContent = `${sortedClients.length} clientes`;
+            document.getElementById('totalGeralTabela').textContent = formatCurrency(grandTotal);
+
+            if (sortedClients.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-slate-500">Nenhum registro encontrado.</td></tr>`;
+            } else {
+                const fragment = document.createDocumentFragment();
+                sortedClients.forEach((c, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.className = (idx % 2 === 0 ? 'bg-slate-900/20' : 'bg-slate-950/40') + ' hover:bg-slate-800/50 transition';
+                    tr.innerHTML = `
+                        <td class="p-2 text-slate-200 font-medium truncate max-w-[200px]" title="${c.name}">${c.name}</td>
+                        <td class="p-2 text-right font-mono font-semibold text-emerald-400">${formatCurrency(c.total)}</td>
+                    `;
+                    fragment.appendChild(tr);
+                });
+                tbody.appendChild(fragment);
+            }
+
+            // 2. Gráfico Rosca Top 15 + Outros
+            const top15 = sortedClients.slice(0, 15);
+            const rest = sortedClients.slice(15);
+
+            const labels = top15.map(c => c.name);
+            const dataValues = top15.map(c => c.total);
+
+            if (rest.length > 0) {
+                const outrosTotal = rest.reduce((sum, c) => sum + c.total, 0);
+                labels.push('Outros');
+                dataValues.push(outrosTotal);
+            }
+
+            const ctx = document.getElementById('chartPedidosCliente').getContext('2d');
+
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: chartColors.slice(0, labels.length),
+                        borderColor: '#0f172a',
+                        borderWidth: 2,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#cbd5e1',
+                                font: { size: 10, family: 'Segoe UI' },
+                                boxWidth: 12,
+                                padding: 10
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.raw || 0;
+                                    const pct = grandTotal > 0 ? ((val / grandTotal) * 100).toFixed(2) : 0;
+                                    return ` ${context.label}: ${formatCurrency(val)} (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+
         function loadMoreRecords() {
             currentRenderLimit += batchStep;
             renderTable();
@@ -829,6 +1002,7 @@
             }, 200);
         }
 
+        // APLICAR FILTROS (ATUALIZA AMBAS AS VISTAS SIMULTANEMENTE)
         function applyFilters() {
             const globalVal = document.getElementById('filterGlobal').value.toLowerCase();
             const clienteVal = document.getElementById('filterClienteInput').value.toLowerCase();
@@ -878,6 +1052,10 @@
             sortData();
             currentRenderLimit = batchStep;
             renderTable();
+
+            if (activeTab === 'Grafico') {
+                renderGraficoView();
+            }
         }
 
         function setupClienteDropdown() {
@@ -954,18 +1132,33 @@
         let isPbiOpen = false;
         const PBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiZGVhNmFkYTMtYjZiZS00MDA5LTkwZTUtYjQwZjEzYTRlNTlkIiwidCI6ImQ2OWIzZmE3LTBhMGEtNDhhZC1hNDZmLWVhYmM5YzFiMDRjOCJ9";
 
-        function toggleView() {
+        function togglePowerBiView() {
             isPbiOpen = !isPbiOpen;
-            document.getElementById('htmlView').classList.toggle('hidden', isPbiOpen);
-            document.getElementById('filterSection').classList.toggle('hidden', isPbiOpen);
-            document.getElementById('btnExport').classList.toggle('hidden', isPbiOpen);
-            document.getElementById('pbiView').classList.toggle('hidden', !isPbiOpen);
-            
-            document.getElementById('btnToggleText').textContent = isPbiOpen ? "Voltar ao Dashboard" : "Acessar Power BI";
-
+            const tabRS = document.getElementById('viewTabRS');
+            const tabGrafico = document.getElementById('viewTabGrafico');
+            const pbiView = document.getElementById('pbiView');
+            const filterSection = document.getElementById('filterSection');
+            const btnExport = document.getElementById('btnExport');
+            const btnToggleText = document.getElementById('btnToggleText');
             const pbiContainer = document.getElementById('pbiContainer');
-            if (isPbiOpen && !pbiContainer.innerHTML.trim()) {
-                pbiContainer.innerHTML = `<iframe title="RS Power BI" class="w-full h-full border-0" src="${PBI_URL}" allowFullScreen="true"></iframe>`;
+
+            if (isPbiOpen) {
+                tabRS.classList.add('hidden');
+                tabGrafico.classList.add('hidden');
+                filterSection.classList.add('hidden');
+                btnExport.classList.add('hidden');
+                pbiView.classList.remove('hidden');
+                btnToggleText.textContent = "Voltar ao Dashboard";
+
+                if (!pbiContainer.innerHTML.trim()) {
+                    pbiContainer.innerHTML = `<iframe title="RS Power BI" class="w-full h-full border-0" src="${PBI_URL}" allowFullScreen="true"></iframe>`;
+                }
+            } else {
+                pbiView.classList.add('hidden');
+                filterSection.classList.remove('hidden');
+                btnExport.classList.remove('hidden');
+                btnToggleText.textContent = "Acessar Power BI";
+                switchMainTab(activeTab);
             }
         }
 
