@@ -267,7 +267,7 @@
                 </div>
 
                 <div class="flex gap-5">
-                    <span>Quantidade Total: <span id="totalQtde" class="text-amber-400">0</span></span>
+                    <span>Quantidade Total (Peças): <span id="totalQtde" class="text-amber-400">0</span></span>
                     <span>Valor Total: <span id="totalValor" class="text-emerald-400">R$ 0,00</span></span>
                 </div>
             </div>
@@ -1072,17 +1072,13 @@
             });
         }
 
-        // RENDERIZAÇÃO ABA MENSAL COM COUNT DISTINCT SC & CORES/ROTOR FIÉIS
+        // RENDERIZAÇÃO ABA MENSAL: CONTAGEM DE LINHAS/REGISTROS CONFORME COUNTROWS(RS)
         function renderMensalView() {
             const monthlyAgg = {};
             let totalVal = 0;
-            const uniqueScsSet = new Set();
 
             filteredData.forEach(item => {
                 const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
-                const sc = item.cod_interno || item.sc || '';
-
-                if (sc) uniqueScsSet.add(sc);
 
                 if (d) {
                     const y = d.getFullYear();
@@ -1091,23 +1087,23 @@
                     const label = `${monthNames[m]}/${y}`;
 
                     if (!monthlyAgg[key]) {
-                        monthlyAgg[key] = { label, year: y, monthIndex: m, total: 0, scs: new Set() };
+                        monthlyAgg[key] = { label, year: y, monthIndex: m, total: 0, countOfItems: 0 };
                     }
 
                     const val = parseFloat(item.vl_total || 0);
                     monthlyAgg[key].total += val;
-                    if (sc) monthlyAgg[key].scs.add(sc);
+                    monthlyAgg[key].countOfItems += 1; // CONTAGEM DE REGISTROS/LINHAS
 
                     totalVal += val;
                 }
             });
 
-            const totalItensCountDistinct = uniqueScsSet.size;
+            const totalItensCount = filteredData.length;
             const sortedMonths = Object.keys(monthlyAgg).sort().map(k => ({
                 label: monthlyAgg[k].label,
                 year: monthlyAgg[k].year,
                 total: monthlyAgg[k].total,
-                itens: monthlyAgg[k].scs.size // COUNT DISTINCT RS[SC]
+                itens: monthlyAgg[k].countOfItems
             }));
 
             const monthsCount = sortedMonths.length || 1;
@@ -1118,7 +1114,7 @@
 
             // KPIs
             document.getElementById('kpiVlTotal').textContent = formatCurrency(totalVal);
-            document.getElementById('kpiQtdeItens').textContent = totalItensCountDistinct.toLocaleString('pt-BR');
+            document.getElementById('kpiQtdeItens').textContent = totalItensCount.toLocaleString('pt-BR');
             document.getElementById('kpiMediaMensal').textContent = formatCurrency(mediaMensal);
             document.getElementById('kpiMediaAnual').textContent = formatCurrency(mediaAnual);
 
@@ -1164,7 +1160,7 @@
                             type: 'line',
                             label: 'Qtde. Itens',
                             data: itens,
-                            borderColor: '#d9531e', // Laranja Power BI
+                            borderColor: '#d9531e',
                             backgroundColor: '#d9531e',
                             borderWidth: 3,
                             pointBackgroundColor: '#d9531e',
@@ -1190,7 +1186,7 @@
                             type: 'bar',
                             label: 'Vl. Total',
                             data: totals,
-                            backgroundColor: '#737373', // Cinza Power BI
+                            backgroundColor: '#737373',
                             borderColor: '#d9531e',
                             borderWidth: 1.5,
                             borderRadius: 0,
@@ -1429,8 +1425,6 @@
 
                 filteredData.forEach(item => {
                     const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
-                    const sc = item.cod_interno || item.sc || '';
-
                     if (d) {
                         const y = d.getFullYear();
                         const m = d.getMonth();
@@ -1438,18 +1432,18 @@
                         const label = `${monthNames[m]}/${y}`;
 
                         if (!monthlyAgg[key]) {
-                            monthlyAgg[key] = { label, total: 0, scs: new Set() };
+                            monthlyAgg[key] = { label, total: 0, countOfItems: 0 };
                         }
 
                         monthlyAgg[key].total += parseFloat(item.vl_total || 0);
-                        if (sc) monthlyAgg[key].scs.add(sc);
+                        monthlyAgg[key].countOfItems += 1;
                     }
                 });
 
                 exportData = Object.keys(monthlyAgg).sort().map(k => ({
                     "Mês/Ano": monthlyAgg[k].label,
                     "Vl. Total": monthlyAgg[k].total,
-                    "Qtde. Itens": monthlyAgg[k].scs.size
+                    "Qtde. Itens": monthlyAgg[k].countOfItems
                 }));
             }
 
