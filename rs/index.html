@@ -4,10 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RS - Sintercan</title>
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS (Para Exportar para Excel) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #090d16; color: #f8fafc; }
@@ -22,8 +27,10 @@
 </head>
 <body class="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
 
+    <!-- HEADER -->
     <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-md flex-shrink-0">
         <div class="w-full px-4 py-2 flex justify-between items-center gap-4">
+            <!-- Esquerda: Voltar + Logo + Título -->
             <div class="flex items-center gap-4">
                 <button onclick="goBack()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700 flex items-center justify-center cursor-pointer" title="Voltar ao Menu">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
@@ -40,6 +47,7 @@
                 </div>
             </div>
 
+            <!-- Direita: Ações -->
             <div class="flex items-center gap-2">
                 <button onclick="resetAllFilters()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700 cursor-pointer">
                     <i data-lucide="filter-x" class="w-4 h-4 text-amber-400"></i>
@@ -57,9 +65,11 @@
         </div>
     </header>
 
+    <!-- BARRA DE FILTROS GERAIS (COMPARTILHADA POR TODAS AS ABAS) -->
     <section id="filterSection" class="bg-slate-900/90 border-b border-slate-800 p-2.5 flex-shrink-0">
         <div class="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 text-xs">
             
+            <!-- 1. Pesquisa Geral -->
             <div>
                 <label class="block text-slate-400 font-medium mb-1">Pesquisa Geral</label>
                 <div class="relative">
@@ -68,6 +78,7 @@
                 </div>
             </div>
 
+            <!-- 2. Cliente -->
             <div class="relative">
                 <label class="block text-slate-400 font-medium mb-1">Cliente</label>
                 <input type="text" id="filterClienteInput" onfocus="openClienteDropdown()" oninput="filterClienteList()" placeholder="Selecione ou busque..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-amber-500">
@@ -78,6 +89,7 @@
                 </div>
             </div>
 
+            <!-- 3. Ano / Mês -->
             <div class="relative">
                 <label class="block text-slate-400 font-medium mb-1">Ano / Mês</label>
                 <button onclick="toggleAnoMesTree()" id="btnAnoMesLabel" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-left text-slate-200 focus:outline-none focus:border-amber-500 flex justify-between items-center cursor-pointer">
@@ -90,6 +102,7 @@
                 </div>
             </div>
 
+            <!-- 4. Período De / Até -->
             <div class="col-span-1 sm:col-span-2 grid grid-cols-2 gap-2">
                 <div>
                     <label class="block text-slate-400 font-medium mb-1">Data De</label>
@@ -104,8 +117,10 @@
         </div>
     </section>
 
+    <!-- CONTEÚDO PRINCIPAL -->
     <main class="flex-1 w-full h-full overflow-hidden relative bg-slate-950 p-2">
         
+        <!-- 1. ABA RS (DETALHADO) -->
         <div id="viewTabRS" class="h-full w-full flex flex-col overflow-hidden">
             <div class="flex-1 border border-slate-800 rounded-xl bg-slate-900/50 overflow-y-auto overflow-x-hidden shadow-2xl relative">
                 <table id="mainTable" class="w-full text-left text-[11px] border-collapse table-fixed">
@@ -232,6 +247,7 @@
                 </table>
             </div>
 
+            <!-- CONTROLE RS -->
             <div class="bg-slate-900 border border-slate-800 mt-1.5 p-2 rounded-xl flex flex-wrap justify-between items-center text-xs font-bold text-slate-200 gap-3 flex-shrink-0">
                 <div class="flex items-center gap-3">
                     <span>Exibindo <span id="renderedCount" class="text-amber-400">0</span> de <span id="totalLinhas" class="text-amber-400">0</span> registros</span>
@@ -256,6 +272,7 @@
             </div>
         </div>
 
+        <!-- 2. ABA GRÁFICO (TOP 15 + OUTROS) -->
         <div id="viewTabGrafico" class="h-full w-full hidden flex flex-col lg:flex-row gap-3 overflow-hidden">
             <div class="w-full lg:w-1/3 h-full border border-slate-800 rounded-xl bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
                 <div class="p-2.5 border-b border-slate-800 bg-slate-900/80 flex justify-between items-center">
@@ -295,16 +312,83 @@
             </div>
         </div>
 
+        <!-- 3. ABA MENSAL (KPIS + TABELA MENSAL + GRÁFICO COMBINADO) -->
+        <div id="viewTabMensal" class="h-full w-full hidden flex flex-col lg:flex-row gap-3 overflow-hidden">
+            <!-- COLUNA ESQUERDA: KPIS + TABELA MENSAL -->
+            <div class="w-full lg:w-1/3 h-full flex flex-col gap-3 overflow-hidden">
+                <!-- 4 CARDS KPIS -->
+                <div class="grid grid-cols-2 gap-2 flex-shrink-0">
+                    <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 shadow-lg">
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">VL. TOTAL</span>
+                        <p id="kpiVlTotal" class="text-xs sm:text-sm font-extrabold text-amber-400 font-mono truncate">R$ 0,00</p>
+                        <p class="text-[9px] text-slate-500 mt-0.5">Período filtrado</p>
+                    </div>
+                    <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 shadow-lg">
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">QTDE. ITENS</span>
+                        <p id="kpiQtdeItens" class="text-xs sm:text-sm font-extrabold text-white font-mono truncate">0</p>
+                        <p class="text-[9px] text-slate-500 mt-0.5">Itens totais</p>
+                    </div>
+                    <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 shadow-lg">
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">MÉDIA MENSAL</span>
+                        <p id="kpiMediaMensal" class="text-xs sm:text-sm font-extrabold text-emerald-400 font-mono truncate">R$ 0,00</p>
+                        <p class="text-[9px] text-slate-500 mt-0.5">Faturamento médio/mês</p>
+                    </div>
+                    <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 shadow-lg">
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">MÉDIA ANUAL</span>
+                        <p id="kpiMediaAnual" class="text-xs sm:text-sm font-extrabold text-indigo-400 font-mono truncate">R$ 0,00</p>
+                        <p class="text-[9px] text-slate-500 mt-0.5">Média por exercício</p>
+                    </div>
+                </div>
+
+                <!-- TABELA MENSAL RESUMIDA -->
+                <div class="flex-1 border border-slate-800 rounded-xl bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                    <div class="p-2 border-b border-slate-800 bg-slate-900/80 flex justify-between items-center">
+                        <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wide">Resumo Mensal</h2>
+                        <span id="totalMesesCount" class="text-[10px] bg-slate-800 text-amber-400 px-2 py-0.5 rounded-full font-mono">0 meses</span>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto">
+                        <table class="w-full text-left text-[11px] border-collapse">
+                            <thead class="bg-slate-900 text-slate-400 sticky top-0 z-10 border-b border-slate-800">
+                                <tr>
+                                    <th class="p-2 font-semibold">Mês/Ano</th>
+                                    <th class="p-2 font-semibold text-right">Vl. Total</th>
+                                    <th class="p-2 font-semibold text-right">Qtde. Itens</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBodyMensal" class="divide-y divide-slate-800/40 text-slate-300 font-sans">
+                                <tr><td colspan="3" class="p-4 text-center text-slate-500">Carregando dados...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUNA DIREITA: GRÁFICO MENSAL EVOLUTIVO -->
+            <div class="w-full lg:w-2/3 h-full border border-slate-800 rounded-xl bg-slate-900/60 p-4 flex flex-col justify-between overflow-hidden shadow-2xl">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wide">GRÁFICO MENSAL EVOLUTIVO</h2>
+                    <span class="text-[11px] text-slate-400 font-sans">Evolução do Faturamento (Barras) e Quantidade de Itens (Linha)</span>
+                </div>
+
+                <div class="flex-1 relative w-full h-full flex items-center justify-center p-2">
+                    <canvas id="chartMensalEvolutivo"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. VISÃO POWER BI -->
         <div id="pbiView" class="h-full w-full hidden border border-slate-800 rounded-xl overflow-hidden">
             <div id="pbiContainer" class="w-full h-full"></div>
         </div>
 
     </main>
 
+    <!-- NAVEGAÇÃO DE ABAS NO RODAPÉ -->
     <nav class="bg-slate-900 border-t border-slate-800 px-2 py-1 flex gap-1 overflow-x-auto text-xs font-medium flex-shrink-0">
         <button id="navBtnRS" onclick="switchMainTab('RS')" class="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer">RS</button>
         <button id="navBtnGrafico" onclick="switchMainTab('Grafico')" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Gráfico</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Mensal</button>
+        <button id="navBtnMensal" onclick="switchMainTab('Mensal')" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Mensal</button>
         <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Mensal por cliente</button>
         <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Classificação de vendas</button>
         <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Pedidos em aberto</button>
@@ -331,7 +415,8 @@
         const currentYear = new Date().getFullYear();
 
         let activeTab = 'RS'; 
-        let myChart = null;
+        let myChartGrafico = null;
+        let myChartMensal = null;
 
         let currentRenderLimit = 50;
         let batchStep = 50;
@@ -398,28 +483,44 @@
             return isNaN(d) ? null : d;
         }
 
+        // TROCA DINÂMICA DE ABA
         function switchMainTab(tabName) {
             activeTab = tabName;
 
             const tabRS = document.getElementById('viewTabRS');
             const tabGrafico = document.getElementById('viewTabGrafico');
+            const tabMensal = document.getElementById('viewTabMensal');
+
             const btnRS = document.getElementById('navBtnRS');
             const btnGrafico = document.getElementById('navBtnGrafico');
+            const btnMensal = document.getElementById('navBtnMensal');
+
             const headerSubtitle = document.getElementById('headerSubtitle');
+
+            // Reset visual dos botões
+            [btnRS, btnGrafico, btnMensal].forEach(btn => {
+                if (btn) btn.className = "px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
+            });
+
+            // Oculta todas
+            tabRS.classList.add('hidden');
+            tabGrafico.classList.add('hidden');
+            tabMensal.classList.add('hidden');
 
             if (tabName === 'RS') {
                 tabRS.classList.remove('hidden');
-                tabGrafico.classList.add('hidden');
                 btnRS.className = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
-                btnGrafico.className = "px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
                 headerSubtitle.textContent = "Dashboard RS";
             } else if (tabName === 'Grafico') {
-                tabRS.classList.add('hidden');
                 tabGrafico.classList.remove('hidden');
-                btnRS.className = "px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
                 btnGrafico.className = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
                 headerSubtitle.textContent = "Dashboard Gráfico";
                 renderGraficoView();
+            } else if (tabName === 'Mensal') {
+                tabMensal.classList.remove('hidden');
+                btnMensal.className = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
+                headerSubtitle.textContent = "Dashboard Mensal";
+                renderMensalView();
             }
         }
 
@@ -790,6 +891,7 @@
             });
         }
 
+        // RENDERIZAÇÃO ABA RS
         function renderTable() {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
@@ -861,6 +963,7 @@
             }
         }
 
+        // RENDERIZAÇÃO ABA GRÁFICO
         function renderGraficoView() {
             const totalsByClient = {};
             let grandTotal = 0;
@@ -876,7 +979,6 @@
                 .map(([name, total]) => ({ name, total }))
                 .sort((a, b) => b.total - a.total);
 
-            // 1. Tabela Lateral
             const tbody = document.getElementById('tableBodyClientes');
             tbody.innerHTML = '';
 
@@ -899,7 +1001,6 @@
                 tbody.appendChild(fragment);
             }
 
-            // 2. Gráfico Rosca Top 15 + Outros
             const top15 = sortedClients.slice(0, 15);
             const rest = sortedClients.slice(15);
 
@@ -914,11 +1015,11 @@
 
             const ctx = document.getElementById('chartPedidosCliente').getContext('2d');
 
-            if (myChart) {
-                myChart.destroy();
+            if (myChartGrafico) {
+                myChartGrafico.destroy();
             }
 
-            myChart = new Chart(ctx, {
+            myChartGrafico = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: labels,
@@ -954,6 +1055,165 @@
                         }
                     },
                     cutout: '60%'
+                }
+            });
+        }
+
+        // RENDERIZAÇÃO ABA MENSAL
+        function renderMensalView() {
+            const monthlyAgg = {};
+            let totalVal = 0;
+            let totalItens = 0;
+
+            filteredData.forEach(item => {
+                const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
+                if (d) {
+                    const y = d.getFullYear();
+                    const m = d.getMonth();
+                    const key = `${y}-${String(m + 1).padStart(2, '0')}`;
+                    const label = `${monthNames[m]}/${y}`;
+
+                    if (!monthlyAgg[key]) {
+                        monthlyAgg[key] = { label, year: y, monthIndex: m, total: 0, itens: 0 };
+                    }
+
+                    const val = parseFloat(item.vl_total || 0);
+                    const qtde = parseFloat(item.qtde || 0);
+
+                    monthlyAgg[key].total += val;
+                    monthlyAgg[key].itens += qtde;
+
+                    totalVal += val;
+                    totalItens += qtde;
+                }
+            });
+
+            const sortedMonths = Object.keys(monthlyAgg).sort().map(k => monthlyAgg[k]);
+            const monthsCount = sortedMonths.length || 1;
+
+            // Anos únicos no filtro
+            const uniqueYearsCount = new Set(sortedMonths.map(m => m.year)).size || 1;
+
+            const mediaMensal = totalVal / monthsCount;
+            const mediaAnual = totalVal / uniqueYearsCount;
+
+            // Atualiza KPIs
+            document.getElementById('kpiVlTotal').textContent = formatCurrency(totalVal);
+            document.getElementById('kpiQtdeItens').textContent = totalItens.toLocaleString('pt-BR');
+            document.getElementById('kpiMediaMensal').textContent = formatCurrency(mediaMensal);
+            document.getElementById('kpiMediaAnual').textContent = formatCurrency(mediaAnual);
+
+            // Atualiza Tabela Resumo Mensal
+            const tbody = document.getElementById('tableBodyMensal');
+            tbody.innerHTML = '';
+            document.getElementById('totalMesesCount').textContent = `${monthsCount} meses`;
+
+            if (sortedMonths.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-500">Nenhum registro encontrado.</td></tr>`;
+            } else {
+                const fragment = document.createDocumentFragment();
+                sortedMonths.forEach((m, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.className = (idx % 2 === 0 ? 'bg-slate-900/20' : 'bg-slate-950/40') + ' hover:bg-slate-800/50 transition';
+                    tr.innerHTML = `
+                        <td class="p-2 font-medium text-slate-200">${m.label}</td>
+                        <td class="p-2 text-right font-mono font-semibold text-amber-400">${formatCurrency(m.total)}</td>
+                        <td class="p-2 text-right font-mono text-slate-300">${m.itens.toLocaleString('pt-BR')}</td>
+                    `;
+                    fragment.appendChild(tr);
+                });
+                tbody.appendChild(fragment);
+            }
+
+            // Atualiza Gráfico Misto Mensal Evolutivo
+            const labels = sortedMonths.map(m => m.label);
+            const totals = sortedMonths.map(m => m.total);
+            const itens = sortedMonths.map(m => m.itens);
+
+            const ctx = document.getElementById('chartMensalEvolutivo').getContext('2d');
+
+            if (myChartMensal) {
+                myChartMensal.destroy();
+            }
+
+            myChartMensal = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Qtde. Itens',
+                            data: itens,
+                            borderColor: '#f97316',
+                            backgroundColor: '#f97316',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#fb923c',
+                            pointRadius: 3,
+                            yAxisID: 'y1',
+                            tension: 0.2
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Vl. Total (R$)',
+                            data: totals,
+                            backgroundColor: 'rgba(245, 158, 11, 0.75)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#cbd5e1', font: { size: 10 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataset.yAxisID === 'y') {
+                                        return ` Vl. Total: ${formatCurrency(context.raw)}`;
+                                    } else {
+                                        return ` Qtde. Itens: ${context.raw.toLocaleString('pt-BR')}`;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(51, 65, 85, 0.3)', drawBorder: false },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            grid: { color: 'rgba(51, 65, 85, 0.3)', drawBorder: false },
+                            ticks: {
+                                color: '#f59e0b',
+                                font: { size: 10 },
+                                callback: function(value) {
+                                    return 'R$ ' + (value / 1000000).toFixed(1) + 'M';
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false, drawBorder: false },
+                            ticks: {
+                                color: '#f97316',
+                                font: { size: 10 }
+                            }
+                        }
+                    }
                 }
             });
         }
@@ -1029,6 +1289,8 @@
 
             if (activeTab === 'Grafico') {
                 renderGraficoView();
+            } else if (activeTab === 'Mensal') {
+                renderMensalView();
             }
         }
 
@@ -1074,7 +1336,7 @@
             applyFilters();
         }
 
-        // EXPORTAÇÃO DINÂMICA BASEADA NA ABA ATIVA
+        // EXPORTAÇÃO DINÂMICA POR ABA
         function exportToExcel() {
             if (!filteredData || filteredData.length === 0) {
                 alert("Sem dados para exportar.");
@@ -1105,8 +1367,6 @@
                 }));
             } else if (activeTab === 'Grafico') {
                 sheetName = "Faturamento_Clientes";
-
-                // Agrupa o faturamento por cliente com base nos filtros atuais
                 const totalsByClient = {};
                 filteredData.forEach(item => {
                     const client = (item.cliente || 'SEM CLIENTE').trim();
@@ -1120,6 +1380,32 @@
                         "Valor Total": vlTotal
                     }))
                     .sort((a, b) => b["Valor Total"] - a["Valor Total"]);
+            } else if (activeTab === 'Mensal') {
+                sheetName = "Evolucao_Mensal";
+                const monthlyAgg = {};
+
+                filteredData.forEach(item => {
+                    const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
+                    if (d) {
+                        const y = d.getFullYear();
+                        const m = d.getMonth();
+                        const key = `${y}-${String(m + 1).padStart(2, '0')}`;
+                        const label = `${monthNames[m]}/${y}`;
+
+                        if (!monthlyAgg[key]) {
+                            monthlyAgg[key] = { label, total: 0, itens: 0 };
+                        }
+
+                        monthlyAgg[key].total += parseFloat(item.vl_total || 0);
+                        monthlyAgg[key].itens += parseFloat(item.qtde || 0);
+                    }
+                });
+
+                exportData = Object.keys(monthlyAgg).sort().map(k => ({
+                    "Mês/Ano": monthlyAgg[k].label,
+                    "Vl. Total": monthlyAgg[k].total,
+                    "Qtde. Itens": monthlyAgg[k].itens
+                }));
             }
 
             const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -1135,6 +1421,7 @@
             isPbiOpen = !isPbiOpen;
             const tabRS = document.getElementById('viewTabRS');
             const tabGrafico = document.getElementById('viewTabGrafico');
+            const tabMensal = document.getElementById('viewTabMensal');
             const pbiView = document.getElementById('pbiView');
             const filterSection = document.getElementById('filterSection');
             const btnExport = document.getElementById('btnExport');
@@ -1144,6 +1431,7 @@
             if (isPbiOpen) {
                 tabRS.classList.add('hidden');
                 tabGrafico.classList.add('hidden');
+                tabMensal.classList.add('hidden');
                 filterSection.classList.add('hidden');
                 btnExport.classList.add('hidden');
                 pbiView.classList.remove('hidden');
