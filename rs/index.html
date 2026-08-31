@@ -80,11 +80,12 @@
                 </div>
             </div>
 
-            <!-- 3. Ano/Mês -->
+            <!-- 3. Ano/Mês (Filtra ano atual por padrão) -->
             <div>
                 <label class="block text-slate-400 font-medium mb-1">Ano / Mês</label>
                 <select id="filterAnoMes" onchange="applyFilters()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-amber-500">
-                    <option value="">Todos</option>
+                    <option value="YEAR_CURRENT">Ano Atual (Padrão)</option>
+                    <option value="">Todos os Anos</option>
                 </select>
             </div>
 
@@ -129,7 +130,7 @@
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-800/40 text-slate-300 font-mono text-[11px]">
                         <tr>
-                            <td colspan="13" class="p-8 text-center text-slate-400 font-sans">Carregando dados...</td>
+                            <td colspan="13" class="p-8 text-center text-slate-400 font-sans animate-pulse">Carregando dados...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -166,7 +167,7 @@
     </nav>
 
     <script>
-        // 1. VOLTAR
+        // 1. NAVEGAÇÃO VOLTAR
         function goBack() {
             if (window.history.length > 1) {
                 window.history.back();
@@ -175,7 +176,7 @@
             }
         }
 
-        // 2. SEGURANÇA
+        // 2. SEGURANÇA E SESSÃO
         const sessionData = localStorage.getItem('sintercan_user');
         if (sessionData) {
             try {
@@ -187,7 +188,7 @@
             } catch (e) {}
         }
 
-        // 3. POWER BI vs HTML
+        // 3. POWER BI vs DASHBOARD HTML
         let isPbiOpen = false;
         const PBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiZGVhNmFkYTMtYjZiZS00MDA5LTkwZTUtYjQwZjEzYTRlNTlkIiwidCI6ImQ2OWIzZmE3LTBhMGEtNDhhZC1hNDZmLWVhYmM5YzFiMDRjOCJ9";
 
@@ -206,11 +207,12 @@
             }
         }
 
-        // 4. GESTÃO DE DADOS OTIMIZADA
+        // 4. CONSUMO DE DADOS COM FILTRO INICIAL DO ANO ATUAL
         let fullData = [];
         let filteredData = [];
         let allClientes = [];
         let filterTimeout = null;
+        const currentYear = new Date().getFullYear();
 
         async function loadRsData() {
             const endpoint = 'https://sintercan.consultoriarf.net/rs';
@@ -219,18 +221,19 @@
                 if (!response || !response.ok) {
                     response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(endpoint)}`);
                 }
-                if (!response.ok) throw new Error('Falha ao conectar no endpoint');
+                if (!response.ok) throw new Error('Falha ao obter dados.');
 
                 fullData = await response.json();
-                filteredData = fullData;
 
                 setupClienteDropdown();
                 setupAnoMesOptions();
-                renderTable(filteredData);
+                
+                // Aplica filtro inicial (Somente Ano Atual para ter máxima performance)
+                applyFilters();
             } catch (err) {
                 console.error(err);
                 document.getElementById('tableBody').innerHTML = `
-                    <tr><td colspan="13" class="p-8 text-center text-rose-400 font-sans">Erro ao carregar os dados do servidor.</td></tr>
+                    <tr><td colspan="13" class="p-8 text-center text-rose-400 font-sans">Erro ao carregar dados do servidor.</td></tr>
                 `;
             }
         }
@@ -251,13 +254,13 @@
             return new Date(str);
         }
 
-        // RENDERIZAÇÃO ALTA PERFORMANCE COM DOCUMENTFRAGMENT
+        // RENDERIZAÇÃO ULTRA RÁPIDA (DocumentFragment)
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
 
             if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-500 font-sans">Nenhum registro encontrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-500 font-sans">Nenhum registro encontrado para este filtro.</td></tr>`;
                 document.getElementById('totalLinhas').textContent = '0';
                 document.getElementById('totalQtde').textContent = '0';
                 document.getElementById('totalValor').textContent = 'R$ 0,00';
@@ -268,11 +271,7 @@
             let totalQtde = 0;
             let totalValor = 0;
 
-            // Renderiza no máximo 1000 linhas pra evitar travar o navegador se houver milhares de itens
-            const limit = Math.min(data.length, 1000);
-
-            for (let idx = 0; idx < limit; idx++) {
-                const row = data[idx];
+            data.forEach((row, idx) => {
                 const qtde = parseFloat(row.qtde || row.Qtde || 0);
                 const vlTotal = parseFloat(row.vl_total || row.VlTotal || row['VI. Total'] || row['Vl. Total'] || 0);
                 const vlUnit = parseFloat(row.vl_unitario || row.VlUnitario || row['VI. unitário'] || row['Vl. unitário'] || 0);
@@ -299,16 +298,16 @@
                     <td class="p-2 text-right font-bold text-emerald-400">${formatCurrency(vlTotal)}</td>
                 `;
                 fragment.appendChild(tr);
-            }
+            });
 
             tbody.appendChild(fragment);
 
-            document.getElementById('totalLinhas').textContent = data.length;
+            document.getElementById('totalLinhas').textContent = data.length.toLocaleString('pt-BR');
             document.getElementById('totalQtde').textContent = totalQtde.toLocaleString('pt-BR');
             document.getElementById('totalValor').textContent = formatCurrency(totalValor);
         }
 
-        // DEBOUNCE
+        // DEBOUNCE PARA DIGITAÇÃO FLUIDA
         function debouncedApplyFilters() {
             clearTimeout(filterTimeout);
             filterTimeout = setTimeout(() => {
@@ -316,6 +315,7 @@
             }, 250);
         }
 
+        // MOTOR DE FILTRAGEM
         function applyFilters() {
             const globalVal = document.getElementById('filterGlobal').value.toLowerCase();
             const clienteVal = document.getElementById('filterClienteInput').value.toLowerCase();
@@ -327,21 +327,27 @@
             const dateAte = dataAteVal ? new Date(dataAteVal + 'T23:59:59') : null;
 
             filteredData = fullData.filter(item => {
+                const d = parseDate(item.aprovacao || item.Aprovacao || item.prazo || item.Prazo);
+
+                // 1. Filtro do Ano Atual ou Específico
+                if (anoMesVal === 'YEAR_CURRENT') {
+                    if (!d || isNaN(d) || d.getFullYear() !== currentYear) return false;
+                } else if (anoMesVal && d && !isNaN(d)) {
+                    const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    if (ym !== anoMesVal) return false;
+                }
+
+                // 2. Pesquisa Geral
                 if (globalVal) {
                     const str = Object.values(item).join(' ').toLowerCase();
                     if (!str.includes(globalVal)) return false;
                 }
 
+                // 3. Cliente
                 const cliente = (item.cliente || item.Cliente || '').toLowerCase();
                 if (clienteVal && !cliente.includes(clienteVal)) return false;
 
-                const d = parseDate(item.aprovacao || item.Aprovacao || item.prazo || item.Prazo);
-
-                if (anoMesVal && d && !isNaN(d)) {
-                    const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                    if (ym !== anoMesVal) return false;
-                }
-
+                // 4. Intervalo por Data De/Até
                 if (dateDe && d && d < dateDe) return false;
                 if (dateAte && d && d > dateAte) return false;
 
@@ -394,7 +400,7 @@
             applyFilters();
         }
 
-        // MÊS / ANO
+        // MONTA OPÇÕES DO DROPDOWN ANO/MÊS
         function setupAnoMesOptions() {
             const setAnosMeses = new Set();
             fullData.forEach(item => {
@@ -414,7 +420,7 @@
         // EXPORTAR EXCEL
         function exportToExcel() {
             if (!filteredData || filteredData.length === 0) {
-                alert("Sem dados para exportar.");
+                alert("Sem dados visíveis para exportar.");
                 return;
             }
 
