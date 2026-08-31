@@ -4,15 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RS - Sintercan</title>
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- SheetJS (Para Exportar para Excel) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Chart.js + Plugin Datalabels -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #090d16; color: #f8fafc; }
@@ -27,10 +22,8 @@
 </head>
 <body class="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
 
-    <!-- HEADER -->
     <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-md flex-shrink-0">
         <div class="w-full px-4 py-2 flex justify-between items-center gap-4">
-            <!-- Esquerda: Voltar + Logo + Título -->
             <div class="flex items-center gap-4">
                 <button onclick="goBack()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700 flex items-center justify-center cursor-pointer" title="Voltar ao Menu">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
@@ -47,7 +40,6 @@
                 </div>
             </div>
 
-            <!-- Direita: Ações (Limpar Filtros + Excel + Power BI) -->
             <div class="flex items-center gap-2">
                 <button onclick="resetAllFilters()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700 cursor-pointer">
                     <i data-lucide="filter-x" class="w-4 h-4 text-amber-400"></i>
@@ -55,7 +47,7 @@
                 </button>
                 <button id="btnExport" onclick="exportToExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/10 cursor-pointer">
                     <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-                    <span>Exportar Excel</span>
+                    <span id="btnExportText">Exportar Excel</span>
                 </button>
                 <button id="btnTogglePbi" onclick="togglePowerBiView()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/10 cursor-pointer">
                     <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
@@ -65,11 +57,9 @@
         </div>
     </header>
 
-    <!-- BARRA DE FILTROS GERAIS (COMPARTILHADA ENTRE AS ABAS) -->
     <section id="filterSection" class="bg-slate-900/90 border-b border-slate-800 p-2.5 flex-shrink-0">
         <div class="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 text-xs">
             
-            <!-- 1. Pesquisa Geral -->
             <div>
                 <label class="block text-slate-400 font-medium mb-1">Pesquisa Geral</label>
                 <div class="relative">
@@ -78,7 +68,6 @@
                 </div>
             </div>
 
-            <!-- 2. Cliente -->
             <div class="relative">
                 <label class="block text-slate-400 font-medium mb-1">Cliente</label>
                 <input type="text" id="filterClienteInput" onfocus="openClienteDropdown()" oninput="filterClienteList()" placeholder="Selecione ou busque..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-amber-500">
@@ -89,7 +78,6 @@
                 </div>
             </div>
 
-            <!-- 3. Ano / Mês (Power BI Treeview) -->
             <div class="relative">
                 <label class="block text-slate-400 font-medium mb-1">Ano / Mês</label>
                 <button onclick="toggleAnoMesTree()" id="btnAnoMesLabel" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-left text-slate-200 focus:outline-none focus:border-amber-500 flex justify-between items-center cursor-pointer">
@@ -102,7 +90,6 @@
                 </div>
             </div>
 
-            <!-- 4. Período De / Até -->
             <div class="col-span-1 sm:col-span-2 grid grid-cols-2 gap-2">
                 <div>
                     <label class="block text-slate-400 font-medium mb-1">Data De</label>
@@ -117,10 +104,8 @@
         </div>
     </section>
 
-    <!-- CONTEÚDO PRINCIPAL (MÚLTIPLAS VISTAS) -->
     <main class="flex-1 w-full h-full overflow-hidden relative bg-slate-950 p-2">
         
-        <!-- 1. ABA RS (TABELA DETALHADA) -->
         <div id="viewTabRS" class="h-full w-full flex flex-col overflow-hidden">
             <div class="flex-1 border border-slate-800 rounded-xl bg-slate-900/50 overflow-y-auto overflow-x-hidden shadow-2xl relative">
                 <table id="mainTable" class="w-full text-left text-[11px] border-collapse table-fixed">
@@ -247,7 +232,6 @@
                 </table>
             </div>
 
-            <!-- BARRA DE CONTROLE E TOTAIS RS -->
             <div class="bg-slate-900 border border-slate-800 mt-1.5 p-2 rounded-xl flex flex-wrap justify-between items-center text-xs font-bold text-slate-200 gap-3 flex-shrink-0">
                 <div class="flex items-center gap-3">
                     <span>Exibindo <span id="renderedCount" class="text-amber-400">0</span> de <span id="totalLinhas" class="text-amber-400">0</span> registros</span>
@@ -272,9 +256,7 @@
             </div>
         </div>
 
-        <!-- 2. ABA GRÁFICO (VISUALIZAÇÃO DE TOP 15 + OUTROS) -->
         <div id="viewTabGrafico" class="h-full w-full hidden flex flex-col lg:flex-row gap-3 overflow-hidden">
-            <!-- ESQUERDA: TABELA RESUMO CLIENTES -->
             <div class="w-full lg:w-1/3 h-full border border-slate-800 rounded-xl bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
                 <div class="p-2.5 border-b border-slate-800 bg-slate-900/80 flex justify-between items-center">
                     <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wide">Faturamento por Cliente</h2>
@@ -301,7 +283,6 @@
                 </div>
             </div>
 
-            <!-- DIREITA: GRÁFICO ROSCA (TOP 15 + OUTROS) -->
             <div class="w-full lg:w-2/3 h-full border border-slate-800 rounded-xl bg-slate-900/60 p-4 flex flex-col justify-between overflow-hidden shadow-2xl">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wide">Pedidos por Clientes (Top 15 + Outros)</h2>
@@ -314,14 +295,12 @@
             </div>
         </div>
 
-        <!-- 3. VISÃO POWER BI -->
         <div id="pbiView" class="h-full w-full hidden border border-slate-800 rounded-xl overflow-hidden">
             <div id="pbiContainer" class="w-full h-full"></div>
         </div>
 
     </main>
 
-    <!-- NAVEGAÇÃO DE ABAS NO RODAPÉ -->
     <nav class="bg-slate-900 border-t border-slate-800 px-2 py-1 flex gap-1 overflow-x-auto text-xs font-medium flex-shrink-0">
         <button id="navBtnRS" onclick="switchMainTab('RS')" class="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer">RS</button>
         <button id="navBtnGrafico" onclick="switchMainTab('Grafico')" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Gráfico</button>
@@ -351,7 +330,7 @@
         let filterTimeout = null;
         const currentYear = new Date().getFullYear();
 
-        let activeTab = 'RS'; // 'RS' ou 'Grafico'
+        let activeTab = 'RS'; 
         let myChart = null;
 
         let currentRenderLimit = 50;
@@ -371,7 +350,6 @@
             '#6366f1', '#a855f7', '#d97706', '#059669', '#2563eb', '#64748b'
         ];
 
-        // AUXILIAR PARA NORMALIZAR IDs DE COLUNAS
         function getSafeColId(colKey) {
             return colKey.replace(/[^a-zA-Z0-9_]/g, '_');
         }
@@ -420,7 +398,6 @@
             return isNaN(d) ? null : d;
         }
 
-        // TROCA DE ABA
         function switchMainTab(tabName) {
             activeTab = tabName;
 
@@ -526,7 +503,6 @@
             });
         }
 
-        // CONSTRUÇÃO E MANIPULAÇÃO DO FILTRO EXCEL
         function buildExcelFilterPopover(colKey) {
             const safeId = getSafeColId(colKey);
             const popover = document.getElementById(`filter_popover_${safeId}`);
@@ -885,7 +861,6 @@
             }
         }
 
-        // RENDERIZAÇÃO DA VISÃO GRÁFICO (TOP 15 + OUTROS + TABELA COMPLETA)
         function renderGraficoView() {
             const totalsByClient = {};
             let grandTotal = 0;
@@ -1002,7 +977,6 @@
             }, 200);
         }
 
-        // APLICAR FILTROS (ATUALIZA AMBAS AS VISTAS SIMULTANEMENTE)
         function applyFilters() {
             const globalVal = document.getElementById('filterGlobal').value.toLowerCase();
             const clienteVal = document.getElementById('filterClienteInput').value.toLowerCase();
@@ -1100,33 +1074,58 @@
             applyFilters();
         }
 
+        // EXPORTAÇÃO DINÂMICA BASEADA NA ABA ATIVA
         function exportToExcel() {
             if (!filteredData || filteredData.length === 0) {
                 alert("Sem dados para exportar.");
                 return;
             }
 
-            const exportData = filteredData.map(item => ({
-                "Orçamento": item.n_orcamento || '',
-                "OS": item.n_os || '',
-                "Cliente": item.cliente || '',
-                "Cód. Cliente/Nº Des.": item.cod_mat_no_cliente || '',
-                "N. Pedido": item.pedido_cliente || '',
-                "Item": item.item || '',
-                "SC": item.cod_interno || '',
-                "Descrição": item.descricao || '',
-                "Qtde": parseFloat(item.qtde || 0),
-                "Aprovação": formatDateBR(item.dt_aprovacao),
-                "Prazo": formatDateBR(item.dt_previsao_entrega),
-                "Vl. Unitário": parseFloat(item.vl_unitario || 0),
-                "Vl. Total": parseFloat(item.vl_total || 0),
-                "PROD/MAN/IND": item['PROD/MAN/IND'] || item.prod_man_ind || ''
-            }));
+            let exportData = [];
+            let sheetName = "Dados";
+            let fileName = `Relatorio_${activeTab}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+            if (activeTab === 'RS') {
+                sheetName = "RS_Detalhado";
+                exportData = filteredData.map(item => ({
+                    "Orçamento": item.n_orcamento || '',
+                    "OS": item.n_os || '',
+                    "Cliente": item.cliente || '',
+                    "Cód. Cliente/Nº Des.": item.cod_mat_no_cliente || '',
+                    "N. Pedido": item.pedido_cliente || '',
+                    "Item": item.item || '',
+                    "SC": item.cod_interno || '',
+                    "Descrição": item.descricao || '',
+                    "Qtde": parseFloat(item.qtde || 0),
+                    "Aprovação": formatDateBR(item.dt_aprovacao),
+                    "Prazo": formatDateBR(item.dt_previsao_entrega),
+                    "Vl. Unitário": parseFloat(item.vl_unitario || 0),
+                    "Vl. Total": parseFloat(item.vl_total || 0),
+                    "PROD/MAN/IND": item['PROD/MAN/IND'] || item.prod_man_ind || ''
+                }));
+            } else if (activeTab === 'Grafico') {
+                sheetName = "Faturamento_Clientes";
+
+                // Agrupa o faturamento por cliente com base nos filtros atuais
+                const totalsByClient = {};
+                filteredData.forEach(item => {
+                    const client = (item.cliente || 'SEM CLIENTE').trim();
+                    const val = parseFloat(item.vl_total || 0);
+                    totalsByClient[client] = (totalsByClient[client] || 0) + val;
+                });
+
+                exportData = Object.entries(totalsByClient)
+                    .map(([cliente, vlTotal]) => ({
+                        "Cliente": cliente,
+                        "Valor Total": vlTotal
+                    }))
+                    .sort((a, b) => b["Valor Total"] - a["Valor Total"]);
+            }
 
             const worksheet = XLSX.utils.json_to_sheet(exportData);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "RS");
-            XLSX.writeFile(workbook, `Relatorio_RS_${new Date().toISOString().slice(0, 10)}.xlsx`);
+            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+            XLSX.writeFile(workbook, fileName);
         }
 
         let isPbiOpen = false;
