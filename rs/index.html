@@ -191,4 +191,1299 @@
                             <th class="w-[4%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('qtde')">
                                     <span class="truncate">Qtde. <span id="sort_qtde"></span></span>
-                                    <button
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('qtde')" id="btn_filter_qtde" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_qtde" class="col-filter-popover absolute right-0 top-full mt-1 w-44 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-center relative group">
+                                <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('dt_aprovacao')">
+                                    <span class="truncate">Aprovação <span id="sort_dt_aprovacao">▼</span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('dt_aprovacao')" id="btn_filter_dt_aprovacao" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_dt_aprovacao" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-center relative group">
+                                <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('dt_previsao_entrega')">
+                                    <span class="truncate">Prazo <span id="sort_dt_previsao_entrega"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('dt_previsao_entrega')" id="btn_filter_dt_previsao_entrega" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_dt_previsao_entrega" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-right relative group">
+                                <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('vl_unitario')">
+                                    <span class="truncate">Vl. unit. <span id="sort_vl_unitario"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('vl_unitario')" id="btn_filter_vl_unitario" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_vl_unitario" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-right relative group">
+                                <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('vl_total')">
+                                    <span class="truncate">Vl. Total <span id="sort_vl_total"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('vl_total')" id="btn_filter_vl_total" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_vl_total" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[6.5%] p-1.5 text-center relative group">
+                                <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('PROD/MAN/IND')">
+                                    <span class="truncate">PROD/MAN/IND <span id="sort_PROD/MAN/IND"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('PROD/MAN/IND')" id="btn_filter_PROD/MAN/IND" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_PROD_MAN_IND" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-200 dark:divide-slate-800/40 text-slate-700 dark:text-slate-300 font-mono text-[10.5px]">
+                        <tr>
+                            <td colspan="14" class="p-8 text-center text-slate-500 dark:text-slate-400 font-sans">Carregando dados...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 mt-1.5 p-2 rounded-xl flex flex-wrap justify-between items-center text-xs font-bold text-slate-800 dark:text-slate-200 gap-3 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <span>Exibindo <span id="renderedCount" class="text-amber-600 dark:text-amber-400">0</span> de <span id="totalLinhas" class="text-amber-600 dark:text-amber-400">0</span> registros</span>
+                    
+                    <button id="btnLoadMore" onclick="loadMoreRecords()" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-amber-600 dark:text-amber-400 font-semibold rounded-lg border border-slate-300 dark:border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                        <span>Carregar + 50</span>
+                    </button>
+
+                    <select id="pageSizeSelect" onchange="changePageSize()" class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-lg">
+                        <option value="50">50 por vez</option>
+                        <option value="100">100 por vez</option>
+                        <option value="250">250 por vez</option>
+                        <option value="999999">Exibir Todos</option>
+                    </select>
+                </div>
+
+                <div class="flex gap-5">
+                    <span>Quantidade Total (Peças): <span id="totalQtde" class="text-amber-600 dark:text-amber-400">0</span></span>
+                    <span>Valor Total: <span id="totalValor" class="text-emerald-600 dark:text-emerald-400">R$ 0,00</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="viewTabGrafico" class="h-full w-full hidden flex flex-col lg:flex-row gap-3 overflow-hidden">
+            <div class="w-full lg:w-1/3 h-full border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                <div class="p-2.5 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex justify-between items-center">
+                    <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Faturamento por Cliente</h2>
+                    <span id="totalClientesCount" class="text-[11px] bg-slate-200 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-mono">0 clientes</span>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto">
+                    <table class="w-full text-left text-[11px] border-collapse">
+                        <thead class="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 sticky top-0 z-10 border-b border-slate-300 dark:border-slate-800">
+                            <tr>
+                                <th class="p-2 font-semibold">Cliente</th>
+                                <th class="p-2 font-semibold text-right">Vl. Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyClientes" class="divide-y divide-slate-200 dark:divide-slate-800/40 text-slate-700 dark:text-slate-300 font-sans">
+                            <tr><td colspan="2" class="p-4 text-center text-slate-500">Carregando dados...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-2.5 bg-slate-50 dark:bg-slate-900 border-t border-slate-300 dark:border-slate-800 text-xs font-bold flex justify-between items-center text-slate-800 dark:text-slate-200">
+                    <span>Total Geral:</span>
+                    <span id="totalGeralTabela" class="text-emerald-600 dark:text-emerald-400 font-mono text-sm">R$ 0,00</span>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-2/3 h-full border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 p-4 flex flex-col justify-between overflow-hidden shadow-2xl">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Pedidos por Clientes (Top 15 + Outros)</h2>
+                    <span class="text-[11px] text-slate-500 dark:text-slate-400 font-sans">Top 15 detalhados, demais somados em "Outros"</span>
+                </div>
+
+                <div class="flex-1 relative w-full h-full flex items-center justify-center p-2">
+                    <canvas id="chartPedidosCliente"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="viewTabMensal" class="h-full w-full hidden flex flex-col lg:flex-row gap-3 overflow-hidden">
+            <div class="w-full lg:w-1/3 h-full flex flex-col gap-3 overflow-hidden">
+                <div class="grid grid-cols-1 gap-2 flex-shrink-0">
+                    <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg p-2.5 shadow-md text-center">
+                        <p id="kpiVlTotal" class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white font-sans tracking-tight">R$ 0,00</p>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider block">Vl. Total</span>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg p-2.5 shadow-md text-center">
+                        <p id="kpiQtdeItens" class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white font-sans tracking-tight">0</p>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider block">Qtde. Itens</span>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg p-2.5 shadow-md text-center">
+                        <p id="kpiMediaMensal" class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white font-sans tracking-tight">R$ 0,00</p>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider block">Média Mensal</span>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg p-2.5 shadow-md text-center">
+                        <p id="kpiMediaAnual" class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white font-sans tracking-tight">R$ 0,00</p>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider block">Média Anual</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                    <div class="p-2 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex justify-between items-center">
+                        <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Resumo Mensal</h2>
+                        <span id="totalMesesCount" class="text-[10px] bg-slate-200 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-mono">0 meses</span>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto">
+                        <table class="w-full text-left text-[11px] border-collapse">
+                            <thead class="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 sticky top-0 z-10 border-b border-slate-300 dark:border-slate-800">
+                                <tr>
+                                    <th class="p-2 font-semibold">Mês/Ano</th>
+                                    <th class="p-2 font-semibold text-right">Vl. Total</th>
+                                    <th class="p-2 font-semibold text-right">Qtde. Itens</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBodyMensal" class="divide-y divide-slate-200 dark:divide-slate-800/40 text-slate-700 dark:text-slate-300 font-sans">
+                                <tr><td colspan="3" class="p-4 text-center text-slate-500">Carregando dados...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-2/3 h-full border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 p-3 flex flex-col justify-between overflow-hidden shadow-2xl transition-colors duration-200">
+                <div class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 px-3 py-1.5 text-center font-extrabold text-xs uppercase tracking-widest border border-slate-200 dark:border-slate-800 rounded mb-2">
+                    GRÁFICO MENSAL
+                </div>
+
+                <div class="flex items-center gap-4 px-2 mb-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-[#737373] border border-[#d9531e] inline-block"></span>
+                        <span>Vl. Total</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-[#d9531e] inline-block"></span>
+                        <span>Qtde. Itens</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 relative w-full h-full flex items-center justify-center p-1">
+                    <canvas id="chartMensalEvolutivo"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="pbiView" class="h-full w-full hidden border border-slate-300 dark:border-slate-800 rounded-xl overflow-hidden">
+            <div id="pbiContainer" class="w-full h-full"></div>
+        </div>
+
+    </main>
+
+    <nav class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 py-1 flex gap-1 overflow-x-auto text-xs font-medium flex-shrink-0">
+        <button id="navBtnRS" onclick="switchMainTab('RS')" class="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer">RS</button>
+        <button id="navBtnGrafico" onclick="switchMainTab('Grafico')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Gráfico</button>
+        <button id="navBtnMensal" onclick="switchMainTab('Mensal')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Mensal</button>
+        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Mensal por cliente</button>
+        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Classificação de vendas</button>
+        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Pedidos em aberto</button>
+        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Notas Fiscais</button>
+        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Pedidos em carteira</button>
+        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Valores por prazo de entrega</button>
+    </nav>
+
+    <script>
+        // Plugin de DataLabels
+        if (window.ChartDataLabels) {
+            Chart.register(ChartDataLabels);
+        }
+
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '../';
+            }
+        }
+
+        let fullData = [];
+        let filteredData = [];
+        let allClientes = [];
+        
+        let columnSelections = {};
+        let filterTimeout = null;
+        const currentYear = new Date().getFullYear();
+
+        let activeTab = 'RS'; 
+        let myChartGrafico = null;
+        let myChartMensal = null;
+
+        let currentRenderLimit = 50;
+        let batchStep = 50;
+
+        let sortColumn = 'dt_aprovacao';
+        let sortAsc = false;
+
+        const monthNames = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+        let selectedAnoMes = {};
+
+        const allColumnsKeys = ['n_orcamento', 'n_os', 'cliente', 'cod_mat_no_cliente', 'pedido_cliente', 'item', 'cod_interno', 'descricao', 'qtde', 'dt_aprovacao', 'dt_previsao_entrega', 'vl_unitario', 'vl_total', 'PROD/MAN/IND'];
+
+        const chartColors = [
+            '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+            '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#14b8a6',
+            '#6366f1', '#a855f7', '#d97706', '#059669', '#2563eb', '#64748b'
+        ];
+
+        function getSafeColId(colKey) {
+            return colKey.replace(/[^a-zA-Z0-9_]/g, '_');
+        }
+
+        async function loadRsData() {
+            try {
+                const response = await fetch('https://sintercan.consultoriarf.net/rs');
+                if (!response.ok) throw new Error('Falha ao carregar dados');
+
+                fullData = await response.json();
+
+                setupClienteDropdown();
+                buildAnoMesTree();
+                
+                selectedAnoMes[currentYear] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+                updateTreeUI();
+
+                applyFilters();
+            } catch (err) {
+                console.error("Erro ao carregar RS:", err);
+                document.getElementById('tableBody').innerHTML = `
+                    <tr><td colspan="14" class="p-8 text-center text-rose-500 font-sans">Erro ao conectar à API. Verifique a conexão.</td></tr>
+                `;
+            }
+        }
+
+        function formatCurrency(val) {
+            const num = parseFloat(val) || 0;
+            return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function formatDateBR(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const date = new Date(dateStr);
+                if (isNaN(date)) return dateStr;
+                return date.toLocaleDateString('pt-BR');
+            } catch (e) {
+                return dateStr;
+            }
+        }
+
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            const d = new Date(dateStr);
+            return isNaN(d) ? null : d;
+        }
+
+        function switchMainTab(tabName) {
+            activeTab = tabName;
+
+            const tabRS = document.getElementById('viewTabRS');
+            const tabGrafico = document.getElementById('viewTabGrafico');
+            const tabMensal = document.getElementById('viewTabMensal');
+
+            const btnRS = document.getElementById('navBtnRS');
+            const btnGrafico = document.getElementById('navBtnGrafico');
+            const btnMensal = document.getElementById('navBtnMensal');
+
+            const headerSubtitle = document.getElementById('headerSubtitle');
+
+            const inactiveClass = "px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
+            const activeClass = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
+
+            [btnRS, btnGrafico, btnMensal].forEach(btn => {
+                if (btn) btn.className = inactiveClass;
+            });
+
+            tabRS.classList.add('hidden');
+            tabGrafico.classList.add('hidden');
+            tabMensal.classList.add('hidden');
+
+            if (tabName === 'RS') {
+                tabRS.classList.remove('hidden');
+                btnRS.className = activeClass;
+                headerSubtitle.textContent = "Dashboard RS";
+            } else if (tabName === 'Grafico') {
+                tabGrafico.classList.remove('hidden');
+                btnGrafico.className = activeClass;
+                headerSubtitle.textContent = "Dashboard Gráfico";
+                renderGraficoView();
+            } else if (tabName === 'Mensal') {
+                tabMensal.classList.remove('hidden');
+                btnMensal.className = activeClass;
+                headerSubtitle.textContent = "Dashboard Mensal";
+                renderMensalView();
+            }
+        }
+
+        function resetAllFilters() {
+            document.getElementById('filterGlobal').value = '';
+            document.getElementById('filterClienteInput').value = '';
+            document.getElementById('filterDataDe').value = '';
+            document.getElementById('filterDataAte').value = '';
+
+            selectedAnoMes = {};
+            selectedAnoMes[currentYear] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+            updateTreeUI();
+
+            columnSelections = {};
+            allColumnsKeys.forEach(key => updateFilterIconState(key));
+
+            applyFilters();
+        }
+
+        function toggleColumnFilter(colKey) {
+            const safeId = getSafeColId(colKey);
+            const el = document.getElementById(`filter_popover_${safeId}`);
+            if (!el) return;
+            const isVisible = el.classList.contains('active');
+            
+            document.querySelectorAll('.col-filter-popover').forEach(p => p.classList.remove('active'));
+
+            if (!isVisible) {
+                buildExcelFilterPopover(colKey);
+                el.classList.add('active');
+            }
+        }
+
+        function getFilteredDataExcludingColumn(excludeColKey) {
+            const globalVal = document.getElementById('filterGlobal').value.toLowerCase();
+            const clienteVal = document.getElementById('filterClienteInput').value.toLowerCase();
+            const dataDeVal = document.getElementById('filterDataDe').value;
+            const dataAteVal = document.getElementById('filterDataAte').value;
+
+            const dateDe = dataDeVal ? new Date(dataDeVal + 'T00:00:00') : null;
+            const dateAte = dataAteVal ? new Date(dataAteVal + 'T23:59:59') : null;
+
+            const hasAnoMesFilter = Object.keys(selectedAnoMes).length > 0;
+
+            return fullData.filter(item => {
+                const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
+
+                if (hasAnoMesFilter) {
+                    if (!d) return false;
+                    const y = d.getFullYear().toString();
+                    const m = d.getMonth();
+                    if (!selectedAnoMes[y] || !selectedAnoMes[y].includes(m)) return false;
+                }
+
+                if (globalVal) {
+                    const str = `${item.n_orcamento || ''} ${item.n_os || ''} ${item.cliente || ''} ${item.cod_mat_no_cliente || ''} ${item.pedido_cliente || ''} ${item.cod_interno || ''} ${item.descricao || ''} ${item['PROD/MAN/IND'] || ''}`.toLowerCase();
+                    if (!str.includes(globalVal)) return false;
+                }
+
+                if (clienteVal && !(item.cliente || '').toLowerCase().includes(clienteVal)) return false;
+
+                if (dateDe && d && d < dateDe) return false;
+                if (dateAte && d && d > dateAte) return false;
+
+                for (const [colKey, selectedSet] of Object.entries(columnSelections)) {
+                    if (colKey === excludeColKey) continue;
+                    if (!selectedSet) continue;
+
+                    let itemVal = '';
+                    if (colKey === 'PROD/MAN/IND') itemVal = item['PROD/MAN/IND'] || item.prod_man_ind || '(Vazio)';
+                    else if (colKey === 'dt_aprovacao' || colKey === 'dt_previsao_entrega') itemVal = formatDateBR(item[colKey]) || '(Vazio)';
+                    else if (colKey === 'vl_unitario' || colKey === 'vl_total') itemVal = formatCurrency(item[colKey]) || '(Vazio)';
+                    else itemVal = (item[colKey] ?? '').toString() || '(Vazio)';
+
+                    if (!selectedSet.has(itemVal)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+        }
+
+        function buildExcelFilterPopover(colKey) {
+            const safeId = getSafeColId(colKey);
+            const popover = document.getElementById(`filter_popover_${safeId}`);
+            if (!popover) return;
+
+            const activeData = getFilteredDataExcludingColumn(colKey);
+
+            let rawValues = activeData.map(item => {
+                if (colKey === 'PROD/MAN/IND') return item['PROD/MAN/IND'] || item.prod_man_ind || '(Vazio)';
+                if (colKey === 'dt_aprovacao' || colKey === 'dt_previsao_entrega') return formatDateBR(item[colKey]) || '(Vazio)';
+                if (colKey === 'vl_unitario' || colKey === 'vl_total') return formatCurrency(item[colKey]) || '(Vazio)';
+                return (item[colKey] ?? '').toString() || '(Vazio)';
+            });
+
+            const uniqueValues = [...new Set(rawValues)].sort();
+
+            const selectedSet = columnSelections[colKey];
+            const isAllSelected = !selectedSet || uniqueValues.every(val => selectedSet.has(val));
+
+            popover.innerHTML = `
+                <div class="space-y-2">
+                    <input type="text" id="search_popover_${safeId}" oninput="filterExcelPopoverList('${colKey}')" placeholder="Pesquisar..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                    
+                    <div class="max-h-40 overflow-y-auto space-y-1 text-xs font-sans py-1 border-t border-b border-slate-200 dark:border-slate-800" id="list_popover_${safeId}">
+                        <div class="flex items-center gap-2 px-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
+                            <input type="checkbox" id="chk_all_${safeId}" onchange="toggleSelectAllColumn('${colKey}', this.checked)" ${isAllSelected ? 'checked' : ''} class="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                            <label for="chk_all_${safeId}" class="text-amber-600 dark:text-amber-400 font-semibold cursor-pointer select-none">(Selecionar Tudo)</label>
+                        </div>
+                        ${uniqueValues.map((val) => {
+                            const isChecked = !selectedSet || selectedSet.has(val);
+                            return `
+                                <div class="flex items-center gap-2 px-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded item-popover-row">
+                                    <input type="checkbox" value="${val.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="toggleSingleColumnVal('${colKey}')" class="chk_col_${safeId} rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                                    <label onclick="this.previousElementSibling.click()" class="text-slate-700 dark:text-slate-300 truncate cursor-pointer select-none" title="${val}">${val}</label>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+
+                    <div class="flex justify-end gap-1.5 pt-1">
+                        <button onclick="clearSingleColumnFilter('${colKey}')" class="px-2 py-0.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] rounded cursor-pointer">Limpar</button>
+                        <button onclick="applyColumnFilterFromUI('${colKey}')" class="px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] rounded cursor-pointer">Aplicar</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function filterExcelPopoverList(colKey) {
+            const safeId = getSafeColId(colKey);
+            const term = document.getElementById(`search_popover_${safeId}`).value.toLowerCase();
+            const rows = document.querySelectorAll(`#list_popover_${safeId} .item-popover-row`);
+            
+            rows.forEach(r => {
+                const txt = r.textContent.toLowerCase();
+                r.style.display = txt.includes(term) ? 'flex' : 'none';
+            });
+
+            toggleSingleColumnVal(colKey);
+        }
+
+        function toggleSelectAllColumn(colKey, isChecked) {
+            const safeId = getSafeColId(colKey);
+            const visibleRows = document.querySelectorAll(`#list_popover_${safeId} .item-popover-row`);
+            visibleRows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const chk = row.querySelector(`.chk_col_${safeId}`);
+                    if (chk) chk.checked = isChecked;
+                }
+            });
+        }
+
+        function toggleSingleColumnVal(colKey) {
+            const safeId = getSafeColId(colKey);
+            const visibleChks = Array.from(document.querySelectorAll(`#list_popover_${safeId} .item-popover-row`))
+                .filter(r => r.style.display !== 'none')
+                .map(r => r.querySelector(`.chk_col_${safeId}`))
+                .filter(Boolean);
+
+            const allChecked = visibleChks.length > 0 && visibleChks.every(c => c.checked);
+            const chkAll = document.getElementById(`chk_all_${safeId}`);
+            if (chkAll) {
+                chkAll.checked = allChecked;
+            }
+        }
+
+        function applyColumnFilterFromUI(colKey) {
+            const safeId = getSafeColId(colKey);
+            const allChks = Array.from(document.querySelectorAll(`.chk_col_${safeId}`));
+            const checkedVals = allChks.filter(c => c.checked).map(c => c.value);
+
+            if (checkedVals.length === allChks.length) {
+                delete columnSelections[colKey];
+            } else {
+                columnSelections[colKey] = new Set(checkedVals);
+            }
+
+            updateFilterIconState(colKey);
+            document.querySelectorAll('.col-filter-popover').forEach(p => p.classList.remove('active'));
+            applyFilters();
+        }
+
+        function clearSingleColumnFilter(colKey) {
+            delete columnSelections[colKey];
+            updateFilterIconState(colKey);
+            document.querySelectorAll('.col-filter-popover').forEach(p => p.classList.remove('active'));
+            applyFilters();
+        }
+
+        function updateFilterIconState(colKey) {
+            const btn = document.getElementById(`btn_filter_${colKey}`);
+            if (!btn) return;
+
+            if (columnSelections[colKey]) {
+                btn.className = "text-amber-500 dark:text-amber-400 bg-amber-500/20 p-0.5 rounded transition font-bold";
+            } else {
+                btn.className = "text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition";
+            }
+        }
+
+        let availableYears = {};
+
+        function buildAnoMesTree() {
+            availableYears = {};
+            fullData.forEach(item => {
+                const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
+                if (d) {
+                    const y = d.getFullYear();
+                    const m = d.getMonth();
+                    if (!availableYears[y]) availableYears[y] = new Set();
+                    availableYears[y].add(m);
+                }
+            });
+
+            const treeContent = document.getElementById('treeContent');
+            treeContent.innerHTML = '';
+
+            Object.keys(availableYears).sort().reverse().forEach(year => {
+                const months = Array.from(availableYears[year]).sort((a,b) => a - b);
+                
+                const yearBlock = document.createElement('div');
+                yearBlock.className = "select-none";
+
+                yearBlock.innerHTML = `
+                    <div class="flex items-center gap-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded px-1 cursor-pointer">
+                        <span onclick="toggleYearExpand('${year}')" class="text-slate-400 hover:text-slate-800 dark:hover:text-white px-1">
+                            <i data-lucide="chevron-right" id="arrow_${year}" class="w-3.5 h-3.5 transition-transform"></i>
+                        </span>
+                        <input type="checkbox" id="chk_year_${year}" onchange="toggleYearCheck('${year}', this.checked)" class="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                        <label for="chk_year_${year}" class="text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer">${year}</label>
+                    </div>
+                    <div id="months_container_${year}" class="hidden pl-8 space-y-1 py-0.5 border-l border-slate-200 dark:border-slate-800 ml-3">
+                        ${months.map(m => `
+                            <div class="flex items-center gap-2 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded px-1">
+                                <input type="checkbox" id="chk_m_${year}_${m}" onchange="toggleMonthCheck('${year}', ${m}, this.checked)" class="chk_month_${year} rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                                <label for="chk_m_${year}_${m}" class="text-xs text-slate-600 dark:text-slate-300 cursor-pointer">${monthNames[m]}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                treeContent.appendChild(yearBlock);
+            });
+
+            if (window.lucide) lucide.createIcons();
+
+            document.addEventListener('click', (e) => {
+                const container = document.getElementById('anoMesTreeContainer');
+                const btn = document.getElementById('btnAnoMesLabel');
+                if (container && !container.contains(e.target) && !btn.contains(e.target)) {
+                    container.classList.add('hidden');
+                }
+
+                if (!e.target.closest('.group') && !e.target.closest('.col-filter-popover')) {
+                    document.querySelectorAll('.col-filter-popover').forEach(p => p.classList.remove('active'));
+                }
+            });
+        }
+
+        function toggleAnoMesTree() {
+            document.getElementById('anoMesTreeContainer').classList.toggle('hidden');
+        }
+
+        function toggleYearExpand(year) {
+            const container = document.getElementById(`months_container_${year}`);
+            const arrow = document.getElementById(`arrow_${year}`);
+            container.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-90');
+        }
+
+        function toggleYearCheck(year, isChecked) {
+            if (isChecked) {
+                selectedAnoMes[year] = Array.from(availableYears[year]);
+            } else {
+                delete selectedAnoMes[year];
+            }
+            updateTreeUI();
+            applyFilters();
+        }
+
+        function toggleMonthCheck(year, monthIndex, isChecked) {
+            if (!selectedAnoMes[year]) selectedAnoMes[year] = [];
+
+            if (isChecked) {
+                if (!selectedAnoMes[year].includes(monthIndex)) selectedAnoMes[year].push(monthIndex);
+            } else {
+                selectedAnoMes[year] = selectedAnoMes[year].filter(m => m !== monthIndex);
+                if (selectedAnoMes[year].length === 0) delete selectedAnoMes[year];
+            }
+            updateTreeUI();
+            applyFilters();
+        }
+
+        function updateTreeUI() {
+            Object.keys(availableYears).forEach(year => {
+                const yearChk = document.getElementById(`chk_year_${year}`);
+                const selMonths = selectedAnoMes[year] || [];
+                const totalMonths = Array.from(availableYears[year]);
+
+                if (yearChk) {
+                    yearChk.checked = selMonths.length === totalMonths.length && totalMonths.length > 0;
+                    yearChk.indeterminate = selMonths.length > 0 && selMonths.length < totalMonths.length;
+                }
+
+                totalMonths.forEach(m => {
+                    const mChk = document.getElementById(`chk_m_${year}_${m}`);
+                    if (mChk) mChk.checked = selMonths.includes(m);
+                });
+            });
+
+            const labelEl = document.getElementById('anoMesSelectedText');
+            const selectedYearsKeys = Object.keys(selectedAnoMes);
+
+            if (selectedYearsKeys.length === 0) {
+                labelEl.textContent = "Todos";
+            } else if (selectedYearsKeys.length === 1) {
+                const y = selectedYearsKeys[0];
+                if (selectedAnoMes[y].length === availableYears[y]?.size) {
+                    labelEl.textContent = `Ano ${y}`;
+                } else {
+                    labelEl.textContent = `${y} (${selectedAnoMes[y].length} meses)`;
+                }
+            } else {
+                labelEl.textContent = `${selectedYearsKeys.length} Anos Selecionados`;
+            }
+        }
+
+        function sortTable(columnKey) {
+            if (sortColumn === columnKey) {
+                sortAsc = !sortAsc;
+            } else {
+                sortColumn = columnKey;
+                sortAsc = true;
+            }
+
+            allColumnsKeys.forEach(k => {
+                const el = document.getElementById(`sort_${k}`);
+                if (el) el.textContent = '';
+            });
+
+            const activeEl = document.getElementById(`sort_${sortColumn}`);
+            if (activeEl) activeEl.textContent = sortAsc ? '▲' : '▼';
+
+            sortData();
+            renderTable();
+        }
+
+        function sortData() {
+            filteredData.sort((a, b) => {
+                let valA = a[sortColumn] ?? '';
+                let valB = b[sortColumn] ?? '';
+
+                if (['qtde', 'vl_unitario', 'vl_total', 'n_orcamento', 'n_os'].includes(sortColumn)) {
+                    valA = parseFloat(valA) || 0;
+                    valB = parseFloat(valB) || 0;
+                } else if (['dt_aprovacao', 'dt_previsao_entrega'].includes(sortColumn)) {
+                    valA = valA ? new Date(valA).getTime() : 0;
+                    valB = valB ? new Date(valB).getTime() : 0;
+                } else {
+                    valA = valA.toString().toLowerCase();
+                    valB = valB.toString().toLowerCase();
+                }
+
+                if (valA < valB) return sortAsc ? -1 : 1;
+                if (valA > valB) return sortAsc ? 1 : -1;
+                return 0;
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            const totalRows = filteredData.length;
+
+            if (totalRows === 0) {
+                tbody.innerHTML = `<tr><td colspan="14" class="p-8 text-center text-slate-500 font-sans">Nenhum registro localizado.</td></tr>`;
+                document.getElementById('totalLinhas').textContent = '0';
+                document.getElementById('renderedCount').textContent = '0';
+                document.getElementById('totalQtde').textContent = '0';
+                document.getElementById('totalValor').textContent = 'R$ 0,00';
+                document.getElementById('btnLoadMore').classList.add('hidden');
+                return;
+            }
+
+            const limit = Math.min(currentRenderLimit, totalRows);
+            const pageData = filteredData.slice(0, limit);
+
+            let totalQtde = 0;
+            let totalValor = 0;
+            for (let i = 0; i < totalRows; i++) {
+                totalQtde += parseFloat(filteredData[i].qtde || 0);
+                totalValor += parseFloat(filteredData[i].vl_total || 0);
+            }
+
+            const fragment = document.createDocumentFragment();
+
+            pageData.forEach((row, idx) => {
+                const qtde = parseFloat(row.qtde || 0);
+                const vlUnit = parseFloat(row.vl_unitario || 0);
+                const vlTotal = parseFloat(row.vl_total || 0);
+                const prodManInd = row['PROD/MAN/IND'] || row.prod_man_ind || '';
+
+                const tr = document.createElement('tr');
+                tr.className = (idx % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/30' : 'bg-white dark:bg-slate-950/40') + ' hover:bg-slate-100 dark:hover:bg-slate-800/50 transition';
+
+                tr.innerHTML = `
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 truncate" title="${row.n_orcamento || ''}">${row.n_orcamento || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 truncate" title="${row.n_os || ''}">${row.n_os || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 font-sans font-medium text-slate-900 dark:text-slate-200 truncate" title="${row.cliente || ''}">${row.cliente || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 truncate" title="${row.cod_mat_no_cliente || ''}">${row.cod_mat_no_cliente || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 truncate" title="${row.pedido_cliente || ''}">${row.pedido_cliente || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 truncate" title="${row.item || ''}">${row.item || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 truncate" title="${row.cod_interno || ''}">${row.cod_interno || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 font-sans text-slate-700 dark:text-slate-300 truncate" title="${row.descricao || ''}">${row.descricao || ''}</td>
+                    <td class="p-1.5 text-right border-r border-slate-200 dark:border-slate-800/60 font-bold truncate">${qtde}</td>
+                    <td class="p-1.5 text-center border-r border-slate-200 dark:border-slate-800/60 truncate">${formatDateBR(row.dt_aprovacao)}</td>
+                    <td class="p-1.5 text-center border-r border-slate-200 dark:border-slate-800/60 truncate">${formatDateBR(row.dt_previsao_entrega)}</td>
+                    <td class="p-1.5 text-right border-r border-slate-200 dark:border-slate-800/60 truncate">${formatCurrency(vlUnit)}</td>
+                    <td class="p-1.5 text-right font-bold text-emerald-600 dark:text-emerald-400 border-r border-slate-200 dark:border-slate-800/60 truncate">${formatCurrency(vlTotal)}</td>
+                    <td class="p-1.5 text-center font-semibold text-slate-700 dark:text-slate-300 truncate" title="${prodManInd}">${prodManInd}</td>
+                `;
+                fragment.appendChild(tr);
+            });
+
+            tbody.appendChild(fragment);
+
+            document.getElementById('renderedCount').textContent = limit.toLocaleString('pt-BR');
+            document.getElementById('totalLinhas').textContent = totalRows.toLocaleString('pt-BR');
+            document.getElementById('totalQtde').textContent = totalQtde.toLocaleString('pt-BR');
+            document.getElementById('totalValor').textContent = formatCurrency(totalValor);
+
+            const btnMore = document.getElementById('btnLoadMore');
+            if (limit >= totalRows) {
+                btnMore.classList.add('hidden');
+            } else {
+                btnMore.classList.remove('hidden');
+            }
+        }
+
+        function renderGraficoView() {
+            const totalsByClient = {};
+            let grandTotal = 0;
+
+            filteredData.forEach(item => {
+                const client = (item.cliente || 'SEM CLIENTE').trim();
+                const val = parseFloat(item.vl_total || 0);
+                totalsByClient[client] = (totalsByClient[client] || 0) + val;
+                grandTotal += val;
+            });
+
+            const sortedClients = Object.entries(totalsByClient)
+                .map(([name, total]) => ({ name, total }))
+                .sort((a, b) => b.total - a.total);
+
+            const tbody = document.getElementById('tableBodyClientes');
+            tbody.innerHTML = '';
+
+            document.getElementById('totalClientesCount').textContent = `${sortedClients.length} clientes`;
+            document.getElementById('totalGeralTabela').textContent = formatCurrency(grandTotal);
+
+            if (sortedClients.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-slate-500">Nenhum registro encontrado.</td></tr>`;
+            } else {
+                const fragment = document.createDocumentFragment();
+                sortedClients.forEach((c, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.className = (idx % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/20' : 'bg-white dark:bg-slate-950/40') + ' hover:bg-slate-100 dark:hover:bg-slate-800/50 transition';
+                    tr.innerHTML = `
+                        <td class="p-2 text-slate-800 dark:text-slate-200 font-medium truncate max-w-[200px]" title="${c.name}">${c.name}</td>
+                        <td class="p-2 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">${formatCurrency(c.total)}</td>
+                    `;
+                    fragment.appendChild(tr);
+                });
+                tbody.appendChild(fragment);
+            }
+
+            const top15 = sortedClients.slice(0, 15);
+            const rest = sortedClients.slice(15);
+
+            const labels = top15.map(c => c.name);
+            const dataValues = top15.map(c => c.total);
+
+            if (rest.length > 0) {
+                const outrosTotal = rest.reduce((sum, c) => sum + c.total, 0);
+                labels.push('Outros');
+                dataValues.push(outrosTotal);
+            }
+
+            const ctx = document.getElementById('chartPedidosCliente').getContext('2d');
+
+            if (myChartGrafico) {
+                myChartGrafico.destroy();
+            }
+
+            const isDark = document.documentElement.classList.contains('dark');
+
+            myChartGrafico = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: chartColors.slice(0, labels.length),
+                        borderColor: isDark ? '#0f172a' : '#ffffff',
+                        borderWidth: 2,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        datalabels: { display: false },
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: isDark ? '#cbd5e1' : '#334155',
+                                font: { size: 10, family: 'Segoe UI' },
+                                boxWidth: 12,
+                                padding: 10
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.raw || 0;
+                                    const pct = grandTotal > 0 ? ((val / grandTotal) * 100).toFixed(2) : 0;
+                                    return ` ${context.label}: ${formatCurrency(val)} (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+
+        function renderMensalView() {
+            const monthlyAgg = {};
+            let totalVal = 0;
+
+            filteredData.forEach(item => {
+                const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
+
+                if (d) {
+                    const y = d.getFullYear();
+                    const m = d.getMonth();
+                    const key = `${y}-${String(m + 1).padStart(2, '0')}`;
+                    const label = `${monthNames[m]}/${y}`;
+
+                    if (!monthlyAgg[key]) {
+                        monthlyAgg[key] = { label, year: y, monthIndex: m, total: 0, countOfItems: 0 };
+                    }
+
+                    const val = parseFloat(item.vl_total || 0);
+                    monthlyAgg[key].total += val;
+                    monthlyAgg[key].countOfItems += 1;
+
+                    totalVal += val;
+                }
+            });
+
+            const totalItensCount = filteredData.length;
+            const sortedMonths = Object.keys(monthlyAgg).sort().map(k => ({
+                label: monthlyAgg[k].label,
+                year: monthlyAgg[k].year,
+                total: monthlyAgg[k].total,
+                itens: monthlyAgg[k].countOfItems
+            }));
+
+            const monthsCount = sortedMonths.length || 1;
+            const uniqueYearsCount = new Set(sortedMonths.map(m => m.year)).size || 1;
+
+            const mediaMensal = totalVal / monthsCount;
+            const mediaAnual = totalVal / uniqueYearsCount;
+
+            // KPIs
+            document.getElementById('kpiVlTotal').textContent = formatCurrency(totalVal);
+            document.getElementById('kpiQtdeItens').textContent = totalItensCount.toLocaleString('pt-BR');
+            document.getElementById('kpiMediaMensal').textContent = formatCurrency(mediaMensal);
+            document.getElementById('kpiMediaAnual').textContent = formatCurrency(mediaAnual);
+
+            // Tabela Mensal Resumida
+            const tbody = document.getElementById('tableBodyMensal');
+            tbody.innerHTML = '';
+            document.getElementById('totalMesesCount').textContent = `${monthsCount} meses`;
+
+            if (sortedMonths.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-500">Nenhum registro encontrado.</td></tr>`;
+            } else {
+                const fragment = document.createDocumentFragment();
+                sortedMonths.forEach((m, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.className = (idx % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/20' : 'bg-white dark:bg-slate-950/40') + ' hover:bg-slate-100 dark:hover:bg-slate-800/50 transition';
+                    tr.innerHTML = `
+                        <td class="p-2 font-medium text-slate-800 dark:text-slate-200">${m.label}</td>
+                        <td class="p-2 text-right font-mono font-semibold text-amber-600 dark:text-amber-400">${formatCurrency(m.total)}</td>
+                        <td class="p-2 text-right font-mono text-slate-700 dark:text-slate-300">${m.itens.toLocaleString('pt-BR')}</td>
+                    `;
+                    fragment.appendChild(tr);
+                });
+                tbody.appendChild(fragment);
+            }
+
+            // GRÁFICO COMBINADO MENSAL
+            const labels = sortedMonths.map(m => m.label);
+            const totals = sortedMonths.map(m => m.total);
+            const itens = sortedMonths.map(m => m.itens);
+
+            const ctx = document.getElementById('chartMensalEvolutivo').getContext('2d');
+
+            if (myChartMensal) {
+                myChartMensal.destroy();
+            }
+
+            const isDark = document.documentElement.classList.contains('dark');
+
+            myChartMensal = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Qtde. Itens',
+                            data: itens,
+                            borderColor: '#d9531e',
+                            backgroundColor: '#d9531e',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#d9531e',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 1.5,
+                            pointRadius: 4.5,
+                            yAxisID: 'y1',
+                            tension: 0.1,
+                            datalabels: {
+                                align: 'top',
+                                anchor: 'end',
+                                backgroundColor: isDark ? '#f1f5f9' : '#ffffff',
+                                borderRadius: 3,
+                                color: '#1e293b',
+                                font: { size: 9, weight: 'bold' },
+                                padding: { top: 2, bottom: 2, left: 4, right: 4 },
+                                formatter: function(val) {
+                                    return val.toLocaleString('pt-BR');
+                                }
+                            }
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Vl. Total',
+                            data: totals,
+                            backgroundColor: isDark ? '#737373' : '#94a3b8',
+                            borderColor: '#d9531e',
+                            borderWidth: 1.5,
+                            borderRadius: 0,
+                            yAxisID: 'y',
+                            datalabels: {
+                                align: 'start',
+                                anchor: 'end',
+                                backgroundColor: 'rgba(217, 83, 30, 0.25)',
+                                borderColor: '#d9531e',
+                                borderWidth: 1,
+                                borderRadius: 3,
+                                color: isDark ? '#f8fafc' : '#0f172a',
+                                font: { size: 9, weight: 'bold' },
+                                padding: { top: 2, bottom: 2, left: 4, right: 4 },
+                                formatter: function(val) {
+                                    if (val >= 1000000) {
+                                        return 'R$ ' + (val / 1000000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' Mi';
+                                    } else if (val >= 1000) {
+                                        return 'R$ ' + (val / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' Mil';
+                                    }
+                                    return 'R$ ' + val;
+                                }
+                            }
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataset.yAxisID === 'y') {
+                                        return ` Vl. Total: ${formatCurrency(context.raw)}`;
+                                    } else {
+                                        return ` Qtde. Itens: ${context.raw.toLocaleString('pt-BR')}`;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(51, 65, 85, 0.2)', drawBorder: false },
+                            ticks: { color: isDark ? '#94a3b8' : '#475569', font: { size: 9 }, maxRotation: 45, minRotation: 45 }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: false,
+                            position: 'left',
+                            grid: { display: false }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: false,
+                            position: 'right',
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadMoreRecords() {
+            currentRenderLimit += batchStep;
+            renderTable();
+        }
+
+        function changePageSize() {
+            const val = parseInt(document.getElementById('pageSizeSelect').value, 10);
+            batchStep = val;
+            currentRenderLimit = val;
+            renderTable();
+        }
+
+        function debouncedApplyFilters() {
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(() => {
+                applyFilters();
+            }, 200);
+        }
+
+        function applyFilters() {
+            const globalVal = document.getElementById('filterGlobal').value.toLowerCase();
+            const clienteVal = document.getElementById('filterClienteInput').value.toLowerCase();
+            const dataDeVal = document.getElementById('filterDataDe').value;
+            const dataAteVal = document.getElementById('filterDataAte').value;
+
+            const dateDe = dataDeVal ? new Date(dataDeVal + 'T00:00:00') : null;
+            const dateAte = dataAteVal ? new Date(dataAteVal + 'T23:59:59') : null;
+
+            const hasAnoMesFilter = Object.keys(selectedAnoMes).length > 0;
+
+            filteredData = fullData.filter(item => {
+                const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
+
+                if (hasAnoMesFilter) {
+                    if (!d) return false;
+                    const y = d.getFullYear().toString();
+                    const m = d.getMonth();
+                    if (!selectedAnoMes[y] || !selectedAnoMes[y].includes(m)) return false;
+                }
+
+                if (globalVal) {
+                    const str = `${item.n_orcamento || ''} ${item.n_os || ''} ${item.cliente || ''} ${item.cod_mat_no_cliente || ''} ${item.pedido_cliente || ''} ${item.cod_interno || ''} ${item.descricao || ''} ${item['PROD/MAN/IND'] || ''}`.toLowerCase();
+                    if (!str.includes(globalVal)) return false;
+                }
+
+                if (clienteVal && !(item.cliente || '').toLowerCase().includes(clienteVal)) return false;
+
+                if (dateDe && d && d < dateDe) return false;
+                if (dateAte && d && d > dateAte) return false;
+
+                for (const [colKey, selectedSet] of Object.entries(columnSelections)) {
+                    let itemVal = '';
+                    if (colKey === 'PROD/MAN/IND') itemVal = item['PROD/MAN/IND'] || item.prod_man_ind || '(Vazio)';
+                    else if (colKey === 'dt_aprovacao' || colKey === 'dt_previsao_entrega') itemVal = formatDateBR(item[colKey]) || '(Vazio)';
+                    else if (colKey === 'vl_unitario' || colKey === 'vl_total') itemVal = formatCurrency(item[colKey]) || '(Vazio)';
+                    else itemVal = (item[colKey] ?? '').toString() || '(Vazio)';
+
+                    if (!selectedSet.has(itemVal)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            sortData();
+            currentRenderLimit = batchStep;
+            renderTable();
+
+            if (activeTab === 'Grafico') {
+                renderGraficoView();
+            } else if (activeTab === 'Mensal') {
+                renderMensalView();
+            }
+        }
+
+        function setupClienteDropdown() {
+            allClientes = [...new Set(fullData.map(i => i.cliente))].filter(Boolean).sort();
+            renderClienteOptions(allClientes);
+
+            document.addEventListener('click', (e) => {
+                const dropdown = document.getElementById('clienteDropdown');
+                const input = document.getElementById('filterClienteInput');
+                if (dropdown && !dropdown.contains(e.target) && e.target !== input) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        function openClienteDropdown() {
+            document.getElementById('clienteDropdown').classList.remove('hidden');
+        }
+
+        function filterClienteList() {
+            const term = document.getElementById('filterClienteInput').value.toLowerCase();
+            const filtered = allClientes.filter(c => c.toLowerCase().includes(term));
+            renderClienteOptions(filtered);
+            debouncedApplyFilters();
+        }
+
+        function renderClienteOptions(list) {
+            const container = document.getElementById('clienteListOptions');
+            container.innerHTML = '';
+            list.slice(0, 100).forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'p-2 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-700 dark:text-slate-300 font-sans';
+                div.textContent = c;
+                div.onclick = () => selectCliente(c);
+                container.appendChild(div);
+            });
+        }
+
+        function selectCliente(val) {
+            document.getElementById('filterClienteInput').value = val;
+            document.getElementById('clienteDropdown').classList.add('hidden');
+            applyFilters();
+        }
+
+        function exportToExcel() {
+            if (!filteredData || filteredData.length === 0) {
+                alert("Sem dados para exportar.");
+                return;
+            }
+
+            let exportData = [];
+            let sheetName = "Dados";
+            let fileName = `Relatorio_${activeTab}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+            if (activeTab === 'RS') {
+                sheetName = "RS_Detalhado";
+                exportData = filteredData.map(item => ({
+                    "Orçamento": item.n_orcamento || '',
+                    "OS": item.n_os || '',
+                    "Cliente": item.cliente || '',
+                    "Cód. Cliente/Nº Des.": item.cod_mat_no_cliente || '',
+                    "N. Pedido": item.pedido_cliente || '',
+                    "Item": item.item || '',
+                    "SC": item.cod_interno || '',
+                    "Descrição": item.descricao || '',
+                    "Qtde": parseFloat(item.qtde || 0),
+                    "Aprovação": formatDateBR(item.dt_aprovacao),
+                    "Prazo": formatDateBR(item.dt_previsao_entrega),
+                    "Vl. Unitário": parseFloat(item.vl_unitario || 0),
+                    "Vl. Total": parseFloat(item.vl_total || 0),
+                    "PROD/MAN/IND": item['PROD/MAN/IND'] || item.prod_man_ind || ''
+                }));
+            } else if (activeTab === 'Grafico') {
+                sheetName = "Faturamento_Clientes";
+                const totalsByClient = {};
+                filteredData.forEach(item => {
+                    const client = (item.cliente || 'SEM CLIENTE').trim();
+                    const val = parseFloat(item.vl_total || 0);
+                    totalsByClient[client] = (totalsByClient[client] || 0) + val;
+                });
+
+                exportData = Object.entries(totalsByClient)
+                    .map(([cliente, vlTotal]) => ({
+                        "Cliente": cliente,
+                        "Valor Total": vlTotal
+                    }))
+                    .sort((a, b) => b["Valor Total"] - a["Valor Total"]);
+            } else if (activeTab === 'Mensal') {
+                sheetName = "Evolucao_Mensal";
+                const monthlyAgg = {};
+
+                filteredData.forEach(item => {
+                    const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
+                    if (d) {
+                        const y = d.getFullYear();
+                        const m = d.getMonth();
+                        const key = `${y}-${String(m + 1).padStart(2, '0')}`;
+                        const label = `${monthNames[m]}/${y}`;
+
+                        if (!monthlyAgg[key]) {
+                            monthlyAgg[key] = { label, total: 0, countOfItems: 0 };
+                        }
+
+                        monthlyAgg[key].total += parseFloat(item.vl_total || 0);
+                        monthlyAgg[key].countOfItems += 1;
+                    }
+                });
+
+                exportData = Object.keys(monthlyAgg).sort().map(k => ({
+                    "Mês/Ano": monthlyAgg[k].label,
+                    "Vl. Total": monthlyAgg[k].total,
+                    "Qtde. Itens": monthlyAgg[k].countOfItems
+                }));
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+            XLSX.writeFile(workbook, fileName);
+        }
+
+        let isPbiOpen = false;
+        const PBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiZGVhNmFkYTMtYjZiZS00MDA5LTkwZTUtYjQwZjEzYTRlNTlkIiwidCI6ImQ2OWIzZmE3LTBhMGEtNDhhZC1hNDZmLWVhYmM5YzFiMDRjOCJ9";
+
+        function togglePowerBiView() {
+            isPbiOpen = !isPbiOpen;
+            const tabRS = document.getElementById('viewTabRS');
+            const tabGrafico = document.getElementById('viewTabGrafico');
+            const tabMensal = document.getElementById('viewTabMensal');
+            const pbiView = document.getElementById('pbiView');
+            const filterSection = document.getElementById('filterSection');
+            const btnExport = document.getElementById('btnExport');
+            const btnToggleText = document.getElementById('btnToggleText');
+            const pbiContainer = document.getElementById('pbiContainer');
+
+            if (isPbiOpen) {
+                tabRS.classList.add('hidden');
+                tabGrafico.classList.add('hidden');
+                tabMensal.classList.add('hidden');
+                filterSection.classList.add('hidden');
+                btnExport.classList.add('hidden');
+                pbiView.classList.remove('hidden');
+                btnToggleText.textContent = "Voltar ao Dashboard";
+
+                if (!pbiContainer.innerHTML.trim()) {
+                    pbiContainer.innerHTML = `<iframe title="RS Power BI" class="w-full h-full border-0" src="${PBI_URL}" allowFullScreen="true"></iframe>`;
+                }
+            } else {
+                pbiView.classList.add('hidden');
+                filterSection.classList.remove('hidden');
+                btnExport.classList.remove('hidden');
+                btnToggleText.textContent = "Acessar Power BI";
+                switchMainTab(activeTab);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+            loadRsData();
+        });
+    </script>
+</body>
+</html>
