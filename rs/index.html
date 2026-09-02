@@ -1,405 +1,194 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="light">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Mensal - Sintercan</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              orange: '#f97316',
-              darkOrange: '#ea580c',
-            }
-          }
-        }
-      }
-    }
-  </script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-  <style>
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 4px;
-    }
-    .dark ::-webkit-scrollbar-thumb {
-      background: #334155;
-    }
-  </style>
-</head>
-<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-200 min-h-screen flex flex-col font-sans text-xs">
-
-  <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between shadow-sm transition-colors duration-200">
-    <div class="flex items-center gap-4">
-      <button class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i>
-      </button>
-      
-      <div class="flex items-center justify-center p-1.5 bg-slate-950 rounded-xl border border-slate-800 shadow-inner px-3">
-        <img src="../logo.png" alt="Logo" class="h-7 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-        <div class="hidden p-1 bg-amber-500 rounded-lg text-slate-950 font-bold items-center justify-center gap-1">
-          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-          <span class="text-xs tracking-wider">CONSULTORIA.RF</span>
-        </div>
-      </div>
-
-      <div>
-        <h1 class="text-sm font-bold text-slate-900 dark:text-white leading-tight">Sintercan</h1>
-        <p class="text-[10px] text-amber-600 dark:text-amber-500 font-semibold tracking-wider uppercase">Dashboard Mensal</p>
-      </div>
-    </div>
-
-    <div class="flex items-center gap-2">
-      <button id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Alternar Tema">
-        <i data-lucide="moon" class="w-4 h-4 hidden dark:block"></i>
-        <i data-lucide="sun" class="w-4 h-4 block dark:hidden"></i>
-      </button>
-
-      <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition-colors shadow-sm">
-        <i data-lucide="filter-x" class="w-3.5 h-3.5 text-amber-500"></i>
-        <span>Limpar Filtros</span>
-      </button>
-
-      <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors shadow-sm">
-        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
-        <span>Exportar Excel</span>
-      </button>
-
-      <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold transition-colors shadow-sm">
-        <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
-        <span>Acessar Power BI</span>
-      </button>
-    </div>
-  </header>
-
-  <section class="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-4 py-2.5 grid grid-cols-1 md:grid-cols-5 gap-3 transition-colors duration-200">
-    <div>
-      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Pesquisa Geral</label>
-      <div class="relative">
-        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-        <input type="text" placeholder="Buscar em tudo..." class="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500">
-      </div>
-    </div>
-
-    <div>
-      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Cliente</label>
-      <select class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500">
-        <option value="">Selecione ou busque...</option>
-      </select>
-    </div>
-
-    <div>
-      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Ano / Mês</label>
-      <select class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium">
-        <option value="2026">2026 (12 meses)</option>
-      </select>
-    </div>
-
-    <div>
-      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Data De</label>
-      <div class="relative">
-        <input type="text" placeholder="dd/mm/aaaa" class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500">
-        <i data-lucide="calendar" class="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-      </div>
-    </div>
-
-    <div>
-      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Data Até</label>
-      <div class="relative">
-        <input type="text" placeholder="dd/mm/aaaa" class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500">
-        <i data-lucide="calendar" class="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-      </div>
-    </div>
-  </section>
-
-  <main class="flex-1 p-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RS - Sintercan</title>
+    <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
     
-    <div class="lg:col-span-4 flex flex-col gap-3">
-      
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center shadow-sm transition-colors duration-200">
-        <div class="text-base font-extrabold text-slate-900 dark:text-white">R$ 18.470.955,54</div>
-        <div class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">VL. TOTAL</div>
-      </div>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
 
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center shadow-sm transition-colors duration-200">
-        <div class="text-base font-extrabold text-slate-900 dark:text-white">2.014</div>
-        <div class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">QTDE. ITENS</div>
-      </div>
-
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center shadow-sm transition-colors duration-200">
-        <div class="text-base font-extrabold text-slate-900 dark:text-white">R$ 2.052.328,39</div>
-        <div class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">MÉDIA MENSAL</div>
-      </div>
-
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center shadow-sm transition-colors duration-200">
-        <div class="text-base font-extrabold text-slate-900 dark:text-white">R$ 18.470.955,54</div>
-        <div class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">MÉDIA ANUAL</div>
-      </div>
-
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex-1 flex flex-col transition-colors duration-200">
-        <div class="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-          <span class="font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[11px]">RESUMO MENSAL</span>
-          <span class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full text-[10px] font-semibold">9 meses</span>
-        </div>
-
-        <div class="overflow-x-auto flex-1">
-          <table class="w-full text-left">
-            <thead>
-              <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">
-                <th class="py-2 px-3">Mês/Ano</th>
-                <th class="py-2 px-3 text-right">Vl. Total</th>
-                <th class="py-2 px-3 text-right">Qtde. Itens</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
-              <tr>
-                <td class="py-1.5 px-3">jan/2026</td>
-                <td class="py-1.5 px-3 text-right text-amber-600 dark:text-amber-500 font-semibold">R$ 1.731.190,91</td>
-                <td class="py-1.5 px-3 text-right text-slate-600 dark:text-slate-300">210</td>
-              </tr>
-              <tr>
-                <td class="py-1.5 px-3">fev/2026</td>
-                <td class="py-1.5 px-3 text-right text-amber-600 dark:text-amber-500 font-semibold">R$ 1.544.491,27</td>
-                <td class="py-1.5 px-3 text-right text-slate-600 dark:text-slate-300">221</td>
-              </tr>
-              <tr>
-                <td class="py-1.5 px-3">mar/2026</td>
-                <td class="py-1.5 px-3 text-right text-amber-600 dark:text-amber-500 font-semibold">R$ 2.094.443,39</td>
-                <td class="py-1.5 px-3 text-right text-slate-600 dark:text-slate-300">192</td>
-              </tr>
-              <tr>
-                <td class="py-1.5 px-3">abr/2026</td>
-                <td class="py-1.5 px-3 text-right text-amber-600 dark:text-amber-500 font-semibold">R$ 2.574.862,80</td>
-                <td class="py-1.5 px-3 text-right text-slate-600 dark:text-slate-300">221</td>
-              </tr>
-              <tr>
-                <td class="py-1.5 px-3">mai/2026</td>
-                <td class="py-1.5 px-3 text-right text-amber-600 dark:text-amber-500 font-semibold">R$ 2.903.372,24</td>
-                <td class="py-1.5 px-3 text-right text-slate-600 dark:text-slate-300">234</td>
-              </tr>
-              <tr>
-                <td class="py-1.5 px-3">jun/2026</td>
-                <td class="py-1.5 px-3 text-right text-amber-600 dark:text-amber-500 font-semibold">R$ 2.481.815,97</td>
-                <td class="py-1.5 px-3 text-right text-slate-600 dark:text-slate-300">338</td>
-              </tr>
-              <tr>
-                <td class="py-1.5 px-3">jul/2026</td>
-                <td class="py-1.5 px-3 text-right text-amber-600 dark:text-amber-500 font-semibold">R$ 2.567.833,01</td>
-                <td class="py-1.5 px-3 text-right text-slate-600 dark:text-slate-300">261</td>
-              </tr>
-              <tr>
-                <td class="py-1.5 px-3">ago/2026</td>
-                <td class="py-1.5 px-3 text-right text-amber-600 dark:text-amber-500 font-semibold">R$ 2.506.504,95</td>
-                <td class="py-1.5 px-3 text-right text-slate-600 dark:text-slate-300">327</td>
-              </tr>
-              <tr>
-                <td class="py-1.5 px-3">set/2026</td>
-                <td class="py-1.5 px-3 text-right text-amber-600 dark:text-amber-500 font-semibold">R$ 66.441,00</td>
-                <td class="py-1.5 px-3 text-right text-slate-600 dark:text-slate-300">10</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="lg:col-span-8 flex flex-col">
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm h-full flex flex-col transition-colors duration-200">
-        
-        <div class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 text-center font-bold py-2 px-4 rounded-xl text-xs tracking-wider uppercase border border-slate-200/80 dark:border-slate-800 shadow-inner">
-          GRÁFICO MENSAL
-        </div>
-
-        <div class="flex-1 min-h-[420px] mt-4 relative">
-          <canvas id="graficoMensal"></canvas>
-        </div>
-
-      </div>
-    </div>
-
-  </main>
-
-  <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 py-2 overflow-x-auto transition-colors duration-200">
-    <div class="flex items-center gap-1 min-w-max text-[11px] font-medium">
-      <button class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">RS</button>
-      <button class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Gráfico</button>
-      <button class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold shadow-sm">Mensal</button>
-      <button class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Mensal por cliente</button>
-      <button class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Classificação de vendas</button>
-      <button class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Pedidos em aberto</button>
-      <button class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Notas Fiscais</button>
-      <button class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Pedidos em carteira</button>
-      <button class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Valores por prazo de entrega</button>
-    </div>
-  </footer>
-
-  <script>
-    // Inicializar ícones do Lucide
-    lucide.createIcons();
-
-    // Dados do Dashboard
-    const labels = ['jan/2026', 'fev/2026', 'mar/2026', 'abr/2026', 'mai/2026', 'jun/2026', 'jul/2026', 'ago/2026', 'set/2026'];
-    const valoresReais = [1.73, 1.54, 2.09, 2.57, 2.90, 2.48, 2.57, 2.51, 0.066]; // Em Milhões
-    const valoresFormatados = ['R$ 1,7 Mi', 'R$ 1,5 Mi', 'R$ 2,1 Mi', 'R$ 2,6 Mi', 'R$ 2,9 Mi', 'R$ 2,5 Mi', 'R$ 2,6 Mi', 'R$ 2,5 Mi', 'R$ 66 Mil'];
-    const quantidades = [210, 221, 192, 221, 234, 338, 261, 327, 10];
-
-    let chartInstance = null;
-
-    // Função para obter cores dinâmicas conforme o tema ativo
-    function getThemeColors() {
-      const isDark = document.documentElement.classList.contains('dark');
-      return {
-        text: isDark ? '#94a3b8' : '#475569',
-        grid: isDark ? '#1e293b' : '#e2e8f0',
-        barBg: isDark ? '#475569' : '#94a3b8',
-        barBorder: '#ea580c',
-        lineColor: '#f97316'
-      };
-    }
-
-    // Inicialização do Chart.js com suporte a Tema Dinâmico
-    function initChart() {
-      const ctx = document.getElementById('graficoMensal').getContext('2d');
-      const colors = getThemeColors();
-
-      chartInstance = new Chart(ctx, {
-        type: 'bar',
-        plugins: [ChartDataLabels],
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              type: 'line',
-              label: 'Qtde. Itens',
-              data: quantidades,
-              borderColor: colors.lineColor,
-              backgroundColor: colors.lineColor,
-              borderWidth: 2.5,
-              pointBackgroundColor: '#ffffff',
-              pointBorderColor: colors.lineColor,
-              pointBorderWidth: 2,
-              pointRadius: 5,
-              pointHoverRadius: 7,
-              tension: 0.2,
-              yAxisID: 'y1',
-              datalabels: {
-                align: 'top',
-                anchor: 'end',
-                backgroundColor: '#ffffff',
-                borderColor: '#cbd5e1',
-                borderWidth: 1,
-                borderRadius: 4,
-                color: '#0f172a',
-                font: { weight: 'bold', size: 10 },
-                padding: { top: 2, bottom: 2, left: 4, right: 4 },
-                formatter: (val) => val
-              }
-            },
-            {
-              type: 'bar',
-              label: 'Vl. Total',
-              data: valoresReais,
-              backgroundColor: colors.barBg,
-              borderColor: colors.barBorder,
-              borderWidth: 1.5,
-              borderRadius: 4,
-              yAxisID: 'y',
-              datalabels: {
-                align: 'center',
-                anchor: 'center',
-                backgroundColor: 'rgba(234, 88, 12, 0.85)',
-                borderRadius: 4,
-                color: '#ffffff',
-                font: { weight: 'bold', size: 10 },
-                padding: { top: 3, bottom: 3, left: 6, right: 6 },
-                formatter: (val, ctx) => valoresFormatados[ctx.dataIndex]
-              }
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: {
-              position: 'top',
-              align: 'start',
-              labels: {
-                color: colors.text,
-                usePointStyle: true,
-                boxWidth: 8,
-                font: { size: 11, weight: '600' }
-              }
-            },
-            tooltip: {
-              backgroundColor: '#0f172a',
-              titleColor: '#f8fafc',
-              bodyColor: '#f8fafc',
-              padding: 10,
-              cornerRadius: 8
-            }
-          },
-          scales: {
-            x: {
-              ticks: { color: colors.text, font: { size: 10 } },
-              grid: { display: false }
-            },
-            y: {
-              type: 'linear',
-              display: false,
-              position: 'left',
-              max: 3.5
-            },
-            y1: {
-              type: 'linear',
-              display: false,
-              position: 'right',
-              max: 400
-            }
-          }
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
         }
-      });
-    }
+    </script>
 
-    // Função de Troca de Tema (Light / Dark)
-    function toggleTheme() {
-      const html = document.documentElement;
-      if (html.classList.contains('dark')) {
-        html.classList.remove('dark');
-        html.classList.add('light');
-      } else {
-        html.classList.remove('light');
-        html.classList.add('dark');
-      }
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        .dark ::-webkit-scrollbar-track { background: #0f172a; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        th { user-select: none; }
+        .col-filter-popover { display: none; }
+        .col-filter-popover.active { display: block; }
+    </style>
+</head>
+<body class="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-hidden transition-colors duration-200">
 
-      // Atualiza as cores do gráfico após alterar a classe HTML
-      if (chartInstance) {
-        const colors = getThemeColors();
-        chartInstance.options.plugins.legend.labels.color = colors.text;
-        chartInstance.options.scales.x.ticks.color = colors.text;
-        chartInstance.data.datasets[1].backgroundColor = colors.barBg;
-        chartInstance.update();
-      }
-    }
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 shadow-md flex-shrink-0">
+        <div class="w-full px-4 py-2 flex justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <button onclick="goBack()" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-300 dark:border-slate-700 flex items-center justify-center cursor-pointer" title="Voltar ao Menu">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </button>
+                
+                <div class="flex items-center justify-center p-1 bg-slate-950 rounded-xl border border-slate-800 shadow-inner">
+                    <img src="../logo.png" alt="Logo" class="h-8 max-h-9 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="hidden p-2 bg-amber-500 rounded-xl text-slate-950 font-bold items-center justify-center">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                    </div>
+                </div>
 
-    // Renderizar gráfico ao carregar página
-    window.addEventListener('DOMContentLoaded', initChart);
-  </script>
-</body>
-</html>
+                <div>
+                    <h1 class="text-base font-extrabold tracking-wide text-slate-900 dark:text-white leading-tight">Sintercan</h1>
+                    <p id="headerSubtitle" class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wider">Dashboard RS</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="resetAllFilters()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 cursor-pointer">
+                    <i data-lucide="filter-x" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
+                    <span>Limpar Filtros</span>
+                </button>
+                <button id="btnExport" onclick="exportToExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/10 cursor-pointer">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                    <span id="btnExportText">Exportar Excel</span>
+                </button>
+                <button id="btnTogglePbi" onclick="togglePowerBiView()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/10 cursor-pointer">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span id="btnToggleText">Acessar Power BI</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <section id="filterSection" class="bg-slate-50 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 p-2.5 flex-shrink-0">
+        <div class="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 text-xs">
+            <div>
+                <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Pesquisa Geral</label>
+                <div class="relative">
+                    <input type="text" id="filterGlobal" oninput="debouncedApplyFilters()" placeholder="Buscar em tudo..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg pl-8 pr-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-2 top-1.5 text-slate-400 dark:text-slate-500"></i>
+                </div>
+            </div>
+
+            <div class="relative">
+                <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Cliente</label>
+                <input type="text" id="filterClienteInput" onfocus="openClienteDropdown()" oninput="filterClienteList()" placeholder="Selecione ou busque..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                <div id="clienteDropdown" class="hidden absolute top-full left-0 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg max-h-48 overflow-y-auto z-50 shadow-2xl">
+                    <div onclick="selectCliente('')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-amber-600 dark:text-amber-400 border-b border-slate-200 dark:border-slate-800">-- Todos os Clientes --</div>
+                    <div id="clienteListOptions"></div>
+                </div>
+            </div>
+
+            <div class="relative">
+                <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Ano / Mês</label>
+                <button onclick="toggleAnoMesTree()" id="btnAnoMesLabel" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-left text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500 flex justify-between items-center cursor-pointer">
+                    <span id="anoMesSelectedText" class="truncate">Ano Atual</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                </button>
+                <div id="anoMesTreeContainer" class="hidden absolute top-full left-0 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg max-h-60 overflow-y-auto z-50 shadow-2xl p-2 font-sans">
+                    <div id="treeContent" class="space-y-1"></div>
+                </div>
+            </div>
+
+            <div class="col-span-1 sm:col-span-2 grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Data De</label>
+                    <input type="date" id="filterDataDe" onchange="applyFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Data Até</label>
+                    <input type="date" id="filterDataAte" onchange="applyFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main class="flex-1 w-full h-full overflow-hidden relative bg-slate-100 dark:bg-slate-950 p-2">
+        
+        <div id="viewTabRS" class="h-full w-full flex flex-col overflow-hidden">
+            <div class="flex-1 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/50 overflow-y-auto overflow-x-hidden shadow-2xl relative">
+                <table id="mainTable" class="w-full text-left text-[11px] border-collapse table-fixed">
+                    <thead class="bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-300 sticky top-0 z-20 border-b border-slate-300 dark:border-slate-800 font-semibold">
+                        <tr>
+                            <th class="w-[5.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
+                                <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('n_orcamento')">
+                                    <span class="truncate">Orçamento <span id="sort_n_orcamento"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('n_orcamento')" id="btn_filter_n_orcamento" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_n_orcamento" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[4.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
+                                <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('n_os')">
+                                    <span class="truncate">OS <span id="sort_n_os"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('n_os')" id="btn_filter_n_os" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_n_os" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[15%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
+                                <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cliente')">
+                                    <span class="truncate">Cliente <span id="sort_cliente"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cliente')" id="btn_filter_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[8.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
+                                <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cod_mat_no_cliente')">
+                                    <span class="truncate" title="Cód. Cliente/Nº Des.">Cód. Cliente/Nº Des. <span id="sort_cod_mat_no_cliente"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cod_mat_no_cliente')" id="btn_filter_cod_mat_no_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_cod_mat_no_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-56 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
+                                <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('pedido_cliente')">
+                                    <span class="truncate">N. Pedido <span id="sort_pedido_cliente"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('pedido_cliente')" id="btn_filter_pedido_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_pedido_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[4%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
+                                <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('item')">
+                                    <span class="truncate">Item <span id="sort_item"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('item')" id="btn_filter_item" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_item" class="col-filter-popover absolute left-0 top-full mt-1 w-44 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[5.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
+                                <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cod_interno')">
+                                    <span class="truncate">SC <span id="sort_cod_interno"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cod_interno')" id="btn_filter_cod_interno" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_cod_interno" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[18.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
+                                <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('descricao')">
+                                    <span class="truncate">Descrição <span id="sort_descricao"></span></span>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('descricao')" id="btn_filter_descricao" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                </div>
+                                <div id="filter_popover_descricao" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                            </th>
+
+                            <th class="w-[4%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-right relative group">
+                                <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('qtde')">
+                                    <span class="truncate">Qtde. <span id="sort_qtde"></span></span>
+                                    <button
