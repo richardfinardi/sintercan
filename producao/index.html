@@ -19,78 +19,84 @@
     <meta property="og:type" content="website">
     
     <title>Programação Semanal de Produção Sintercan V6.7</title>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
 
-   
-<script>
-    tailwind.config = { darkMode: 'class' }
-</script>
+    <!-- Script de leitura do tema vindo da index -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
 
-<script>
-    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
-</script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #0f172a; color: #f8fafc; }
-        .custom-scroll::-webkit-scrollbar { width: 5px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #1e293b; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .dark .custom-scroll::-webkit-scrollbar-track { background: #1e293b; }
+        .dark .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #e2e8f0; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-200">
 
     <!-- HEADER -->
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-md">
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
             
             <!-- Botão Voltar & Título -->
             <div class="flex items-center gap-4">
-                <a href="../" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700 flex items-center justify-center" title="Voltar ao Menu">
+                <a href="../" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-300 dark:border-slate-700 flex items-center justify-center" title="Voltar ao Menu">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
-                <div class="flex items-center justify-center p-1 bg-slate-950/80 rounded-xl border border-slate-800 shadow-inner">
+                
+                <!-- LOGO FIXA EM FUNDO ESCURO PARA MANTER VISIBILIDADE -->
+                <div class="flex items-center justify-center p-1 bg-slate-950 rounded-xl border border-slate-800 shadow-inner">
                     <img src="../logo.png" alt="Logo" class="h-10 max-h-12 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="hidden p-2 bg-amber-500 rounded-xl text-slate-950 font-bold items-center justify-center">
                         <i data-lucide="factory" class="w-6 h-6"></i>
                     </div>
                 </div>
+
                 <div>
-                    <h1 class="text-xl font-extrabold tracking-wide text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-400">Controle Semanal de Produção <span class="text-amber-400 font-mono">V6.7</span></p>
+                    <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.7</span></p>
                 </div>
             </div>
 
             <!-- NAVEGADOR DE MÊS -->
-            <div class="flex items-center bg-slate-900/90 border border-slate-700/80 rounded-2xl px-2 py-1.5 shadow-md">
-                <button onclick="changeMonth(-1)" class="p-1.5 hover:bg-slate-800 rounded-xl text-slate-300 hover:text-white transition">
+            <div class="flex items-center bg-slate-100 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-2xl px-2 py-1.5 shadow-md">
+                <button onclick="changeMonth(-1)" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-700 dark:text-slate-300 transition">
                     <i data-lucide="chevron-left" class="w-5 h-5"></i>
                 </button>
                 
                 <div class="flex items-center gap-2 px-3">
-                    <i data-lucide="calendar" class="w-5 h-5 text-amber-400"></i>
-                    <span id="currentMonthYearLabel" class="font-bold text-sm text-white capitalize tracking-wide min-w-[130px] text-center">
+                    <i data-lucide="calendar" class="w-5 h-5 text-amber-500 dark:text-amber-400"></i>
+                    <span id="currentMonthYearLabel" class="font-bold text-sm text-slate-900 dark:text-white capitalize tracking-wide min-w-[130px] text-center">
                         Carregando...
                     </span>
                 </div>
 
-                <button onclick="changeMonth(1)" class="p-1.5 hover:bg-slate-800 rounded-xl text-slate-300 hover:text-white transition">
+                <button onclick="changeMonth(1)" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-700 dark:text-slate-300 transition">
                     <i data-lucide="chevron-right" class="w-5 h-5"></i>
                 </button>
 
-                <button onclick="resetToToday()" class="ml-2 px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold text-white transition">
+                <button onclick="resetToToday()" class="ml-2 px-3 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white transition">
                     Hoje
                 </button>
             </div>
 
             <!-- Botões de Ação -->
             <div class="flex items-center gap-2">
-                <button id="btnToggleValues" onclick="toggleValuesVisibility()" class="hidden items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl font-semibold text-xs transition">
+                <button id="btnToggleValues" onclick="toggleValuesVisibility()" class="hidden items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl font-semibold text-xs transition">
                     <i data-lucide="eye" class="w-4 h-4" id="eyeIcon"></i>
                     <span id="lblToggleValues">Ocultar Valores</span>
                 </button>
@@ -104,23 +110,23 @@
     </header>
 
     <!-- METRICS BAR -->
-    <div class="bg-slate-900/60 border-b border-slate-800 text-white shadow-inner">
+    <div class="bg-slate-200/60 dark:bg-slate-900/60 border-b border-slate-300 dark:border-slate-800 text-slate-800 dark:text-white shadow-inner">
         <div class="max-w-7xl mx-auto px-4 py-3 grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
-                <span class="text-[10px] text-slate-400 font-bold uppercase block">Total de OS (Filtrado)</span>
-                <span id="metricTotalOS" class="text-xl font-extrabold text-slate-100">0</span>
+            <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">Total de OS (Filtrado)</span>
+                <span id="metricTotalOS" class="text-xl font-extrabold text-slate-900 dark:text-slate-100">0</span>
             </div>
-            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
-                <span class="text-[10px] text-slate-400 font-bold uppercase block">OS Atrasadas</span>
-                <span id="metricAtrasadas" class="text-xl font-extrabold text-red-400">0</span>
+            <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">OS Atrasadas</span>
+                <span id="metricAtrasadas" class="text-xl font-extrabold text-red-500 dark:text-red-400">0</span>
             </div>
-            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
-                <span class="text-[10px] text-slate-400 font-bold uppercase block">Valor Geral Total</span>
-                <span id="metricValorTotal" class="text-xl font-extrabold text-emerald-400">R$ 0,00</span>
+            <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">Valor Geral Total</span>
+                <span id="metricValorTotal" class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">R$ 0,00</span>
             </div>
-            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
-                <span class="text-[10px] text-slate-400 font-bold uppercase block">Sem Orçamento</span>
-                <span id="metricSemOrcamento" class="text-xl font-extrabold text-amber-400">0</span>
+            <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">Sem Orçamento</span>
+                <span id="metricSemOrcamento" class="text-xl font-extrabold text-amber-600 dark:text-amber-400">0</span>
             </div>
         </div>
     </div>
@@ -128,81 +134,81 @@
     <!-- CONTROLES E FILTROS -->
     <main class="max-w-7xl w-full mx-auto p-4 flex flex-col gap-4 flex-1">
         
-        <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+        <div class="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-sm">
             
             <!-- Busca Geral Universal -->
-            <div class="flex items-center gap-2 flex-1 min-w-[200px] bg-slate-950 border border-slate-800 rounded-xl px-3 py-2">
+            <div class="flex items-center gap-2 flex-1 min-w-[200px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
                 <input type="text" id="searchInput" oninput="renderCalendar()" placeholder="Pesquisar qualquer coisa (OS, Pedido, SC, Título, Cliente...)" 
-                       class="w-full text-xs bg-transparent text-white focus:outline-none placeholder-slate-500">
+                       class="w-full text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none placeholder-slate-400 dark:placeholder-slate-500">
             </div>
 
             <!-- Filtro por Cliente -->
-            <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2">
+            <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
-                <select id="clientFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-white focus:outline-none cursor-pointer max-w-[140px]">
-                    <option value="" class="bg-slate-900">Todos os Clientes</option>
+                <select id="clientFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[140px]">
+                    <option value="" class="bg-white dark:bg-slate-900">Todos os Clientes</option>
                 </select>
             </div>
 
             <!-- Filtro por Status Compras -->
-            <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2">
+            <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="shopping-cart" class="w-4 h-4 text-slate-400"></i>
-                <select id="comprasFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-white focus:outline-none cursor-pointer max-w-[140px]">
-                    <option value="" class="bg-slate-900">Status Compras (Todos)</option>
+                <select id="comprasFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[140px]">
+                    <option value="" class="bg-white dark:bg-slate-900">Status Compras (Todos)</option>
                 </select>
             </div>
 
             <!-- Filtro por Status Terceiros -->
-            <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2">
+            <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="truck" class="w-4 h-4 text-slate-400"></i>
-                <select id="terceirosFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-white focus:outline-none cursor-pointer max-w-[140px]">
-                    <option value="" class="bg-slate-900">Status Terceiros (Todos)</option>
+                <select id="terceirosFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[140px]">
+                    <option value="" class="bg-white dark:bg-slate-900">Status Terceiros (Todos)</option>
                 </select>
             </div>
 
             <!-- BOTÕES DE FILTRO SEPARADOS -->
-            <div class="flex items-center gap-2">
-                <button id="btnToggleSort" onclick="toggleSortMode()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="Alternar ordenação entre Data e Cliente">
-                    <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 text-blue-400"></i>
+            <div class="flex items-center gap-2 flex-wrap">
+                <button id="btnToggleSort" onclick="toggleSortMode()" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="Alternar ordenação entre Data e Cliente">
+                    <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 text-blue-500 dark:text-blue-400"></i>
                     <span id="txtToggleSort">Ord.: Cliente</span>
                 </button>
 
-                <button id="btnToggleMonth" onclick="toggleMonthFilter()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
-                    <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-amber-400"></i>
+                <button id="btnToggleMonth" onclick="toggleMonthFilter()" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+                    <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400"></i>
                     <span id="txtToggleMonth">Apenas Mês Selecionado</span>
                 </button>
 
-                <button id="btnToggleOrcamento" onclick="toggleOrcamentoFilter()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
-                    <i data-lucide="dollar-sign" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <button id="btnToggleOrcamento" onclick="toggleOrcamentoFilter()" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+                    <i data-lucide="dollar-sign" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400"></i>
                     <span id="txtToggleOrcamento">Apenas Com Orçamento</span>
                 </button>
 
                 <!-- BOTÃO LIMPAR FILTROS -->
-                <button onclick="clearAllFilters()" title="Limpar todos os filtros acionados" class="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
-                    <i data-lucide="filter-x" class="w-3.5 h-3.5 text-red-400"></i>
+                <button onclick="clearAllFilters()" title="Limpar todos os filtros acionados" class="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                    <i data-lucide="filter-x" class="w-3.5 h-3.5 text-red-500 dark:text-red-400"></i>
                     <span>Limpar Filtros</span>
                 </button>
             </div>
         </div>
 
         <!-- LEGENDAS -->
-        <div class="flex items-center gap-4 text-xs font-medium px-1 text-slate-400">
+        <div class="flex items-center gap-4 text-xs font-medium px-1 text-slate-500 dark:text-slate-400">
             <span>Legendas:</span>
             <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-red-500"></span> Atrasada</span>
             <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-600"></span> No Prazo</span>
             <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-400"></span> Sem Orçamento</span>
         </div>
 
-        <!-- GRID DE SEMANAS -->
-        <div id="calendarGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-            <!-- As semanas serão geradas aqui -->
+        <!-- LAYOUT HORIZONTAL DE SEMANAS (1 LINHA POR SEMANA COM CARDS QUE PULAM LINHA) -->
+        <div id="calendarGrid" class="flex flex-col gap-6">
+            <!-- As semanas serão geradas horizontalmente aqui -->
         </div>
     </main>
 
     <!-- FOOTER -->
-    <footer class="bg-slate-900 border-t border-slate-800 py-4 mt-8">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+    <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
             <div class="flex items-center gap-2">
                 <i data-lucide="code-2" class="w-4 h-4 text-amber-500"></i>
                 <span>© 2026 Sistema de Gestão de Produção V6.5</span>
@@ -212,73 +218,73 @@
 
     <!-- MODAL DE DETALHES DA OS -->
     <div id="osModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 text-slate-100 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-800 max-h-[90vh] flex flex-col">
-            <div class="bg-slate-950 px-6 py-4 flex justify-between items-center border-b border-slate-800">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
+            <div class="bg-slate-100 dark:bg-slate-950 px-6 py-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-800">
                 <div>
                     <span id="mOS" class="text-xs font-bold bg-amber-500 text-slate-950 px-2 py-0.5 rounded uppercase"></span>
-                    <h3 id="mTitulo" class="font-bold text-sm mt-1 text-white"></h3>
+                    <h3 id="mTitulo" class="font-bold text-sm mt-1 text-slate-900 dark:text-white"></h3>
                 </div>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-800 dark:hover:text-white p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             
             <div class="p-5 space-y-3 text-xs overflow-y-auto custom-scroll flex-1">
-                <div class="grid grid-cols-2 gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <div><span class="text-slate-400 block font-semibold">Nº Pedido</span><span id="mPedido" class="font-bold text-slate-200"></span></div>
-                    <div><span class="text-slate-400 block font-semibold">Cliente</span><span id="mCliente" class="font-bold text-slate-200"></span></div>
-                    <div><span class="text-slate-400 block font-semibold">CNPJ Cliente</span><span id="mCnpj" class="font-bold text-amber-400 font-mono"></span></div>
-                    <div><span class="text-slate-400 block font-semibold">Preço Geral / Valor</span><span id="mPreco" class="font-bold text-emerald-400"></span></div>
-                    <div><span class="text-slate-400 block font-semibold">Possui Orçamento</span><span id="mPossuiOrcamento" class="font-bold text-slate-200"></span></div>
-                    <div class="border-t border-slate-800/80 pt-1.5 mt-0.5">
-                        <span class="text-slate-400 block font-semibold">Nº do Orçamento</span>
-                        <span id="mNumOrcamento" class="font-bold text-amber-400"></span>
+                <div class="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <div><span class="text-slate-500 dark:text-slate-400 block font-semibold">Nº Pedido</span><span id="mPedido" class="font-bold text-slate-800 dark:text-slate-200"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400 block font-semibold">Cliente</span><span id="mCliente" class="font-bold text-slate-800 dark:text-slate-200"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400 block font-semibold">CNPJ Cliente</span><span id="mCnpj" class="font-bold text-amber-600 dark:text-amber-400 font-mono"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400 block font-semibold">Preço Geral / Valor</span><span id="mPreco" class="font-bold text-emerald-600 dark:text-emerald-400"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400 block font-semibold">Possui Orçamento</span><span id="mPossuiOrcamento" class="font-bold text-slate-800 dark:text-slate-200"></span></div>
+                    <div class="border-t border-slate-200 dark:border-slate-800/80 pt-1.5 mt-0.5">
+                        <span class="text-slate-500 dark:text-slate-400 block font-semibold">Nº do Orçamento</span>
+                        <span id="mNumOrcamento" class="font-bold text-amber-600 dark:text-amber-400"></span>
                     </div>
                 </div>
 
                 <!-- BLOCO QUANTIDADES RESTANTES -->
-                <div class="grid grid-cols-2 gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800/80">
+                <div class="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80">
                     <div>
-                        <span class="text-slate-400 block font-semibold">Qtd. Restante Orçamento</span>
-                        <span id="mQtdOrcamento" class="font-bold text-blue-400 text-sm">0</span>
+                        <span class="text-slate-500 dark:text-slate-400 block font-semibold">Qtd. Restante Orçamento</span>
+                        <span id="mQtdOrcamento" class="font-bold text-blue-600 dark:text-blue-400 text-sm">0</span>
                     </div>
                     <div>
-                        <span class="text-slate-400 block font-semibold">Qtd. Restante Estoque</span>
-                        <span id="mQtdEstoque" class="font-bold text-emerald-400 text-sm">0</span>
+                        <span class="text-slate-500 dark:text-slate-400 block font-semibold">Qtd. Restante Estoque</span>
+                        <span id="mQtdEstoque" class="font-bold text-emerald-600 dark:text-emerald-400 text-sm">0</span>
                     </div>
                 </div>
 
                 <div class="space-y-1.5">
-                    <h4 class="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Status da Operação</h4>
+                    <h4 class="font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px]">Status da Operação</h4>
                     <div class="grid grid-cols-2 gap-2">
-                        <div class="bg-slate-950 p-2 rounded-lg border border-slate-800"><span class="text-slate-400 block">Compras</span><span id="mCompras" class="font-semibold text-slate-200"></span></div>
-                        <div class="bg-slate-950 p-2 rounded-lg border border-slate-800"><span class="text-slate-400 block">Terceiros</span><span id="mTerceiros" class="font-semibold text-slate-200"></span></div>
-                        <div class="bg-slate-950 p-2 rounded-lg border border-slate-800"><span class="text-slate-400 block">Produção</span><span id="mProducao" class="font-semibold text-blue-400"></span></div>
-                        <div class="bg-slate-950 p-2 rounded-lg border border-slate-800"><span class="text-slate-400 block">Atrasada</span><span id="mAtrasada" class="font-bold"></span></div>
+                        <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200 dark:border-slate-800"><span class="text-slate-500 dark:text-slate-400 block">Compras</span><span id="mCompras" class="font-semibold text-slate-800 dark:text-slate-200"></span></div>
+                        <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200 dark:border-slate-800"><span class="text-slate-500 dark:text-slate-400 block">Terceiros</span><span id="mTerceiros" class="font-semibold text-slate-800 dark:text-slate-200"></span></div>
+                        <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200 dark:border-slate-800"><span class="text-slate-500 dark:text-slate-400 block">Produção</span><span id="mProducao" class="font-semibold text-blue-600 dark:text-blue-400"></span></div>
+                        <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200 dark:border-slate-800"><span class="text-slate-500 dark:text-slate-400 block">Atrasada</span><span id="mAtrasada" class="font-bold"></span></div>
                     </div>
                 </div>
 
-                <div class="space-y-1.5 text-[11px] pt-2 border-t border-slate-800">
-                    <div><span class="text-slate-400">Abertura OS:</span> <span id="mAbertura" class="font-medium text-slate-300"></span></div>
-                    <div><span class="text-slate-400">Prev. Entrega OS (TOS.DT_PREVISTA):</span> <span id="mPrevEntregaOS" class="font-bold text-amber-400"></span></div>
-                    <div><span class="text-slate-400">Prazo Entrega Original:</span> <span id="mPrazoOriginal" class="font-bold text-blue-400"></span></div>
-                    <div><span class="text-slate-400">Último Apontamento:</span> <span id="mApontamento" class="font-medium text-slate-300"></span></div>
-                    <div><span class="text-slate-400">Entrega Normalizada:</span> <span id="mEntregaNorm" class="font-bold text-amber-400"></span></div>
+                <div class="space-y-1.5 text-[11px] pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <div><span class="text-slate-500 dark:text-slate-400">Abertura OS:</span> <span id="mAbertura" class="font-medium text-slate-700 dark:text-slate-300"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400">Prev. Entrega OS (TOS.DT_PREVISTA):</span> <span id="mPrevEntregaOS" class="font-bold text-amber-600 dark:text-amber-400"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400">Prazo Entrega Original:</span> <span id="mPrazoOriginal" class="font-bold text-blue-600 dark:text-blue-400"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400">Último Apontamento:</span> <span id="mApontamento" class="font-medium text-slate-700 dark:text-slate-300"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400">Entrega Normalizada:</span> <span id="mEntregaNorm" class="font-bold text-amber-600 dark:text-amber-400"></span></div>
                 </div>
 
                 <!-- PAINEL EDICAO PRAZO (ESCONDIDO POR PADRÃO) -->
                 <div id="boxEditPrazo" class="hidden mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2">
-                    <h5 class="font-bold text-amber-400 text-xs flex items-center gap-1">
+                    <h5 class="font-bold text-amber-600 dark:text-amber-400 text-xs flex items-center gap-1">
                         <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Alterar Data Prevista (TOS.DT_PREVISTA)
                     </h5>
                     <div>
-                        <label class="block text-[10px] text-slate-400 mb-1">Nova Data de Entrega:</label>
-                        <input type="date" id="inputNovaData" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-amber-400">
+                        <label class="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Nova Data de Entrega:</label>
+                        <input type="date" id="inputNovaData" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-white text-xs focus:outline-none focus:border-amber-400">
                     </div>
                     <div>
-                        <label class="block text-[10px] text-slate-400 mb-1">Justificativa da Alteração (Obrigatório):</label>
-                        <textarea id="txtJustificativa" rows="2" placeholder="Motivo do adiamento ou antecipação..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-amber-400 placeholder-slate-600"></textarea>
+                        <label class="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Justificativa da Alteração (Obrigatório):</label>
+                        <textarea id="txtJustificativa" rows="2" placeholder="Motivo do adiamento ou antecipação..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-800 dark:text-white text-xs focus:outline-none focus:border-amber-400 placeholder-slate-400 dark:placeholder-slate-600"></textarea>
                     </div>
                     <div class="flex justify-end gap-2 pt-1">
-                        <button onclick="toggleEditPrazo(false)" class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs hover:bg-slate-700">Cancelar</button>
+                        <button onclick="toggleEditPrazo(false)" class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs hover:bg-slate-300 dark:hover:bg-slate-700">Cancelar</button>
                         <button id="btnSalvarData" onclick="salvarNovaData()" class="px-3 py-1 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs hover:bg-amber-400 flex items-center gap-1">
                             <i data-lucide="check" class="w-3.5 h-3.5"></i> Salvar
                         </button>
@@ -287,9 +293,9 @@
 
             </div>
 
-            <div class="bg-slate-950 px-5 py-3 border-t border-slate-800 flex flex-wrap justify-between items-center gap-2">
+            <div class="bg-slate-100 dark:bg-slate-950 px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex flex-wrap justify-between items-center gap-2">
                 <div class="flex items-center gap-2 flex-wrap">
-                    <button id="btnOpenEditPrazo" onclick="toggleEditPrazo(true)" class="px-3 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-xl font-semibold text-xs hover:bg-amber-500/20 flex items-center gap-1.5 transition">
+                    <button id="btnOpenEditPrazo" onclick="toggleEditPrazo(true)" class="px-3 py-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl font-semibold text-xs hover:bg-amber-500/20 flex items-center gap-1.5 transition">
                         <i data-lucide="calendar-plus" class="w-4 h-4"></i>
                         <span>Alterar Data de Entrega</span>
                     </button>
@@ -301,48 +307,48 @@
                     </button>
                 </div>
 
-                <button onclick="closeModal()" class="px-4 py-1.5 bg-slate-800 text-white rounded-xl font-semibold hover:bg-slate-700">Fechar</button>
+                <button onclick="closeModal()" class="px-4 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-white rounded-xl font-semibold hover:bg-slate-300 dark:hover:bg-slate-700">Fechar</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL GERAR ACESSO DO CLIENTE -->
     <div id="clientAccessModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-[80]">
-        <div class="bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 text-xs border border-slate-800 relative text-slate-100">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                <div class="flex items-center gap-2 text-white font-extrabold text-sm">
-                    <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400"></i>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 text-xs border border-slate-200 dark:border-slate-800 relative text-slate-800 dark:text-slate-100">
+            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
+                <div class="flex items-center gap-2 text-slate-900 dark:text-white font-extrabold text-sm">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-emerald-500 dark:text-emerald-400"></i>
                     <span>Acesso do Cliente Gerado</span>
                 </div>
-                <button onclick="closeClientAccessModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+                <button onclick="closeClientAccessModal()" class="text-slate-400 hover:text-slate-800 dark:hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
             </div>
 
             <div class="space-y-3">
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase block">Cliente</span>
-                    <span id="caClientName" class="font-extrabold text-slate-200 text-xs"></span>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">Cliente</span>
+                    <span id="caClientName" class="font-extrabold text-slate-800 dark:text-slate-200 text-xs"></span>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <span class="text-[10px] text-slate-400 font-bold uppercase block">CNPJ do Cliente</span>
-                        <span id="caClientCNPJ" class="font-extrabold font-mono text-slate-200 text-xs"></span>
+                    <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">CNPJ do Cliente</span>
+                        <span id="caClientCNPJ" class="font-extrabold font-mono text-slate-800 dark:text-slate-200 text-xs"></span>
                     </div>
 
-                    <div class="bg-slate-950 p-3 rounded-xl border border-amber-500/30">
-                        <span class="text-[10px] text-amber-400 font-bold uppercase block">Senha Exclusiva</span>
-                        <span id="caClientCode" class="font-black font-mono text-emerald-400 text-sm tracking-wider"></span>
+                    <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-amber-500/30">
+                        <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase block">Senha Exclusiva</span>
+                        <span id="caClientCode" class="font-black font-mono text-emerald-600 dark:text-emerald-400 text-sm tracking-wider"></span>
                     </div>
                 </div>
 
                 <div>
-                    <span class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Mensagem Pronta para WhatsApp</span>
-                    <textarea id="caMessageText" rows="5" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 font-mono text-[10.5px] text-slate-300 focus:outline-none custom-scroll"></textarea>
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block mb-1">Mensagem Pronta para WhatsApp</span>
+                    <textarea id="caMessageText" rows="5" readonly class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-mono text-[10.5px] text-slate-700 dark:text-slate-300 focus:outline-none custom-scroll"></textarea>
                 </div>
             </div>
 
             <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeClientAccessModal()" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 rounded-xl font-bold hover:bg-slate-700 transition">Fechar</button>
+                <button onclick="closeClientAccessModal()" class="px-3.5 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition">Fechar</button>
                 <button onclick="copiarMensagemCliente()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-sm transition flex items-center gap-1.5">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                     <span>Copiar Mensagem</span>
@@ -379,16 +385,8 @@
         let valuesVisible = hasAccessValores;
 
         const charMap = {
-            '0': '0',
-            '1': 'I',
-            '2': 'b',
-            '3': 'c',
-            '4': 'd',
-            '5': 'h',
-            '6': 'F',
-            '7': 'g',
-            '8': 'H',
-            '9': 'I'
+            '0': '0', '1': 'I', '2': 'b', '3': 'c', '4': 'd',
+            '5': 'h', '6': 'F', '7': 'g', '8': 'H', '9': 'I'
         };
 
         function calculateCustomClientPassword(cnpj) {
@@ -556,7 +554,7 @@
             } else {
                 sortMode = 'date';
                 document.getElementById('txtToggleSort').textContent = "Ord.: Cliente";
-                document.getElementById('btnToggleSort').className = "px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
+                document.getElementById('btnToggleSort').className = "px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
             }
             renderCalendar();
         }
@@ -572,13 +570,13 @@
             sortMode = 'date';
 
             document.getElementById('txtToggleSort').textContent = "Ord.: Cliente";
-            document.getElementById('btnToggleSort').className = "px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
+            document.getElementById('btnToggleSort').className = "px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
 
             document.getElementById('txtToggleMonth').textContent = "Apenas Mês Selecionado";
-            document.getElementById('btnToggleMonth').className = "px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
+            document.getElementById('btnToggleMonth').className = "px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
 
             document.getElementById('txtToggleOrcamento').textContent = "Apenas Com Orçamento";
-            document.getElementById('btnToggleOrcamento').className = "px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
+            document.getElementById('btnToggleOrcamento').className = "px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
 
             renderCalendar();
         }
@@ -605,9 +603,9 @@
             const currentCompras = comprasSelect.value;
             const currentTerceiros = terceirosSelect.value;
 
-            clientSelect.innerHTML = '<option value="" class="bg-slate-900">Todos os Clientes</option>';
-            comprasSelect.innerHTML = '<option value="" class="bg-slate-900">Status Compras (Todos)</option>';
-            terceirosSelect.innerHTML = '<option value="" class="bg-slate-900">Status Terceiros (Todos)</option>';
+            clientSelect.innerHTML = '<option value="" class="bg-white dark:bg-slate-900">Todos os Clientes</option>';
+            comprasSelect.innerHTML = '<option value="" class="bg-white dark:bg-slate-900">Status Compras (Todos)</option>';
+            terceirosSelect.innerHTML = '<option value="" class="bg-white dark:bg-slate-900">Status Terceiros (Todos)</option>';
 
             const clients = new Set();
             const comprasStatus = new Set();
@@ -620,15 +618,15 @@
             });
 
             Array.from(clients).sort().forEach(val => {
-                clientSelect.appendChild(new Option(val, val, false, false)).className = 'bg-slate-900';
+                clientSelect.appendChild(new Option(val, val, false, false)).className = 'bg-white dark:bg-slate-900';
             });
 
             Array.from(comprasStatus).sort().forEach(val => {
-                comprasSelect.appendChild(new Option(val, val, false, false)).className = 'bg-slate-900';
+                comprasSelect.appendChild(new Option(val, val, false, false)).className = 'bg-white dark:bg-slate-900';
             });
 
             Array.from(terceirosStatus).sort().forEach(val => {
-                terceirosSelect.appendChild(new Option(val, val, false, false)).className = 'bg-slate-900';
+                terceirosSelect.appendChild(new Option(val, val, false, false)).className = 'bg-white dark:bg-slate-900';
             });
 
             clientSelect.value = currentClient;
@@ -653,7 +651,7 @@
 
             if (onlyCurrentMonth) {
                 txt.textContent = "Apenas Mês Selecionado";
-                btn.className = "px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
+                btn.className = "px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
             } else {
                 txt.textContent = "Exibindo Toda Semana";
                 btn.className = "px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm";
@@ -668,7 +666,7 @@
 
             if (onlyWithBudget) {
                 txt.textContent = "Apenas Com Orçamento";
-                btn.className = "px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
+                btn.className = "px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
             } else {
                 txt.textContent = "Exibindo Sem Orçamento";
                 btn.className = "px-3 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 border border-emerald-600 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm";
@@ -788,7 +786,7 @@
 
             if (sortedWeeks.length === 0) {
                 grid.innerHTML = `
-                    <div class="col-span-full bg-slate-900 p-8 text-center rounded-2xl border border-slate-800 text-slate-400">
+                    <div class="w-full bg-white dark:bg-slate-900 p-8 text-center rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
                         <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 opacity-50"></i>
                         Nenhuma Ordem de Serviço encontrada para os filtros selecionados.
                     </div>
@@ -820,23 +818,26 @@
 
                 const weekTotal = week.items.reduce((acc, i) => acc + parseValue(i.preco_geral_a_vista), 0);
                 
-                const col = document.createElement('div');
-                col.className = 'bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden flex flex-col shadow-sm';
+                // NOVO LAYOUT HORIZONTAL DE SEMANAS
+                const rowBlock = document.createElement('div');
+                rowBlock.className = 'bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col shadow-sm';
 
-                col.innerHTML = `
-                    <div class="bg-amber-500 text-slate-950 px-3 py-2 font-black text-xs flex justify-between items-center border-b border-amber-600">
-                        <span>${week.label}</span>
-                        <span class="bg-slate-950 text-white px-2 py-0.5 rounded-full text-[10px] font-mono font-normal">${week.items.length} OS</span>
+                rowBlock.innerHTML = `
+                    <div class="bg-amber-500 text-slate-950 px-4 py-2.5 font-black text-sm flex justify-between items-center border-b border-amber-600">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            <span>${week.label}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-bold text-slate-900">Total Previsto: <span class="text-slate-950 font-black">${formatBRL(weekTotal)}</span></span>
+                            <span class="bg-slate-950 text-white px-2.5 py-0.5 rounded-full text-xs font-mono font-normal">${week.items.length} OS</span>
+                        </div>
                     </div>
-                    <div class="bg-slate-950/60 px-3 py-1.5 border-b border-slate-800 flex justify-between text-[11px] font-semibold text-slate-300">
-                        <span>Previsto:</span>
-                        <span class="text-emerald-400 font-bold">${formatBRL(weekTotal)}</span>
-                    </div>
-                    <div class="p-2 space-y-2 max-h-[550px] overflow-y-auto custom-scroll flex-1">
+                    <div class="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                         ${week.items.map(item => renderItemCard(item)).join('')}
                     </div>
                 `;
-                grid.appendChild(col);
+                grid.appendChild(rowBlock);
             });
 
             lucide.createIcons();
@@ -848,61 +849,61 @@
             
             let valColor = 'bg-emerald-600 text-white';
             if (isAtrasada) valColor = 'bg-red-600 text-white font-bold';
-            else if (val === 0) valColor = 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+            else if (val === 0) valColor = 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30';
 
             const payload = JSON.stringify(item).replace(/'/g, "&apos;");
             const fullTitle = getFullTitle(item);
 
             return `
-                <div onclick='openModal(${payload})' class="border border-slate-800 rounded-xl p-2.5 bg-slate-950/80 hover:border-amber-500/50 hover:shadow-lg transition cursor-pointer flex flex-col gap-1.5 text-xs">
+                <div onclick='openModal(${payload})' class="border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/80 dark:bg-slate-950/80 hover:border-amber-500 dark:hover:border-amber-500/50 hover:shadow-lg transition cursor-pointer flex flex-col gap-1.5 text-xs">
                     
                     <div class="flex items-center justify-between font-mono">
-                        <span class="font-semibold text-slate-300 truncate max-w-[90px]">${item.n_pedido || 'SEM PEDIDO'}</span>
-                        <span class="bg-slate-900 text-amber-400 px-1.5 py-0.5 rounded font-bold border border-slate-800">OS ${item.n_os}</span>
+                        <span class="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[90px]">${item.n_pedido || 'SEM PEDIDO'}</span>
+                        <span class="bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-bold border border-slate-200 dark:border-slate-800">OS ${item.n_os}</span>
                         <span class="px-1.5 py-0.5 rounded text-[10px] ${valColor}">${formatBRL(val)}</span>
                     </div>
 
                     ${item.status ? `
                         <div class="flex items-center gap-1">
-                            <span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider">
+                            <span class="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider">
                                 ${item.status}
                             </span>
                         </div>
                     ` : ''}
 
-                    <div class="text-[11px] text-slate-300 line-clamp-2 leading-snug font-medium" title="${fullTitle}">
+                    <div class="text-[11px] text-slate-800 dark:text-slate-300 line-clamp-2 leading-snug font-medium" title="${fullTitle}">
                         ${fullTitle}
                     </div>
 
-                    <div class="grid grid-cols-1 gap-0.5 text-[10px] bg-slate-900/90 p-1.5 rounded-lg border border-slate-800/80 text-slate-400">
-                        <div class="flex items-center justify-between truncate border-b border-slate-800/80 pb-1 mb-0.5">
-                            <span class="text-slate-500 flex items-center gap-1"><i data-lucide="boxes" class="w-3 h-3 text-amber-400"></i> Quantidades:</span>
-                            <span class="font-bold text-slate-200">
-                                <span class="text-blue-400" title="Qtd. Restante Orçamento">Orç: ${item.qtde_restante_orcamento ?? 0}</span> 
-                                <span class="text-slate-600">|</span> 
-                                <span class="text-emerald-400" title="Qtd. Restante Estoque">Est: ${item.qtde_restante_estoque ?? 0}</span>
+                    <div class="grid grid-cols-1 gap-0.5 text-[10px] bg-white dark:bg-slate-900/90 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800/80 text-slate-500 dark:text-slate-400">
+                        <div class="flex items-center justify-between truncate border-b border-slate-200 dark:border-slate-800/80 pb-1 mb-0.5">
+                            <span class="text-slate-400 dark:text-slate-500 flex items-center gap-1"><i data-lucide="boxes" class="w-3 h-3 text-amber-500 dark:text-amber-400"></i> Quantidades:</span>
+                            <span class="font-bold text-slate-700 dark:text-slate-200">
+                                <span class="text-blue-600 dark:text-blue-400" title="Qtd. Restante Orçamento">Orç: ${item.qtde_restante_orcamento ?? 0}</span> 
+                                <span class="text-slate-400 dark:text-slate-600">|</span> 
+                                <span class="text-emerald-600 dark:text-emerald-400" title="Qtd. Restante Estoque">Est: ${item.qtde_restante_estoque ?? 0}</span>
                             </span>
                         </div>
                         <div class="flex items-center justify-between truncate">
-                            <span class="text-slate-500 flex items-center gap-1"><i data-lucide="shopping-cart" class="w-3 h-3 text-slate-400"></i> Compras:</span>
-                            <span class="font-semibold text-slate-300 truncate max-w-[120px]">${item.status_compras || '-'}</span>
+                            <span class="text-slate-400 dark:text-slate-500 flex items-center gap-1"><i data-lucide="shopping-cart" class="w-3 h-3 text-slate-400"></i> Compras:</span>
+                            <span class="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[120px]">${item.status_compras || '-'}</span>
                         </div>
                         <div class="flex items-center justify-between truncate">
-                            <span class="text-slate-500 flex items-center gap-1"><i data-lucide="truck" class="w-3 h-3 text-slate-400"></i> Terceiros:</span>
-                            <span class="font-semibold text-slate-300 truncate max-w-[120px]">${item.status_terceiros || '-'}</span>
+                            <span class="text-slate-400 dark:text-slate-500 flex items-center gap-1"><i data-lucide="truck" class="w-3 h-3 text-slate-400"></i> Terceiros:</span>
+                            <span class="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[120px]">${item.status_terceiros || '-'}</span>
                         </div>
                         <div class="flex items-center justify-between truncate">
-                            <span class="text-slate-500 flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3 text-slate-400"></i> Produção:</span>
-                            <span class="font-bold text-blue-400">${item.status_producao || '0%'}</span>
+                            <span class="text-slate-400 dark:text-slate-500 flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3 text-slate-400"></i> Produção:</span>
+                            <span class="font-bold text-blue-600 dark:text-blue-400">${item.status_producao || '0%'}</span>
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-900">
+                    <div class="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 pt-1 border-t border-slate-200 dark:border-slate-900">
                         <div class="flex items-center gap-1.5 truncate max-w-[150px]">
-                            <span class="truncate font-medium text-slate-400" title="${item.cliente || 'Sem cliente'}">${item.cliente || 'Sem cliente'}</span>
-                            ${item.prev_entrega_orcamento ? `<span class="text-[9px] bg-slate-900 text-slate-400 px-1 py-0.2 rounded border border-slate-800/80" title="Prazo Orig. Orçamento">Orig: ${formatDateOnly(item.prev_entrega_orcamento)}</span>` : ''}
+                            <span class="truncate font-medium text-slate-600 dark:text-slate-400" title="${item.cliente || 'Sem cliente'}">${item.cliente || 'Sem cliente'}</span>
+                            ${item.prev_entrega_orcamento ? `<span class="text-[9px] bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-1 py-0.2 rounded border border-slate-200 dark:border-slate-800/80" title="Prazo Orig. Orçamento">Orig: ${formatDateOnly(item.prev_entrega_orcamento)}</span>` : ''}
                         </div>
-                        <span class="${isAtrasada ? 'text-red-400 font-bold' : 'text-slate-400'}">${isAtrasada ? 'Atrasado' : 'No prazo'}</span>
+                        <span class="${isAtrasada ? 'text-red-500 dark:text-red-400 font-bold' : 'text-slate-500 dark:text-slate-400'}">${isAtrasada ? 'Atrasado' : 'No prazo'}</span>
                     </div>
                 </div>
             `;
@@ -960,7 +961,6 @@
             const clientCode = calculateCustomClientPassword(cnpjRaw);
             const cnpjFormatted = currentOSItem.cnpj;
             
-            // Link corrigido apontando para a pasta /clientes/
             const directLink = `https://consultoriarf.net/sintercan/clientes/?cnpj=${encodeURIComponent(cnpjFormatted)}&code=${clientCode}`;
 
             const mensagemPronta = `Prezado(a) Cliente,\n\nAcompanhe o status e a evolução da produção dos seus pedidos em tempo real no nosso portal:\n\n🔗 *Acesse o Portal (Login Automático):*\n${directLink}\n\n---\nCaso prefira acessar manualmente:\n🏢 *CNPJ:* ${cnpjFormatted}\n🔑 *Senha:* ${clientCode}\n\nQualquer dúvida, estamos à disposição!\n*SINTERCAN*`;
