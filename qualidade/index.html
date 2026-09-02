@@ -6,39 +6,53 @@
     <title>Qualidade - Sintercan</title>
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS e Configuração Dark Mode -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <!-- Script para carregar o tema dinâmico salvo na index -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #0f172a; color: #f8fafc; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
     </style>
 </head>
-<body class="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
+<body class="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-hidden transition-colors duration-200">
 
     <!-- HEADER -->
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-md">
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center gap-4">
             <div class="flex items-center gap-4">
-                <a href="../" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700 flex items-center justify-center" title="Voltar ao Menu">
+                <a href="../" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-300 dark:border-slate-700 flex items-center justify-center" title="Voltar ao Menu">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
-                <div class="flex items-center justify-center p-1 bg-slate-950/80 rounded-xl border border-slate-800 shadow-inner">
+                
+                <!-- CONTAINER DA LOGO EM FUNDO ESCURO FIXO -->
+                <div class="flex items-center justify-center p-1 bg-slate-950 rounded-xl border border-slate-800 shadow-inner">
                     <img src="../logo.png" alt="Logo" class="h-9 max-h-10 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="hidden p-2 bg-amber-500 rounded-xl text-slate-950 font-bold items-center justify-center">
                         <i data-lucide="check-circle-2" class="w-5 h-5"></i>
                     </div>
                 </div>
+
                 <div>
-                    <h1 class="text-lg font-extrabold tracking-wide text-white">Sintercan</h1>
-                    <p class="text-[10px] text-slate-400 font-medium">Dashboard de Qualidade (NOK)</p>
+                    <h1 class="text-lg font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Dashboard de Qualidade (NOK)</p>
                 </div>
             </div>
         </div>
     </header>
 
     <!-- CONTEÚDO PRINCIPAL (POWER BI TELA CHEIA) -->
-    <main class="flex-1 w-full h-full bg-slate-950">
+    <main class="flex-1 w-full h-full bg-slate-100 dark:bg-slate-950 transition-colors duration-200">
         <iframe 
             title="NOK" 
             class="w-full h-full border-0" 
