@@ -1,13 +1,18 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RS - Sintercan</title>
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS (Ativado o modo dark via classe) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- SheetJS (Para Exportar para Excel) -->
@@ -16,42 +21,54 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #090d16; color: #f8fafc; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        
+        /* Scrollbar Adaptativa */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .dark ::-webkit-scrollbar-track { background: #0f172a; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
         th { user-select: none; }
         .col-filter-popover { display: none; }
         .col-filter-popover.active { display: block; }
     </style>
 </head>
-<body class="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
+<body class="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-hidden transition-colors duration-200">
 
     <!-- HEADER -->
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-md flex-shrink-0">
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 shadow-md flex-shrink-0">
         <div class="w-full px-4 py-2 flex justify-between items-center gap-4">
             <!-- Esquerda: Voltar + Logo + Título -->
             <div class="flex items-center gap-4">
-                <button onclick="goBack()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700 flex items-center justify-center cursor-pointer" title="Voltar ao Menu">
+                <button onclick="goBack()" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-300 dark:border-slate-700 flex items-center justify-center cursor-pointer" title="Voltar ao Menu">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </button>
-                <div class="flex items-center justify-center p-1 bg-slate-950/80 rounded-xl border border-slate-800 shadow-inner">
+                <div class="flex items-center justify-center p-1 bg-slate-100 dark:bg-slate-950/80 rounded-xl border border-slate-200 dark:border-slate-800 shadow-inner">
                     <img src="../logo.png" alt="Logo" class="h-8 max-h-9 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="hidden p-2 bg-amber-500 rounded-xl text-slate-950 font-bold items-center justify-center">
                         <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
                     </div>
                 </div>
                 <div>
-                    <h1 class="text-base font-extrabold tracking-wide text-white leading-tight">Sintercan</h1>
-                    <p id="headerSubtitle" class="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">Dashboard RS</p>
+                    <h1 class="text-base font-extrabold tracking-wide text-slate-900 dark:text-white leading-tight">Sintercan</h1>
+                    <p id="headerSubtitle" class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wider">Dashboard RS</p>
                 </div>
             </div>
 
-            <!-- Direita: Ações -->
+            <!-- Direita: Ações + Botão Alternar Tema -->
             <div class="flex items-center gap-2">
-                <button onclick="resetAllFilters()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700 cursor-pointer">
-                    <i data-lucide="filter-x" class="w-4 h-4 text-amber-400"></i>
+                <!-- Botão Tema Claro/Escuro -->
+                <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-400 rounded-xl border border-slate-300 dark:border-slate-700 transition flex items-center justify-center cursor-pointer" title="Alternar Tema Claro/Escuro">
+                    <i id="themeToggleIcon" data-lucide="sun" class="w-4 h-4"></i>
+                </button>
+
+                <button onclick="resetAllFilters()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 cursor-pointer">
+                    <i data-lucide="filter-x" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
                     <span>Limpar Filtros</span>
                 </button>
                 <button id="btnExport" onclick="exportToExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/10 cursor-pointer">
@@ -67,38 +84,38 @@
     </header>
 
     <!-- BARRA DE FILTROS GERAIS -->
-    <section id="filterSection" class="bg-slate-900/90 border-b border-slate-800 p-2.5 flex-shrink-0">
+    <section id="filterSection" class="bg-slate-50 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 p-2.5 flex-shrink-0">
         <div class="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 text-xs">
             
             <!-- 1. Pesquisa Geral -->
             <div>
-                <label class="block text-slate-400 font-medium mb-1">Pesquisa Geral</label>
+                <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Pesquisa Geral</label>
                 <div class="relative">
-                    <input type="text" id="filterGlobal" oninput="debouncedApplyFilters()" placeholder="Buscar em tudo..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-2 py-1 text-slate-200 focus:outline-none focus:border-amber-500">
-                    <i data-lucide="search" class="w-4 h-4 absolute left-2 top-1.5 text-slate-500"></i>
+                    <input type="text" id="filterGlobal" oninput="debouncedApplyFilters()" placeholder="Buscar em tudo..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg pl-8 pr-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-2 top-1.5 text-slate-400 dark:text-slate-500"></i>
                 </div>
             </div>
 
             <!-- 2. Cliente -->
             <div class="relative">
-                <label class="block text-slate-400 font-medium mb-1">Cliente</label>
-                <input type="text" id="filterClienteInput" onfocus="openClienteDropdown()" oninput="filterClienteList()" placeholder="Selecione ou busque..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-amber-500">
+                <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Cliente</label>
+                <input type="text" id="filterClienteInput" onfocus="openClienteDropdown()" oninput="filterClienteList()" placeholder="Selecione ou busque..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
                 
-                <div id="clienteDropdown" class="hidden absolute top-full left-0 w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg max-h-48 overflow-y-auto z-50 shadow-2xl">
-                    <div onclick="selectCliente('')" class="p-2 hover:bg-slate-800 cursor-pointer text-amber-400 border-b border-slate-800">-- Todos os Clientes --</div>
+                <div id="clienteDropdown" class="hidden absolute top-full left-0 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg max-h-48 overflow-y-auto z-50 shadow-2xl">
+                    <div onclick="selectCliente('')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-amber-600 dark:text-amber-400 border-b border-slate-200 dark:border-slate-800">-- Todos os Clientes --</div>
                     <div id="clienteListOptions"></div>
                 </div>
             </div>
 
             <!-- 3. Ano / Mês -->
             <div class="relative">
-                <label class="block text-slate-400 font-medium mb-1">Ano / Mês</label>
-                <button onclick="toggleAnoMesTree()" id="btnAnoMesLabel" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-left text-slate-200 focus:outline-none focus:border-amber-500 flex justify-between items-center cursor-pointer">
+                <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Ano / Mês</label>
+                <button onclick="toggleAnoMesTree()" id="btnAnoMesLabel" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-left text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500 flex justify-between items-center cursor-pointer">
                     <span id="anoMesSelectedText" class="truncate">Ano Atual</span>
                     <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                 </button>
 
-                <div id="anoMesTreeContainer" class="hidden absolute top-full left-0 w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg max-h-60 overflow-y-auto z-50 shadow-2xl p-2 font-sans">
+                <div id="anoMesTreeContainer" class="hidden absolute top-full left-0 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg max-h-60 overflow-y-auto z-50 shadow-2xl p-2 font-sans">
                     <div id="treeContent" class="space-y-1"></div>
                 </div>
             </div>
@@ -106,12 +123,12 @@
             <!-- 4. Período De / Até -->
             <div class="col-span-1 sm:col-span-2 grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-slate-400 font-medium mb-1">Data De</label>
-                    <input type="date" id="filterDataDe" onchange="applyFilters()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-amber-500">
+                    <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Data De</label>
+                    <input type="date" id="filterDataDe" onchange="applyFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
                 </div>
                 <div>
-                    <label class="block text-slate-400 font-medium mb-1">Data Até</label>
-                    <input type="date" id="filterDataAte" onchange="applyFilters()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-amber-500">
+                    <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Data Até</label>
+                    <input type="date" id="filterDataAte" onchange="applyFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
                 </div>
             </div>
 
@@ -119,146 +136,146 @@
     </section>
 
     <!-- CONTEÚDO PRINCIPAL -->
-    <main class="flex-1 w-full h-full overflow-hidden relative bg-slate-950 p-2">
+    <main class="flex-1 w-full h-full overflow-hidden relative bg-slate-100 dark:bg-slate-950 p-2">
         
         <!-- 1. ABA RS -->
         <div id="viewTabRS" class="h-full w-full flex flex-col overflow-hidden">
-            <div class="flex-1 border border-slate-800 rounded-xl bg-slate-900/50 overflow-y-auto overflow-x-hidden shadow-2xl relative">
+            <div class="flex-1 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/50 overflow-y-auto overflow-x-hidden shadow-2xl relative">
                 <table id="mainTable" class="w-full text-left text-[11px] border-collapse table-fixed">
-                    <thead class="bg-slate-900 text-slate-300 sticky top-0 z-20 border-b border-slate-800 font-semibold">
+                    <thead class="bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-300 sticky top-0 z-20 border-b border-slate-300 dark:border-slate-800 font-semibold">
                         <tr>
-                            <th class="w-[5.5%] p-1.5 border-r border-slate-800/60 relative group">
+                            <th class="w-[5.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('n_orcamento')">
                                     <span class="truncate">Orçamento <span id="sort_n_orcamento"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('n_orcamento')" id="btn_filter_n_orcamento" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('n_orcamento')" id="btn_filter_n_orcamento" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_n_orcamento" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_n_orcamento" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[4.5%] p-1.5 border-r border-slate-800/60 relative group">
+                            <th class="w-[4.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('n_os')">
                                     <span class="truncate">OS <span id="sort_n_os"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('n_os')" id="btn_filter_n_os" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('n_os')" id="btn_filter_n_os" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_n_os" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_n_os" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[15%] p-1.5 border-r border-slate-800/60 relative group">
+                            <th class="w-[15%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cliente')">
                                     <span class="truncate">Cliente <span id="sort_cliente"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cliente')" id="btn_filter_cliente" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cliente')" id="btn_filter_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[8.5%] p-1.5 border-r border-slate-800/60 relative group">
+                            <th class="w-[8.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cod_mat_no_cliente')">
                                     <span class="truncate" title="Cód. Cliente/Nº Des.">Cód. Cliente/Nº Des. <span id="sort_cod_mat_no_cliente"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cod_mat_no_cliente')" id="btn_filter_cod_mat_no_cliente" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cod_mat_no_cliente')" id="btn_filter_cod_mat_no_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_cod_mat_no_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-56 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_cod_mat_no_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-56 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 relative group">
+                            <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('pedido_cliente')">
                                     <span class="truncate">N. Pedido <span id="sort_pedido_cliente"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('pedido_cliente')" id="btn_filter_pedido_cliente" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('pedido_cliente')" id="btn_filter_pedido_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_pedido_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_pedido_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[4%] p-1.5 border-r border-slate-800/60 relative group">
+                            <th class="w-[4%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('item')">
                                     <span class="truncate">Item <span id="sort_item"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('item')" id="btn_filter_item" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('item')" id="btn_filter_item" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_item" class="col-filter-popover absolute left-0 top-full mt-1 w-44 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_item" class="col-filter-popover absolute left-0 top-full mt-1 w-44 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[5.5%] p-1.5 border-r border-slate-800/60 relative group">
+                            <th class="w-[5.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cod_interno')">
                                     <span class="truncate">SC <span id="sort_cod_interno"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cod_interno')" id="btn_filter_cod_interno" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('cod_interno')" id="btn_filter_cod_interno" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_cod_interno" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_cod_interno" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[18.5%] p-1.5 border-r border-slate-800/60 relative group">
+                            <th class="w-[18.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('descricao')">
                                     <span class="truncate">Descrição <span id="sort_descricao"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('descricao')" id="btn_filter_descricao" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('descricao')" id="btn_filter_descricao" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_descricao" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_descricao" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[4%] p-1.5 border-r border-slate-800/60 text-right relative group">
+                            <th class="w-[4%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('qtde')">
                                     <span class="truncate">Qtde. <span id="sort_qtde"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('qtde')" id="btn_filter_qtde" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('qtde')" id="btn_filter_qtde" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_qtde" class="col-filter-popover absolute right-0 top-full mt-1 w-44 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_qtde" class="col-filter-popover absolute right-0 top-full mt-1 w-44 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 text-center relative group">
+                            <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-center relative group">
                                 <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('dt_aprovacao')">
                                     <span class="truncate">Aprovação <span id="sort_dt_aprovacao">▼</span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('dt_aprovacao')" id="btn_filter_dt_aprovacao" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('dt_aprovacao')" id="btn_filter_dt_aprovacao" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_dt_aprovacao" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_dt_aprovacao" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 text-center relative group">
+                            <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-center relative group">
                                 <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('dt_previsao_entrega')">
                                     <span class="truncate">Prazo <span id="sort_dt_previsao_entrega"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('dt_previsao_entrega')" id="btn_filter_dt_previsao_entrega" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('dt_previsao_entrega')" id="btn_filter_dt_previsao_entrega" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_dt_previsao_entrega" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_dt_previsao_entrega" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 text-right relative group">
+                            <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('vl_unitario')">
                                     <span class="truncate">Vl. unit. <span id="sort_vl_unitario"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('vl_unitario')" id="btn_filter_vl_unitario" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('vl_unitario')" id="btn_filter_vl_unitario" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_vl_unitario" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_vl_unitario" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
-                            <th class="w-[6.5%] p-1.5 border-r border-slate-800/60 text-right relative group">
+                            <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('vl_total')">
                                     <span class="truncate">Vl. Total <span id="sort_vl_total"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('vl_total')" id="btn_filter_vl_total" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('vl_total')" id="btn_filter_vl_total" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_vl_total" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_vl_total" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
 
                             <th class="w-[6.5%] p-1.5 text-center relative group">
                                 <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('PROD/MAN/IND')">
                                     <span class="truncate">PROD/MAN/IND <span id="sort_PROD/MAN/IND"></span></span>
-                                    <button onclick="event.stopPropagation(); toggleColumnFilter('PROD/MAN/IND')" id="btn_filter_PROD/MAN/IND" class="text-slate-500 hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    <button onclick="event.stopPropagation(); toggleColumnFilter('PROD/MAN/IND')" id="btn_filter_PROD/MAN/IND" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
-                                <div id="filter_popover_PROD_MAN_IND" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
+                                <div id="filter_popover_PROD_MAN_IND" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
                             </th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-800/40 text-slate-300 font-mono text-[10.5px]">
+                    <tbody id="tableBody" class="divide-y divide-slate-200 dark:divide-slate-800/40 text-slate-700 dark:text-slate-300 font-mono text-[10.5px]">
                         <tr>
-                            <td colspan="14" class="p-8 text-center text-slate-400 font-sans">Carregando dados...</td>
+                            <td colspan="14" class="p-8 text-center text-slate-500 dark:text-slate-400 font-sans">Carregando dados...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
             <!-- CONTROLE RS -->
-            <div class="bg-slate-900 border border-slate-800 mt-1.5 p-2 rounded-xl flex flex-wrap justify-between items-center text-xs font-bold text-slate-200 gap-3 flex-shrink-0">
+            <div class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 mt-1.5 p-2 rounded-xl flex flex-wrap justify-between items-center text-xs font-bold text-slate-800 dark:text-slate-200 gap-3 flex-shrink-0">
                 <div class="flex items-center gap-3">
-                    <span>Exibindo <span id="renderedCount" class="text-amber-400">0</span> de <span id="totalLinhas" class="text-amber-400">0</span> registros</span>
+                    <span>Exibindo <span id="renderedCount" class="text-amber-600 dark:text-amber-400">0</span> de <span id="totalLinhas" class="text-amber-600 dark:text-amber-400">0</span> registros</span>
                     
-                    <button id="btnLoadMore" onclick="loadMoreRecords()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                    <button id="btnLoadMore" onclick="loadMoreRecords()" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-amber-600 dark:text-amber-400 font-semibold rounded-lg border border-slate-300 dark:border-slate-700 transition flex items-center gap-1 cursor-pointer">
                         <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
                         <span>Carregar + 50</span>
                     </button>
 
-                    <select id="pageSizeSelect" onchange="changePageSize()" class="bg-slate-950 border border-slate-700 text-slate-300 px-2 py-0.5 rounded-lg">
+                    <select id="pageSizeSelect" onchange="changePageSize()" class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-lg">
                         <option value="50">50 por vez</option>
                         <option value="100">100 por vez</option>
                         <option value="250">250 por vez</option>
@@ -267,44 +284,44 @@
                 </div>
 
                 <div class="flex gap-5">
-                    <span>Quantidade Total (Peças): <span id="totalQtde" class="text-amber-400">0</span></span>
-                    <span>Valor Total: <span id="totalValor" class="text-emerald-400">R$ 0,00</span></span>
+                    <span>Quantidade Total (Peças): <span id="totalQtde" class="text-amber-600 dark:text-amber-400">0</span></span>
+                    <span>Valor Total: <span id="totalValor" class="text-emerald-600 dark:text-emerald-400">R$ 0,00</span></span>
                 </div>
             </div>
         </div>
 
         <!-- 2. ABA GRÁFICO -->
         <div id="viewTabGrafico" class="h-full w-full hidden flex flex-col lg:flex-row gap-3 overflow-hidden">
-            <div class="w-full lg:w-1/3 h-full border border-slate-800 rounded-xl bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
-                <div class="p-2.5 border-b border-slate-800 bg-slate-900/80 flex justify-between items-center">
-                    <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wide">Faturamento por Cliente</h2>
-                    <span id="totalClientesCount" class="text-[11px] bg-slate-800 text-amber-400 px-2 py-0.5 rounded-full font-mono">0 clientes</span>
+            <div class="w-full lg:w-1/3 h-full border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                <div class="p-2.5 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex justify-between items-center">
+                    <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Faturamento por Cliente</h2>
+                    <span id="totalClientesCount" class="text-[11px] bg-slate-200 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-mono">0 clientes</span>
                 </div>
                 
                 <div class="flex-1 overflow-y-auto">
                     <table class="w-full text-left text-[11px] border-collapse">
-                        <thead class="bg-slate-900 text-slate-400 sticky top-0 z-10 border-b border-slate-800">
+                        <thead class="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 sticky top-0 z-10 border-b border-slate-300 dark:border-slate-800">
                             <tr>
                                 <th class="p-2 font-semibold">Cliente</th>
                                 <th class="p-2 font-semibold text-right">Vl. Total</th>
                             </tr>
                         </thead>
-                        <tbody id="tableBodyClientes" class="divide-y divide-slate-800/40 text-slate-300 font-sans">
+                        <tbody id="tableBodyClientes" class="divide-y divide-slate-200 dark:divide-slate-800/40 text-slate-700 dark:text-slate-300 font-sans">
                             <tr><td colspan="2" class="p-4 text-center text-slate-500">Carregando dados...</td></tr>
                         </tbody>
                     </table>
                 </div>
 
-                <div class="p-2.5 bg-slate-900 border-t border-slate-800 text-xs font-bold flex justify-between items-center text-slate-200">
+                <div class="p-2.5 bg-slate-50 dark:bg-slate-900 border-t border-slate-300 dark:border-slate-800 text-xs font-bold flex justify-between items-center text-slate-800 dark:text-slate-200">
                     <span>Total Geral:</span>
-                    <span id="totalGeralTabela" class="text-emerald-400 font-mono text-sm">R$ 0,00</span>
+                    <span id="totalGeralTabela" class="text-emerald-600 dark:text-emerald-400 font-mono text-sm">R$ 0,00</span>
                 </div>
             </div>
 
-            <div class="w-full lg:w-2/3 h-full border border-slate-800 rounded-xl bg-slate-900/60 p-4 flex flex-col justify-between overflow-hidden shadow-2xl">
+            <div class="w-full lg:w-2/3 h-full border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 p-4 flex flex-col justify-between overflow-hidden shadow-2xl">
                 <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wide">Pedidos por Clientes (Top 15 + Outros)</h2>
-                    <span class="text-[11px] text-slate-400 font-sans">Top 15 detalhados, demais somados em "Outros"</span>
+                    <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Pedidos por Clientes (Top 15 + Outros)</h2>
+                    <span class="text-[11px] text-slate-500 dark:text-slate-400 font-sans">Top 15 detalhados, demais somados em "Outros"</span>
                 </div>
 
                 <div class="flex-1 relative w-full h-full flex items-center justify-center p-2">
@@ -313,51 +330,51 @@
             </div>
         </div>
 
-        <!-- 3. ABA MENSAL (KPIS ESTILO POWER BI + TABELA + GRÁFICO FIEL) -->
+        <!-- 3. ABA MENSAL -->
         <div id="viewTabMensal" class="h-full w-full hidden flex flex-col lg:flex-row gap-3 overflow-hidden">
             <!-- COLUNA ESQUERDA: KPIS E TABELA RESUMIDA MENSAL -->
             <div class="w-full lg:w-1/3 h-full flex flex-col gap-3 overflow-hidden">
                 
-                <!-- 4 CARDS KPIS IDENTICOS AO POWER BI -->
+                <!-- 4 CARDS KPIS -->
                 <div class="grid grid-cols-1 gap-2 flex-shrink-0">
-                    <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-2.5 shadow-md text-center">
-                        <p id="kpiVlTotal" class="text-base sm:text-lg font-extrabold text-white font-sans tracking-tight">R$ 0,00</p>
-                        <span class="text-[10px] text-slate-400 font-medium uppercase tracking-wider block">Vl. Total</span>
+                    <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg p-2.5 shadow-md text-center">
+                        <p id="kpiVlTotal" class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white font-sans tracking-tight">R$ 0,00</p>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider block">Vl. Total</span>
                     </div>
 
-                    <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-2.5 shadow-md text-center">
-                        <p id="kpiQtdeItens" class="text-base sm:text-lg font-extrabold text-white font-sans tracking-tight">0</p>
-                        <span class="text-[10px] text-slate-400 font-medium uppercase tracking-wider block">Qtde. Itens</span>
+                    <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg p-2.5 shadow-md text-center">
+                        <p id="kpiQtdeItens" class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white font-sans tracking-tight">0</p>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider block">Qtde. Itens</span>
                     </div>
 
-                    <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-2.5 shadow-md text-center">
-                        <p id="kpiMediaMensal" class="text-base sm:text-lg font-extrabold text-white font-sans tracking-tight">R$ 0,00</p>
-                        <span class="text-[10px] text-slate-400 font-medium uppercase tracking-wider block">Média Mensal</span>
+                    <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg p-2.5 shadow-md text-center">
+                        <p id="kpiMediaMensal" class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white font-sans tracking-tight">R$ 0,00</p>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider block">Média Mensal</span>
                     </div>
 
-                    <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-2.5 shadow-md text-center">
-                        <p id="kpiMediaAnual" class="text-base sm:text-lg font-extrabold text-white font-sans tracking-tight">R$ 0,00</p>
-                        <span class="text-[10px] text-slate-400 font-medium uppercase tracking-wider block">Média Anual</span>
+                    <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg p-2.5 shadow-md text-center">
+                        <p id="kpiMediaAnual" class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white font-sans tracking-tight">R$ 0,00</p>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider block">Média Anual</span>
                     </div>
                 </div>
 
                 <!-- TABELA MENSAL RESUMIDA -->
-                <div class="flex-1 border border-slate-800 rounded-xl bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
-                    <div class="p-2 border-b border-slate-800 bg-slate-900/80 flex justify-between items-center">
-                        <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wide">Resumo Mensal</h2>
-                        <span id="totalMesesCount" class="text-[10px] bg-slate-800 text-amber-400 px-2 py-0.5 rounded-full font-mono">0 meses</span>
+                <div class="flex-1 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                    <div class="p-2 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex justify-between items-center">
+                        <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Resumo Mensal</h2>
+                        <span id="totalMesesCount" class="text-[10px] bg-slate-200 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-mono">0 meses</span>
                     </div>
 
                     <div class="flex-1 overflow-y-auto">
                         <table class="w-full text-left text-[11px] border-collapse">
-                            <thead class="bg-slate-900 text-slate-400 sticky top-0 z-10 border-b border-slate-800">
+                            <thead class="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 sticky top-0 z-10 border-b border-slate-300 dark:border-slate-800">
                                 <tr>
                                     <th class="p-2 font-semibold">Mês/Ano</th>
                                     <th class="p-2 font-semibold text-right">Vl. Total</th>
                                     <th class="p-2 font-semibold text-right">Qtde. Itens</th>
                                 </tr>
                             </thead>
-                            <tbody id="tableBodyMensal" class="divide-y divide-slate-800/40 text-slate-300 font-sans">
+                            <tbody id="tableBodyMensal" class="divide-y divide-slate-200 dark:divide-slate-800/40 text-slate-700 dark:text-slate-300 font-sans">
                                 <tr><td colspan="3" class="p-4 text-center text-slate-500">Carregando dados...</td></tr>
                             </tbody>
                         </table>
@@ -365,8 +382,8 @@
                 </div>
             </div>
 
-            <!-- COLUNA DIREITA: GRÁFICO MENSAL (CORES E FORMAS FIÉIS AO POWER BI) -->
-            <div class="w-full lg:w-2/3 h-full border border-slate-800 rounded-xl bg-[#080c14] p-3 flex flex-col justify-between overflow-hidden shadow-2xl">
+            <!-- COLUNA DIREITA: GRÁFICO MENSAL -->
+            <div class="w-full lg:w-2/3 h-full border border-slate-300 dark:border-slate-800 rounded-xl bg-slate-900 p-3 flex flex-col justify-between overflow-hidden shadow-2xl">
                 <div class="bg-black text-white px-3 py-1.5 text-center font-extrabold text-xs uppercase tracking-widest border border-slate-800 rounded mb-2">
                     GRÁFICO MENSAL
                 </div>
@@ -390,26 +407,55 @@
         </div>
 
         <!-- 4. VISÃO POWER BI -->
-        <div id="pbiView" class="h-full w-full hidden border border-slate-800 rounded-xl overflow-hidden">
+        <div id="pbiView" class="h-full w-full hidden border border-slate-300 dark:border-slate-800 rounded-xl overflow-hidden">
             <div id="pbiContainer" class="w-full h-full"></div>
         </div>
 
     </main>
 
     <!-- NAVEGAÇÃO DE ABAS NO RODAPÉ -->
-    <nav class="bg-slate-900 border-t border-slate-800 px-2 py-1 flex gap-1 overflow-x-auto text-xs font-medium flex-shrink-0">
+    <nav class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 py-1 flex gap-1 overflow-x-auto text-xs font-medium flex-shrink-0">
         <button id="navBtnRS" onclick="switchMainTab('RS')" class="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer">RS</button>
-        <button id="navBtnGrafico" onclick="switchMainTab('Grafico')" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Gráfico</button>
-        <button id="navBtnMensal" onclick="switchMainTab('Mensal')" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Mensal</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Mensal por cliente</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Classificação de vendas</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Pedidos em aberto</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Notas Fiscais</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Pedidos em carteira</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap">Valores por prazo de entrega</button>
+        <button id="navBtnGrafico" onclick="switchMainTab('Grafico')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Gráfico</button>
+        <button id="navBtnMensal" onclick="switchMainTab('Mensal')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Mensal</button>
+        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Mensal por cliente</button>
+        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Classificação de vendas</button>
+        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Pedidos em aberto</button>
+        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Notas Fiscais</button>
+        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Pedidos em carteira</button>
+        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Valores por prazo de entrega</button>
     </nav>
 
     <script>
+        // Lógica para Alternar o Tema Escuro / Claro
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.documentElement.classList.remove('dark');
+            } else {
+                document.documentElement.classList.add('dark');
+            }
+            updateThemeIcon();
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeIcon();
+
+            // Re-renderiza gráficos para ajustar fontes/cores do gráfico de rosquinha se necessário
+            if (activeTab === 'Grafico') renderGraficoView();
+        }
+
+        function updateThemeIcon() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const iconEl = document.getElementById('themeToggleIcon');
+            if (iconEl) {
+                iconEl.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
         // Registrar Plugin DataLabels do Chart.js
         if (window.ChartDataLabels) {
             Chart.register(ChartDataLabels);
@@ -473,7 +519,7 @@
             } catch (err) {
                 console.error("Erro ao carregar RS:", err);
                 document.getElementById('tableBody').innerHTML = `
-                    <tr><td colspan="14" class="p-8 text-center text-rose-400 font-sans">Erro ao conectar à API. Verifique a conexão.</td></tr>
+                    <tr><td colspan="14" class="p-8 text-center text-rose-500 font-sans">Erro ao conectar à API. Verifique a conexão.</td></tr>
                 `;
             }
         }
@@ -513,8 +559,11 @@
 
             const headerSubtitle = document.getElementById('headerSubtitle');
 
+            const inactiveClass = "px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
+            const activeClass = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
+
             [btnRS, btnGrafico, btnMensal].forEach(btn => {
-                if (btn) btn.className = "px-3 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
+                if (btn) btn.className = inactiveClass;
             });
 
             tabRS.classList.add('hidden');
@@ -523,16 +572,16 @@
 
             if (tabName === 'RS') {
                 tabRS.classList.remove('hidden');
-                btnRS.className = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
+                btnRS.className = activeClass;
                 headerSubtitle.textContent = "Dashboard RS";
             } else if (tabName === 'Grafico') {
                 tabGrafico.classList.remove('hidden');
-                btnGrafico.className = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
+                btnGrafico.className = activeClass;
                 headerSubtitle.textContent = "Dashboard Gráfico";
                 renderGraficoView();
             } else if (tabName === 'Mensal') {
                 tabMensal.classList.remove('hidden');
-                btnMensal.className = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
+                btnMensal.className = activeClass;
                 headerSubtitle.textContent = "Dashboard Mensal";
                 renderMensalView();
             }
@@ -639,26 +688,26 @@
 
             popover.innerHTML = `
                 <div class="space-y-2">
-                    <input type="text" id="search_popover_${safeId}" oninput="filterExcelPopoverList('${colKey}')" placeholder="Pesquisar..." class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    <input type="text" id="search_popover_${safeId}" oninput="filterExcelPopoverList('${colKey}')" placeholder="Pesquisar..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
                     
-                    <div class="max-h-40 overflow-y-auto space-y-1 text-xs font-sans py-1 border-t border-b border-slate-800" id="list_popover_${safeId}">
-                        <div class="flex items-center gap-2 px-1 hover:bg-slate-800 rounded">
-                            <input type="checkbox" id="chk_all_${safeId}" onchange="toggleSelectAllColumn('${colKey}', this.checked)" ${isAllSelected ? 'checked' : ''} class="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
-                            <label for="chk_all_${safeId}" class="text-amber-400 font-semibold cursor-pointer select-none">(Selecionar Tudo)</label>
+                    <div class="max-h-40 overflow-y-auto space-y-1 text-xs font-sans py-1 border-t border-b border-slate-200 dark:border-slate-800" id="list_popover_${safeId}">
+                        <div class="flex items-center gap-2 px-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
+                            <input type="checkbox" id="chk_all_${safeId}" onchange="toggleSelectAllColumn('${colKey}', this.checked)" ${isAllSelected ? 'checked' : ''} class="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                            <label for="chk_all_${safeId}" class="text-amber-600 dark:text-amber-400 font-semibold cursor-pointer select-none">(Selecionar Tudo)</label>
                         </div>
                         ${uniqueValues.map((val) => {
                             const isChecked = !selectedSet || selectedSet.has(val);
                             return `
-                                <div class="flex items-center gap-2 px-1 hover:bg-slate-800 rounded item-popover-row">
-                                    <input type="checkbox" value="${val.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="toggleSingleColumnVal('${colKey}')" class="chk_col_${safeId} rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
-                                    <label onclick="this.previousElementSibling.click()" class="text-slate-300 truncate cursor-pointer select-none" title="${val}">${val}</label>
+                                <div class="flex items-center gap-2 px-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded item-popover-row">
+                                    <input type="checkbox" value="${val.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="toggleSingleColumnVal('${colKey}')" class="chk_col_${safeId} rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                                    <label onclick="this.previousElementSibling.click()" class="text-slate-700 dark:text-slate-300 truncate cursor-pointer select-none" title="${val}">${val}</label>
                                 </div>
                             `;
                         }).join('')}
                     </div>
 
                     <div class="flex justify-end gap-1.5 pt-1">
-                        <button onclick="clearSingleColumnFilter('${colKey}')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] rounded cursor-pointer">Limpar</button>
+                        <button onclick="clearSingleColumnFilter('${colKey}')" class="px-2 py-0.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] rounded cursor-pointer">Limpar</button>
                         <button onclick="applyColumnFilterFromUI('${colKey}')" class="px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] rounded cursor-pointer">Aplicar</button>
                     </div>
                 </div>
@@ -731,9 +780,9 @@
             if (!btn) return;
 
             if (columnSelections[colKey]) {
-                btn.className = "text-amber-400 bg-amber-500/20 p-0.5 rounded transition font-bold";
+                btn.className = "text-amber-500 dark:text-amber-400 bg-amber-500/20 p-0.5 rounded transition font-bold";
             } else {
-                btn.className = "text-slate-500 hover:text-amber-400 p-0.5 rounded transition";
+                btn.className = "text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition";
             }
         }
 
@@ -761,18 +810,18 @@
                 yearBlock.className = "select-none";
 
                 yearBlock.innerHTML = `
-                    <div class="flex items-center gap-2 py-1 hover:bg-slate-800 rounded px-1 cursor-pointer">
-                        <span onclick="toggleYearExpand('${year}')" class="text-slate-400 hover:text-white px-1">
+                    <div class="flex items-center gap-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded px-1 cursor-pointer">
+                        <span onclick="toggleYearExpand('${year}')" class="text-slate-400 hover:text-slate-800 dark:hover:text-white px-1">
                             <i data-lucide="chevron-right" id="arrow_${year}" class="w-3.5 h-3.5 transition-transform"></i>
                         </span>
-                        <input type="checkbox" id="chk_year_${year}" onchange="toggleYearCheck('${year}', this.checked)" class="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
-                        <label for="chk_year_${year}" class="text-xs font-semibold text-slate-200 cursor-pointer">${year}</label>
+                        <input type="checkbox" id="chk_year_${year}" onchange="toggleYearCheck('${year}', this.checked)" class="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                        <label for="chk_year_${year}" class="text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer">${year}</label>
                     </div>
-                    <div id="months_container_${year}" class="hidden pl-8 space-y-1 py-0.5 border-l border-slate-800 ml-3">
+                    <div id="months_container_${year}" class="hidden pl-8 space-y-1 py-0.5 border-l border-slate-200 dark:border-slate-800 ml-3">
                         ${months.map(m => `
-                            <div class="flex items-center gap-2 py-0.5 hover:bg-slate-800/60 rounded px-1">
-                                <input type="checkbox" id="chk_m_${year}_${m}" onchange="toggleMonthCheck('${year}', ${m}, this.checked)" class="chk_month_${year} rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
-                                <label for="chk_m_${year}_${m}" class="text-xs text-slate-300 cursor-pointer">${monthNames[m]}</label>
+                            <div class="flex items-center gap-2 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded px-1">
+                                <input type="checkbox" id="chk_m_${year}_${m}" onchange="toggleMonthCheck('${year}', ${m}, this.checked)" class="chk_month_${year} rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                                <label for="chk_m_${year}_${m}" class="text-xs text-slate-600 dark:text-slate-300 cursor-pointer">${monthNames[m]}</label>
                             </div>
                         `).join('')}
                     </div>
@@ -940,23 +989,23 @@
                 const prodManInd = row['PROD/MAN/IND'] || row.prod_man_ind || '';
 
                 const tr = document.createElement('tr');
-                tr.className = (idx % 2 === 0 ? 'bg-slate-900/30' : 'bg-slate-950/40') + ' hover:bg-slate-800/50 transition';
+                tr.className = (idx % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/30' : 'bg-white dark:bg-slate-950/40') + ' hover:bg-slate-100 dark:hover:bg-slate-800/50 transition';
 
                 tr.innerHTML = `
-                    <td class="p-1.5 border-r border-slate-800/60 truncate" title="${row.n_orcamento || ''}">${row.n_orcamento || ''}</td>
-                    <td class="p-1.5 border-r border-slate-800/60 truncate" title="${row.n_os || ''}">${row.n_os || ''}</td>
-                    <td class="p-1.5 border-r border-slate-800/60 font-sans font-medium text-slate-200 truncate" title="${row.cliente || ''}">${row.cliente || ''}</td>
-                    <td class="p-1.5 border-r border-slate-800/60 truncate" title="${row.cod_mat_no_cliente || ''}">${row.cod_mat_no_cliente || ''}</td>
-                    <td class="p-1.5 border-r border-slate-800/60 truncate" title="${row.pedido_cliente || ''}">${row.pedido_cliente || ''}</td>
-                    <td class="p-1.5 border-r border-slate-800/60 truncate" title="${row.item || ''}">${row.item || ''}</td>
-                    <td class="p-1.5 border-r border-slate-800/60 truncate" title="${row.cod_interno || ''}">${row.cod_interno || ''}</td>
-                    <td class="p-1.5 border-r border-slate-800/60 font-sans text-slate-300 truncate" title="${row.descricao || ''}">${row.descricao || ''}</td>
-                    <td class="p-1.5 text-right border-r border-slate-800/60 font-bold truncate">${qtde}</td>
-                    <td class="p-1.5 text-center border-r border-slate-800/60 truncate">${formatDateBR(row.dt_aprovacao)}</td>
-                    <td class="p-1.5 text-center border-r border-slate-800/60 truncate">${formatDateBR(row.dt_previsao_entrega)}</td>
-                    <td class="p-1.5 text-right border-r border-slate-800/60 truncate">${formatCurrency(vlUnit)}</td>
-                    <td class="p-1.5 text-right font-bold text-emerald-400 border-r border-slate-800/60 truncate">${formatCurrency(vlTotal)}</td>
-                    <td class="p-1.5 text-center font-semibold text-slate-300 truncate" title="${prodManInd}">${prodManInd}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 truncate" title="${row.n_orcamento || ''}">${row.n_orcamento || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 truncate" title="${row.n_os || ''}">${row.n_os || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 font-sans font-medium text-slate-900 dark:text-slate-200 truncate" title="${row.cliente || ''}">${row.cliente || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 truncate" title="${row.cod_mat_no_cliente || ''}">${row.cod_mat_no_cliente || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 truncate" title="${row.pedido_cliente || ''}">${row.pedido_cliente || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 truncate" title="${row.item || ''}">${row.item || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 truncate" title="${row.cod_interno || ''}">${row.cod_interno || ''}</td>
+                    <td class="p-1.5 border-r border-slate-200 dark:border-slate-800/60 font-sans text-slate-700 dark:text-slate-300 truncate" title="${row.descricao || ''}">${row.descricao || ''}</td>
+                    <td class="p-1.5 text-right border-r border-slate-200 dark:border-slate-800/60 font-bold truncate">${qtde}</td>
+                    <td class="p-1.5 text-center border-r border-slate-200 dark:border-slate-800/60 truncate">${formatDateBR(row.dt_aprovacao)}</td>
+                    <td class="p-1.5 text-center border-r border-slate-200 dark:border-slate-800/60 truncate">${formatDateBR(row.dt_previsao_entrega)}</td>
+                    <td class="p-1.5 text-right border-r border-slate-200 dark:border-slate-800/60 truncate">${formatCurrency(vlUnit)}</td>
+                    <td class="p-1.5 text-right font-bold text-emerald-600 dark:text-emerald-400 border-r border-slate-200 dark:border-slate-800/60 truncate">${formatCurrency(vlTotal)}</td>
+                    <td class="p-1.5 text-center font-semibold text-slate-700 dark:text-slate-300 truncate" title="${prodManInd}">${prodManInd}</td>
                 `;
                 fragment.appendChild(tr);
             });
@@ -1003,10 +1052,10 @@
                 const fragment = document.createDocumentFragment();
                 sortedClients.forEach((c, idx) => {
                     const tr = document.createElement('tr');
-                    tr.className = (idx % 2 === 0 ? 'bg-slate-900/20' : 'bg-slate-950/40') + ' hover:bg-slate-800/50 transition';
+                    tr.className = (idx % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/20' : 'bg-white dark:bg-slate-950/40') + ' hover:bg-slate-100 dark:hover:bg-slate-800/50 transition';
                     tr.innerHTML = `
-                        <td class="p-2 text-slate-200 font-medium truncate max-w-[200px]" title="${c.name}">${c.name}</td>
-                        <td class="p-2 text-right font-mono font-semibold text-emerald-400">${formatCurrency(c.total)}</td>
+                        <td class="p-2 text-slate-800 dark:text-slate-200 font-medium truncate max-w-[200px]" title="${c.name}">${c.name}</td>
+                        <td class="p-2 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">${formatCurrency(c.total)}</td>
                     `;
                     fragment.appendChild(tr);
                 });
@@ -1031,6 +1080,8 @@
                 myChartGrafico.destroy();
             }
 
+            const isDark = document.documentElement.classList.contains('dark');
+
             myChartGrafico = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
@@ -1038,7 +1089,7 @@
                     datasets: [{
                         data: dataValues,
                         backgroundColor: chartColors.slice(0, labels.length),
-                        borderColor: '#0f172a',
+                        borderColor: isDark ? '#0f172a' : '#ffffff',
                         borderWidth: 2,
                         hoverOffset: 8
                     }]
@@ -1051,7 +1102,7 @@
                         legend: {
                             position: 'right',
                             labels: {
-                                color: '#cbd5e1',
+                                color: isDark ? '#cbd5e1' : '#334155',
                                 font: { size: 10, family: 'Segoe UI' },
                                 boxWidth: 12,
                                 padding: 10
@@ -1072,7 +1123,6 @@
             });
         }
 
-        // RENDERIZAÇÃO ABA MENSAL: CONTAGEM DE LINHAS/REGISTROS CONFORME COUNTROWS(RS)
         function renderMensalView() {
             const monthlyAgg = {};
             let totalVal = 0;
@@ -1092,7 +1142,7 @@
 
                     const val = parseFloat(item.vl_total || 0);
                     monthlyAgg[key].total += val;
-                    monthlyAgg[key].countOfItems += 1; // CONTAGEM DE REGISTROS/LINHAS
+                    monthlyAgg[key].countOfItems += 1;
 
                     totalVal += val;
                 }
@@ -1129,18 +1179,18 @@
                 const fragment = document.createDocumentFragment();
                 sortedMonths.forEach((m, idx) => {
                     const tr = document.createElement('tr');
-                    tr.className = (idx % 2 === 0 ? 'bg-slate-900/20' : 'bg-slate-950/40') + ' hover:bg-slate-800/50 transition';
+                    tr.className = (idx % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/20' : 'bg-white dark:bg-slate-950/40') + ' hover:bg-slate-100 dark:hover:bg-slate-800/50 transition';
                     tr.innerHTML = `
-                        <td class="p-2 font-medium text-slate-200">${m.label}</td>
-                        <td class="p-2 text-right font-mono font-semibold text-amber-400">${formatCurrency(m.total)}</td>
-                        <td class="p-2 text-right font-mono text-slate-300">${m.itens.toLocaleString('pt-BR')}</td>
+                        <td class="p-2 font-medium text-slate-800 dark:text-slate-200">${m.label}</td>
+                        <td class="p-2 text-right font-mono font-semibold text-amber-600 dark:text-amber-400">${formatCurrency(m.total)}</td>
+                        <td class="p-2 text-right font-mono text-slate-700 dark:text-slate-300">${m.itens.toLocaleString('pt-BR')}</td>
                     `;
                     fragment.appendChild(tr);
                 });
                 tbody.appendChild(fragment);
             }
 
-            // GRÁFICO COMBINADO MENSAL COM CORES & DATALABELS EXATOS DO POWER BI
+            // GRÁFICO COMBINADO MENSAL
             const labels = sortedMonths.map(m => m.label);
             const totals = sortedMonths.map(m => m.total);
             const itens = sortedMonths.map(m => m.itens);
@@ -1363,7 +1413,7 @@
             container.innerHTML = '';
             list.slice(0, 100).forEach(c => {
                 const div = document.createElement('div');
-                div.className = 'p-2 hover:bg-slate-800 cursor-pointer text-slate-300 font-sans';
+                div.className = 'p-2 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-700 dark:text-slate-300 font-sans';
                 div.textContent = c;
                 div.onclick = () => selectCliente(c);
                 container.appendChild(div);
@@ -1489,6 +1539,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
             if (window.lucide) lucide.createIcons();
             loadRsData();
         });
