@@ -8,34 +8,48 @@
     <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <!-- Script para carregar o tema dinâmico salvo na index -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #0f172a; color: #f8fafc; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
         .custom-scroll::-webkit-scrollbar { width: 5px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #1e293b; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .dark .custom-scroll::-webkit-scrollbar-track { background: #1e293b; }
+        .dark .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #e2e8f0; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+<body class="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-200">
 
     <!-- HEADER -->
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-md">
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
             
             <div class="flex items-center gap-4">
-                <a href="../" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700 flex items-center justify-center" title="Voltar ao Menu">
+                <a href="../" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-300 dark:border-slate-700 flex items-center justify-center" title="Voltar ao Menu">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
-                <div class="flex items-center justify-center p-1 bg-slate-950/80 rounded-xl border border-slate-800 shadow-inner">
+                <!-- CONTAINER DA LOGO EM FUNDO ESCURO FIXO -->
+                <div class="flex items-center justify-center p-1 bg-slate-950 rounded-xl border border-slate-800 shadow-inner">
                     <img src="../logo.png" alt="Logo" class="h-10 max-h-12 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="hidden p-2 bg-amber-500 rounded-xl text-slate-950 font-bold items-center justify-center">
                         <i data-lucide="boxes" class="w-6 h-6"></i>
                     </div>
                 </div>
                 <div>
-                    <h1 class="text-xl font-extrabold tracking-wide text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-400">Estoque de Matéria Prima</p>
+                    <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Estoque de Matéria Prima</p>
                 </div>
             </div>
 
@@ -52,40 +66,40 @@
     <main class="max-w-7xl w-full mx-auto p-4 flex flex-col gap-4 flex-1">
         
         <!-- BARRA DE PESQUISA -->
-        <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-sm">
-            <div class="flex items-center gap-2 flex-1 min-w-[200px] bg-slate-950 border border-slate-800 rounded-xl px-3 py-2">
+        <div class="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+            <div class="flex items-center gap-2 flex-1 min-w-[200px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
                 <input type="text" id="searchInput" oninput="renderTable()" placeholder="Pesquisar por Nº OS, Código Completo, Item ou Título..." 
-                       class="w-full text-xs bg-transparent text-white focus:outline-none placeholder-slate-500">
+                       class="w-full text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none placeholder-slate-400 dark:placeholder-slate-500">
             </div>
         </div>
 
         <!-- NAVEGAÇÃO POR ABAS -->
-        <div class="flex border-b border-slate-800 gap-2 overflow-x-auto custom-scroll">
-            <button id="tabRetirar" onclick="switchTab('retirar')" class="px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-amber-500 bg-slate-900 text-amber-400 flex items-center gap-2 whitespace-nowrap">
+        <div class="flex border-b border-slate-200 dark:border-slate-800 gap-2 overflow-x-auto custom-scroll">
+            <button id="tabRetirar" onclick="switchTab('retirar')" class="px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-amber-500 bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 flex items-center gap-2 whitespace-nowrap">
                 <i data-lucide="package-check" class="w-4 h-4"></i>
                 Pronto para Retirar
-                <span id="badgeRetirar" class="ml-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px]">0</span>
+                <span id="badgeRetirar" class="ml-1 bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px]">0</span>
             </button>
             
-            <button id="tabRetirado" onclick="switchTab('retirado')" class="px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
+            <button id="tabRetirado" onclick="switchTab('retirado')" class="px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
                 <i data-lucide="package-minus" class="w-4 h-4"></i>
                 O que Retirou (Já Retirada)
-                <span id="badgeRetirado" class="ml-1 bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full text-[10px]">0</span>
+                <span id="badgeRetirado" class="ml-1 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700 px-2 py-0.5 rounded-full text-[10px]">0</span>
             </button>
 
-            <button id="tabChegar" onclick="switchTab('chegar')" class="px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
+            <button id="tabChegar" onclick="switchTab('chegar')" class="px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
                 <i data-lucide="truck" class="w-4 h-4"></i>
                 Tem para Chegar (Falta Chegar)
-                <span id="badgeChegar" class="ml-1 bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full text-[10px]">0</span>
+                <span id="badgeChegar" class="ml-1 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700 px-2 py-0.5 rounded-full text-[10px]">0</span>
             </button>
         </div>
 
         <!-- TABELA DE ITENS -->
-        <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-sm">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-300">
-                    <thead class="bg-slate-950 text-slate-400 uppercase font-bold border-b border-slate-800 text-[10px]">
+                <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                    <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 uppercase font-bold border-b border-slate-200 dark:border-slate-800 text-[10px]">
                         <tr>
                             <th class="p-3">OS / Cód. Completo</th>
                             <th class="p-3">Título / Subtítulo</th>
@@ -93,13 +107,13 @@
                             <th class="p-3 text-center" id="thQtdAba">Qtd. Pronto Retirar</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-800/60">
+                    <tbody id="tableBody" class="divide-y divide-slate-200 dark:divide-slate-800/60">
                         <!-- Conteúdo via Javascript -->
                     </tbody>
                 </table>
             </div>
 
-            <div id="emptyMessage" class="hidden p-8 text-center text-slate-500">
+            <div id="emptyMessage" class="hidden p-8 text-center text-slate-500 dark:text-slate-400">
                 <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
                 Nenhum item com quantidade cadastrada nesta aba.
             </div>
@@ -168,18 +182,18 @@
             activeTab = tab;
             
             const tabs = {
-                retirar: { el: document.getElementById('tabRetirar'), title: 'Qtd. Pronto Retirar', color: 'border-amber-500 text-amber-400' },
-                retirado: { el: document.getElementById('tabRetirado'), title: 'Qtd. Já Retirada', color: 'border-emerald-500 text-emerald-400' },
-                chegar: { el: document.getElementById('tabChegar'), title: 'Qtd. Falta Chegar', color: 'border-blue-500 text-blue-400' }
+                retirar: { el: document.getElementById('tabRetirar'), title: 'Qtd. Pronto Retirar', color: 'border-amber-500 text-amber-600 dark:text-amber-400' },
+                retirado: { el: document.getElementById('tabRetirado'), title: 'Qtd. Já Retirada', color: 'border-emerald-500 text-emerald-600 dark:text-emerald-400' },
+                chegar: { el: document.getElementById('tabChegar'), title: 'Qtd. Falta Chegar', color: 'border-blue-500 text-blue-600 dark:text-blue-400' }
             };
 
             Object.keys(tabs).forEach(key => {
                 const isSelected = key === tab;
                 const t = tabs[key];
                 if (isSelected) {
-                    t.el.className = `px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 bg-slate-900 ${t.color} flex items-center gap-2 whitespace-nowrap`;
+                    t.el.className = `px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 bg-white dark:bg-slate-900 ${t.color} flex items-center gap-2 whitespace-nowrap`;
                 } else {
-                    t.el.className = 'px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap';
+                    t.el.className = 'px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap';
                 }
             });
 
@@ -219,33 +233,33 @@
 
             filtered.forEach(item => {
                 let targetQty = 0;
-                let badgeClass = 'bg-slate-800 text-slate-200';
+                let badgeClass = 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200';
 
                 if (activeTab === 'retirar') {
                     targetQty = item.qtde_pronto_retirar;
-                    badgeClass = 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                    badgeClass = 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30';
                 } else if (activeTab === 'retirado') {
                     targetQty = item.qtde_ja_retirada;
-                    badgeClass = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                    badgeClass = 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
                 } else if (activeTab === 'chegar') {
                     targetQty = item.qtde_falta_chegar;
-                    badgeClass = 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
+                    badgeClass = 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30';
                 }
 
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-800/40 transition';
+                tr.className = 'hover:bg-slate-100 dark:hover:bg-slate-800/40 transition';
                 tr.innerHTML = `
                     <td class="p-3">
-                        <span class="font-bold text-amber-400 block">OS #${item.n_os || '-'}</span>
-                        <span class="text-[10px] text-slate-500 font-mono">${item.cod_os_completo || '-'}</span>
+                        <span class="font-bold text-amber-600 dark:text-amber-400 block">OS #${item.n_os || '-'}</span>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">${item.cod_os_completo || '-'}</span>
                     </td>
                     <td class="p-3">
-                        <div class="font-semibold text-slate-200">${item.titulo || '-'}</div>
-                        <div class="text-[10px] text-slate-400">${item.subtitulo || ''}</div>
+                        <div class="font-semibold text-slate-800 dark:text-slate-200">${item.titulo || '-'}</div>
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400">${item.subtitulo || ''}</div>
                     </td>
                     <td class="p-3">
-                        <div class="font-medium text-slate-300">${item.item || '-'}</div>
-                        <span class="text-[10px] bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800 text-slate-400 font-mono">
+                        <div class="font-medium text-slate-700 dark:text-slate-300">${item.item || '-'}</div>
+                        <span class="text-[10px] bg-slate-100 dark:bg-slate-950 px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-mono">
                             Cód: ${item.codigo_interno || '-'}
                         </span>
                     </td>
