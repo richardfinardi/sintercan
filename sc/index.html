@@ -8,27 +8,36 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png" />
 
-  <!-- Tailwind CSS -->
+  <!-- Tailwind CSS e Configuração Dark Mode -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
+  
+  <!-- Script para carregar o tema dinâmico salvo na index -->
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
   <style>
-    body { background-color: #070d1e; color: #f8fafc; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-    .bg-rf-header { background-color: #0b1329; }
-    .bg-rf-card { background-color: #0f172a; }
-    .border-rf { border-color: #1e293b; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
     
     .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scroll::-webkit-scrollbar-track { background: #070d1e; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .dark .custom-scroll::-webkit-scrollbar-track { background: #070d1e; }
+    .dark .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #e2e8f0; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
     table { border-collapse: separate; border-spacing: 0; width: 100%; }
-    th { border-bottom: 2px solid #f59e0b; color: #94a3b8; font-weight: 700; font-size: 10px; text-transform: uppercase; padding: 10px 8px; text-align: left; background-color: #070d1e; user-select: none; }
-    th:hover { color: #f59e0b; }
-    td { font-size: 11px; padding: 8px; color: #e2e8f0; white-space: nowrap; border-bottom: 1px solid #1e293b; }
-    tr:nth-child(even) { background-color: #0b1329; }
-    tr:hover { background-color: #1e293b; }
+    th { border-bottom: 2px solid #f59e0b; font-weight: 700; font-size: 10px; text-transform: uppercase; padding: 10px 8px; text-align: left; user-select: none; }
+    td { font-size: 11px; padding: 8px; white-space: nowrap; }
 
     .tab-active {
       background-color: #f59e0b !important;
@@ -38,21 +47,24 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col custom-scroll">
+<body class="min-h-screen flex flex-col custom-scroll bg-slate-100 dark:bg-[#070d1e] text-slate-800 dark:text-slate-100 transition-colors duration-200">
 
   <!-- HEADER -->
-  <header class="bg-rf-header border-b border-rf sticky top-0 z-50 shadow-md">
+  <header class="bg-white dark:bg-[#0b1329] border-b border-slate-200 dark:border-[#1e293b] sticky top-0 z-50 shadow-md">
     <div class="max-w-[1700px] mx-auto px-4 py-2.5 flex flex-wrap justify-between items-center gap-4">
       
       <div class="flex items-center gap-4">
-        <a href="../" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700 flex items-center justify-center" title="Voltar ao Menu">
+        <a href="../" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-300 dark:border-slate-700 flex items-center justify-center" title="Voltar ao Menu">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
-        <img src="../logo.png" alt="Consultoria RF" class="h-10 w-auto object-contain" />
-        <div class="h-8 w-[1px] bg-slate-800 hidden sm:block"></div>
+        <!-- CONTAINER DA LOGO EM FUNDO ESCURO FIXO -->
+        <div class="flex items-center justify-center p-1 bg-slate-950 rounded-xl border border-slate-800 shadow-inner">
+            <img src="../logo.png" alt="Consultoria RF" class="h-10 w-auto object-contain" />
+        </div>
+        <div class="h-8 w-[1px] bg-slate-300 dark:bg-slate-800 hidden sm:block"></div>
         <div>
-          <h1 class="text-sm font-black tracking-wider text-white uppercase leading-tight">Sintercan</h1>
-          <p class="text-[10px] text-slate-400 font-medium leading-tight">Estoque de Produto Acabado</p>
+          <h1 class="text-sm font-black tracking-wider text-slate-900 dark:text-white uppercase leading-tight">Sintercan</h1>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-tight">Estoque de Produto Acabado</p>
         </div>
       </div>
 
@@ -69,115 +81,115 @@
 
     <!-- KPIS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-rf-card p-4 rounded-2xl border border-rf shadow-md flex items-center justify-between">
+      <div class="bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-slate-200 dark:border-[#1e293b] shadow-md flex items-center justify-between">
         <div>
-          <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">TOTAL DE ITENS (FILTRADO)</p>
-          <h3 id="kpiTotalItens" class="text-2xl font-black text-white mt-1">0</h3>
+          <p class="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">TOTAL DE ITENS (FILTRADO)</p>
+          <h3 id="kpiTotalItens" class="text-2xl font-black text-slate-900 dark:text-white mt-1">0</h3>
         </div>
-        <div class="p-3 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20"><i data-lucide="boxes" class="w-5 h-5"></i></div>
+        <div class="p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl border border-blue-500/20"><i data-lucide="boxes" class="w-5 h-5"></i></div>
       </div>
 
-      <div class="bg-rf-card p-4 rounded-2xl border border-rf shadow-md flex items-center justify-between">
+      <div class="bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-slate-200 dark:border-[#1e293b] shadow-md flex items-center justify-between">
         <div>
-          <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">QUANTIDADE SOLICITADA</p>
-          <h3 id="kpiQtdSolicitada" class="text-2xl font-black text-amber-400 mt-1">0</h3>
+          <p class="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">QUANTIDADE SOLICITADA</p>
+          <h3 id="kpiQtdSolicitada" class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">0</h3>
         </div>
-        <div class="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20"><i data-lucide="clipboard-list" class="w-5 h-5"></i></div>
+        <div class="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl border border-amber-500/20"><i data-lucide="clipboard-list" class="w-5 h-5"></i></div>
       </div>
 
-      <div class="bg-rf-card p-4 rounded-2xl border border-rf shadow-md flex items-center justify-between">
+      <div class="bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-slate-200 dark:border-[#1e293b] shadow-md flex items-center justify-between">
         <div>
-          <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">QUANTIDADE DISPONÍVEL</p>
-          <h3 id="kpiQtdDisponivel" class="text-2xl font-black text-emerald-400 mt-1">0</h3>
+          <p class="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">QUANTIDADE DISPONÍVEL</p>
+          <h3 id="kpiQtdDisponivel" class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">0</h3>
         </div>
-        <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20"><i data-lucide="check-circle-2" class="w-5 h-5"></i></div>
+        <div class="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-500/20"><i data-lucide="check-circle-2" class="w-5 h-5"></i></div>
       </div>
 
-      <div class="bg-rf-card p-4 rounded-2xl border border-rf shadow-md flex items-center justify-between">
+      <div class="bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-slate-200 dark:border-[#1e293b] shadow-md flex items-center justify-between">
         <div>
-          <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">EM PRODUÇÃO</p>
-          <h3 id="kpiQtdProduzindo" class="text-2xl font-black text-indigo-400 mt-1">0</h3>
+          <p class="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">EM PRODUÇÃO</p>
+          <h3 id="kpiQtdProduzindo" class="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">0</h3>
         </div>
-        <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20"><i data-lucide="factory" class="w-5 h-5"></i></div>
+        <div class="p-3 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-500/20"><i data-lucide="factory" class="w-5 h-5"></i></div>
       </div>
     </div>
 
     <!-- FILTROS -->
-    <div class="bg-rf-card p-3 rounded-2xl border border-rf flex flex-wrap items-center gap-3 shadow-md">
-      <div class="flex items-center gap-2 flex-1 min-w-[240px] bg-slate-950 border border-slate-800 rounded-xl px-3 py-2">
+    <div class="bg-white dark:bg-[#0f172a] p-3 rounded-2xl border border-slate-200 dark:border-[#1e293b] flex flex-wrap items-center gap-3 shadow-md">
+      <div class="flex items-center gap-2 flex-1 min-w-[240px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
         <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
         <input type="text" id="searchInput" oninput="render()" placeholder="Pesquisar qualquer coisa (OS, Pedido, SC, Título, Cliente...)" 
-               class="w-full text-xs bg-transparent text-white focus:outline-none placeholder-slate-500">
+               class="w-full text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none placeholder-slate-400 dark:placeholder-slate-500">
       </div>
 
-      <div id="wrapperFilterOs" class="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 min-w-[160px]">
+      <div id="wrapperFilterOs" class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 min-w-[160px]">
         <i data-lucide="file-text" class="w-4 h-4 text-slate-400"></i>
-        <select id="filterOs" onchange="render()" class="w-full text-xs bg-transparent text-white focus:outline-none cursor-pointer">
-          <option value="" class="bg-slate-900">OS Destino (Todas)</option>
+        <select id="filterOs" onchange="render()" class="w-full text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer">
+          <option value="" class="bg-white dark:bg-slate-900">OS Destino (Todas)</option>
         </select>
       </div>
 
-      <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 min-w-[160px]">
+      <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 min-w-[160px]">
         <i data-lucide="tag" class="w-4 h-4 text-slate-400"></i>
-        <select id="filterProduto" onchange="render()" class="w-full text-xs bg-transparent text-white focus:outline-none cursor-pointer">
-          <option value="" class="bg-slate-900">Cód. Produto (Todos)</option>
+        <select id="filterProduto" onchange="render()" class="w-full text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer">
+          <option value="" class="bg-white dark:bg-slate-900">Cód. Produto (Todos)</option>
         </select>
       </div>
 
-      <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 min-w-[160px]">
+      <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 min-w-[160px]">
         <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
-        <select id="filterCliente" onchange="render()" class="w-full text-xs bg-transparent text-white focus:outline-none cursor-pointer">
-          <option value="" class="bg-slate-900">Todos os Clientes</option>
+        <select id="filterCliente" onchange="render()" class="w-full text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer">
+          <option value="" class="bg-white dark:bg-slate-900">Todos os Clientes</option>
         </select>
       </div>
 
-      <button onclick="clearFilters()" class="flex items-center gap-2 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl font-bold text-xs transition">
+      <button onclick="clearFilters()" class="flex items-center gap-2 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded-xl font-bold text-xs transition">
         <i data-lucide="filter-x" class="w-4 h-4"></i>
         Limpar
       </button>
     </div>
 
     <!-- ABAS -->
-    <div class="flex border-b border-rf gap-2 overflow-x-auto custom-scroll pt-1">
-      <button id="tab-estoque" onclick="switchTab('estoque')" class="tab-btn px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-amber-500 bg-rf-card text-amber-400 flex items-center gap-2 whitespace-nowrap tab-active">
+    <div class="flex border-b border-slate-200 dark:border-[#1e293b] gap-2 overflow-x-auto custom-scroll pt-1">
+      <button id="tab-estoque" onclick="switchTab('estoque')" class="tab-btn px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-amber-500 bg-white dark:bg-[#0f172a] text-amber-600 dark:text-amber-400 flex items-center gap-2 whitespace-nowrap tab-active">
         <i data-lucide="box" class="w-4 h-4"></i>
         EM ESTOQUE
       </button>
 
-      <button id="tab-orcamento" onclick="switchTab('orcamento')" class="tab-btn px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
+      <button id="tab-orcamento" onclick="switchTab('orcamento')" class="tab-btn px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
         <i data-lucide="file-text" class="w-4 h-4"></i>
         EM ESTOQUE PARA ORÇAMENTO
       </button>
 
-      <button id="tab-produzindo" onclick="switchTab('produzindo')" class="tab-btn px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
+      <button id="tab-produzindo" onclick="switchTab('produzindo')" class="tab-btn px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
         <i data-lucide="hammer" class="w-4 h-4"></i>
         PRODUZINDO
       </button>
 
-      <button id="tab-entregues" onclick="switchTab('entregues')" class="tab-btn px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
+      <button id="tab-entregues" onclick="switchTab('entregues')" class="tab-btn px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
         <i data-lucide="check-check" class="w-4 h-4"></i>
         ENTREGUES
       </button>
 
-      <button id="tab-parciais" onclick="switchTab('parciais')" class="tab-btn px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
+      <button id="tab-parciais" onclick="switchTab('parciais')" class="tab-btn px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
         <i data-lucide="pie-chart" class="w-4 h-4"></i>
         PARCIAIS
       </button>
     </div>
 
     <!-- TABELA -->
-    <div class="bg-rf-card rounded-2xl border border-rf overflow-hidden shadow-md flex-1 flex flex-col">
+    <div class="bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200 dark:border-[#1e293b] overflow-hidden shadow-md flex-1 flex flex-col">
       <div class="overflow-x-auto custom-scroll flex-1">
         <table>
-          <thead class="sticky top-0 z-10">
+          <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-[#070d1e]">
             <tr id="tableHeader"></tr>
           </thead>
-          <tbody id="tableBody"></tbody>
+          <tbody id="tableBody" class="divide-y divide-slate-200 dark:divide-[#1e293b]"></tbody>
         </table>
       </div>
 
-      <div class="bg-slate-950 p-3 border-t border-rf flex justify-between items-center text-xs font-bold text-slate-300">
-        <span>REGISTROS ENCONTRADOS: <strong id="totalCount" class="text-amber-400">0</strong></span>
+      <div class="bg-slate-50 dark:bg-slate-950 p-3 border-t border-slate-200 dark:border-[#1e293b] flex justify-between items-center text-xs font-bold text-slate-700 dark:text-slate-300">
+        <span>REGISTROS ENCONTRADOS: <strong id="totalCount" class="text-amber-600 dark:text-amber-400">0</strong></span>
         <div id="footerSums" class="flex gap-4 font-mono"></div>
       </div>
     </div>
@@ -334,8 +346,8 @@
         const el = document.getElementById(id);
         const vals = [...new Set(combined.map(i => i[key]).filter(Boolean))].sort();
         const firstOpt = el.options[0].text;
-        el.innerHTML = `<option value="" class="bg-slate-900">${firstOpt}</option>`;
-        vals.forEach(v => el.innerHTML += `<option value="${v}" class="bg-slate-900">${v}</option>`);
+        el.innerHTML = `<option value="" class="bg-white dark:bg-slate-900">${firstOpt}</option>`;
+        vals.forEach(v => el.innerHTML += `<option value="${v}" class="bg-white dark:bg-slate-900">${v}</option>`);
       };
 
       fill('filterOs', 'n_os');
@@ -347,7 +359,7 @@
       currentTab = tab;
       document.querySelectorAll('.tab-btn').forEach(b => {
         b.classList.remove('tab-active');
-        b.classList.add('text-slate-400', 'border-transparent');
+        b.classList.add('text-slate-500', 'dark:text-slate-400', 'border-transparent');
       });
 
       const activeBtn = document.getElementById(`tab-${tab}`);
@@ -427,23 +439,23 @@
       document.getElementById('tableHeader').innerHTML = config.cols.map(c => {
         const isSorted = sortColumn === c.key;
         const icon = isSorted ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : '';
-        const activeClass = isSorted ? 'text-amber-400 font-black' : '';
+        const activeClass = isSorted ? 'text-amber-600 dark:text-amber-400 font-black' : 'text-slate-500 dark:text-slate-400';
 
         return `
           <th onclick="handleSort('${c.key}')" class="cursor-pointer ${c.align === 'right' ? 'text-right' : 'text-left'} ${activeClass}">
-            ${c.label}<span class="text-amber-400">${icon}</span>
+            ${c.label}<span class="text-amber-600 dark:text-amber-400">${icon}</span>
           </th>
         `;
       }).join('');
 
-      document.getElementById('tableBody').innerHTML = filtered.map(row => `
-        <tr>
+      document.getElementById('tableBody').innerHTML = filtered.map((row, index) => `
+        <tr class="${index % 2 === 0 ? 'bg-slate-50/50 dark:bg-[#0b1329]' : 'bg-white dark:bg-[#0f172a]'} hover:bg-slate-100 dark:hover:bg-[#1e293b] transition">
           ${config.cols.map(c => {
             let val = row[c.key] !== null && row[c.key] !== undefined ? row[c.key] : '';
             if (c.formatter) val = c.formatter(val);
 
             return `
-              <td class="${c.align === 'right' ? 'text-right font-mono text-amber-400' : 'text-left'}">
+              <td class="${c.align === 'right' ? 'text-right font-mono text-amber-600 dark:text-amber-400' : 'text-left text-slate-700 dark:text-slate-200'}">
                 ${val}
               </td>
             `;
@@ -455,7 +467,7 @@
       sumsContainer.innerHTML = '';
       config.cols.filter(c => c.sum).forEach(c => {
         const total = filtered.reduce((acc, curr) => acc + (Number(curr[c.key]) || 0), 0);
-        sumsContainer.innerHTML += `<span>TOTAL ${c.label.toUpperCase()}: <strong class="text-amber-400">${total}</strong></span>`;
+        sumsContainer.innerHTML += `<span>TOTAL ${c.label.toUpperCase()}: <strong class="text-amber-600 dark:text-amber-400">${total}</strong></span>`;
       });
 
       lucide.createIcons();
