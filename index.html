@@ -6,7 +6,6 @@
     <title>Sintercan - Portal de Gestão</title>
     <link rel="icon" type="image/png" href="LOGO MINIMALISTA.png">
     
-    <!-- Tailwind CSS e Configuração Dark Mode -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -14,7 +13,6 @@
         }
     </script>
 
-    <!-- Leitura rápida do tema antes de renderizar a página (evita pisco de tela) -->
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -27,15 +25,8 @@
 </head>
 <body class="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col justify-center items-center p-4 transition-colors duration-200 relative">
 
-    <!-- BOTÃO FIXO DE ALTERNAR TEMA -->
-    <button id="themeToggleBtn" onclick="toggleTheme()" class="absolute top-4 right-4 p-2.5 bg-white dark:bg-slate-900 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg hover:scale-105 transition cursor-pointer flex items-center justify-center z-50" title="Alternar Tema">
-        <i id="themeToggleIcon" data-lucide="moon" class="w-5 h-5"></i>
-    </button>
-
-    <!-- TELA DE LOGIN -->
     <div id="loginBox" class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl shadow-2xl space-y-6 transition-colors duration-200">
         <div class="text-center space-y-2">
-            <!-- Container do Logo mantido com fundo escuro fixo -->
             <div class="inline-block p-2 bg-slate-950 rounded-xl border border-slate-800 shadow-inner">
                 <img src="./logo.png" alt="Sintercan Logo" class="h-12 mx-auto object-contain" onerror="this.style.display='none'">
             </div>
@@ -61,7 +52,6 @@
         </form>
     </div>
 
-    <!-- PAINEL / MENU PRINCIPAL -->
     <div id="menuBox" class="hidden w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl shadow-2xl space-y-6 transition-colors duration-200">
         <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
             <div class="flex items-center gap-4">
@@ -73,16 +63,21 @@
                     <p class="text-xs text-slate-500 dark:text-slate-400">Usuário: <span id="lblUser" class="text-amber-600 dark:text-amber-400 font-bold"></span></p>
                 </div>
             </div>
-            <button onclick="logout()" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
-                <i data-lucide="log-out" class="w-4 h-4"></i> Sair
-            </button>
+
+            <div class="flex items-center gap-2">
+                <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-400 border border-slate-300 dark:border-slate-700 rounded-xl transition cursor-pointer flex items-center justify-center" title="Alternar Tema">
+                    <i id="themeToggleIcon" data-lucide="moon" class="w-4 h-4"></i>
+                </button>
+                <button onclick="logout()" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Sair
+                </button>
+            </div>
         </div>
 
         <div>
             <h2 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Módulos Disponíveis</h2>
             <div id="gridModules" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Botões dinâmicos dos módulos -->
-            </div>
+                </div>
         </div>
     </div>
 
