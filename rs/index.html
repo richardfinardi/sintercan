@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <!-- SINTERCAN RS | Versão: V1.3.0 | Build: 2026-09-14 -->
-    <meta name="app-version" content="V1.3.0">
+    <!-- SINTERCAN RS | Versão: V1.4.0 | Build: 2026-09-14 -->
+    <meta name="app-version" content="V1.4.0">
     <meta name="app-build-date" content="2026-09-14">
     <meta name="theme-color" content="#0f172a">
-    <title>RS - Sintercan | V1.3.0</title>
+    <title>RS - Sintercan | V1.4.0</title>
     <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -62,6 +62,28 @@
         .rs-sortable-head { cursor: pointer; transition: background-color .15s ease, color .15s ease; }
         .rs-sortable-head:hover { background-color: rgba(245, 158, 11, .12); }
         .rs-sort-indicator { display: inline-flex; min-width: 12px; justify-content: center; margin-left: 4px; color: #f59e0b; font-weight: 900; }
+
+        .rs-sort-reset {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .35rem;
+            min-height: 30px;
+            padding: .28rem .55rem;
+            border-radius: .55rem;
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 700;
+            white-space: nowrap;
+            transition: all .15s ease;
+        }
+        .dark .rs-sort-reset { background: #0f172a; border-color: #334155; color: #94a3b8; }
+        .rs-sort-reset:not(:disabled):hover { border-color: #f59e0b; color: #d97706; background: rgba(245,158,11,.08); }
+        .rs-sort-reset:disabled { opacity: .42; cursor: default; }
+        .pedido-col-filter-popover { min-width: 220px; max-width: 280px; }
+        .pedido-filter-active { color: #f59e0b !important; background: rgba(245,158,11,.16) !important; }
 
         /* ===== PESQUISA AVANÇADA ===== */
         .rs-search-shell {
@@ -221,9 +243,13 @@
             #viewTabMensalCliente > div:first-child p { font-size: 11px !important; }
             #mensalClienteToolbar { padding: .42rem .5rem !important; align-items: stretch !important; }
             #mensalClienteToolbar .rs-mc-toolbar-left { width: 100%; justify-content: space-between; }
-            #mensalClienteToolbar .rs-mc-toolbar-right { width: 100%; display: grid !important; grid-template-columns: auto minmax(0, 1fr); gap: .35rem !important; align-items: center; }
+            #mensalClienteToolbar .rs-mc-toolbar-right { width: 100%; display: grid !important; grid-template-columns: auto minmax(0, 1fr) auto; gap: .35rem !important; align-items: center; }
             #mensalClienteSort { width: 100% !important; min-width: 0 !important; min-height: 36px; font-size: 9.5px !important; }
             #mensalClienteSortHelp { display: none !important; }
+            .rs-sort-reset { min-height: 34px !important; padding: .35rem .5rem !important; font-size: 9px !important; }
+            #btnResetSortRS .rs-sort-reset-text { display: none; }
+            #btnResetSortRS { width: 34px; padding-left: 0 !important; padding-right: 0 !important; }
+            #pedidoTableToolbar .rs-sort-reset { min-height: 32px !important; }
             #tableMensalCliente { font-size: 9px !important; }
             #tableMensalCliente th:first-child, #tableMensalCliente td:first-child { min-width: 145px !important; width: 145px !important; max-width: 145px !important; }
             #tableMensalCliente th:not(:first-child):not(:last-child), #tableMensalCliente td:not(:first-child):not(:last-child) { min-width: 92px !important; }
@@ -555,7 +581,7 @@
                         <tr>
                             <th class="w-[5.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('n_orcamento')">
-                                    <span class="truncate">Orçamento <span id="sort_n_orcamento"></span></span>
+                                    <span class="truncate">Orçamento <span id="sort_n_orcamento" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('n_orcamento')" id="btn_filter_n_orcamento" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_n_orcamento" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -563,7 +589,7 @@
 
                             <th class="w-[4.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('n_os')">
-                                    <span class="truncate">OS <span id="sort_n_os"></span></span>
+                                    <span class="truncate">OS <span id="sort_n_os" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('n_os')" id="btn_filter_n_os" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_n_os" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -571,7 +597,7 @@
 
                             <th class="w-[15%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cliente')">
-                                    <span class="truncate">Cliente <span id="sort_cliente"></span></span>
+                                    <span class="truncate">Cliente <span id="sort_cliente" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('cliente')" id="btn_filter_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -579,7 +605,7 @@
 
                             <th class="w-[8.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cod_mat_no_cliente')">
-                                    <span class="truncate" title="Cód. Cliente/Nº Des.">Cód. Cliente/Nº Des. <span id="sort_cod_mat_no_cliente"></span></span>
+                                    <span class="truncate" title="Cód. Cliente/Nº Des.">Cód. Cliente/Nº Des. <span id="sort_cod_mat_no_cliente" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('cod_mat_no_cliente')" id="btn_filter_cod_mat_no_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_cod_mat_no_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-56 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -587,7 +613,7 @@
 
                             <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('pedido_cliente')">
-                                    <span class="truncate">N. Pedido <span id="sort_pedido_cliente"></span></span>
+                                    <span class="truncate">N. Pedido <span id="sort_pedido_cliente" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('pedido_cliente')" id="btn_filter_pedido_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_pedido_cliente" class="col-filter-popover absolute left-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -595,7 +621,7 @@
 
                             <th class="w-[4%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('item')">
-                                    <span class="truncate">Item <span id="sort_item"></span></span>
+                                    <span class="truncate">Item <span id="sort_item" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('item')" id="btn_filter_item" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_item" class="col-filter-popover absolute left-0 top-full mt-1 w-44 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -603,7 +629,7 @@
 
                             <th class="w-[5.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('cod_interno')">
-                                    <span class="truncate">SC <span id="sort_cod_interno"></span></span>
+                                    <span class="truncate">SC <span id="sort_cod_interno" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('cod_interno')" id="btn_filter_cod_interno" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_cod_interno" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -611,7 +637,7 @@
 
                             <th class="w-[18.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 relative group">
                                 <div class="flex items-center justify-between cursor-pointer" onclick="sortTable('descricao')">
-                                    <span class="truncate">Descrição <span id="sort_descricao"></span></span>
+                                    <span class="truncate">Descrição <span id="sort_descricao" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('descricao')" id="btn_filter_descricao" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_descricao" class="col-filter-popover absolute left-0 top-full mt-1 w-64 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -619,7 +645,7 @@
 
                             <th class="w-[4%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('qtde')">
-                                    <span class="truncate">Qtde. <span id="sort_qtde"></span></span>
+                                    <span class="truncate">Qtde. <span id="sort_qtde" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('qtde')" id="btn_filter_qtde" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_qtde" class="col-filter-popover absolute right-0 top-full mt-1 w-44 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -627,7 +653,7 @@
 
                             <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-center relative group">
                                 <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('dt_aprovacao')">
-                                    <span class="truncate">Aprovação <span id="sort_dt_aprovacao">▼</span></span>
+                                    <span class="truncate">Aprovação <span id="sort_dt_aprovacao" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('dt_aprovacao')" id="btn_filter_dt_aprovacao" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_dt_aprovacao" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -635,7 +661,7 @@
 
                             <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-center relative group">
                                 <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('dt_previsao_entrega')">
-                                    <span class="truncate">Prazo <span id="sort_dt_previsao_entrega"></span></span>
+                                    <span class="truncate">Prazo <span id="sort_dt_previsao_entrega" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('dt_previsao_entrega')" id="btn_filter_dt_previsao_entrega" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_dt_previsao_entrega" class="col-filter-popover absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -643,7 +669,7 @@
 
                             <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('vl_unitario')">
-                                    <span class="truncate">Vl. unit. <span id="sort_vl_unitario"></span></span>
+                                    <span class="truncate">Vl. unit. <span id="sort_vl_unitario" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('vl_unitario')" id="btn_filter_vl_unitario" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_vl_unitario" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -651,7 +677,7 @@
 
                             <th class="w-[6.5%] p-1.5 border-r border-slate-300 dark:border-slate-800/60 text-right relative group">
                                 <div class="flex items-center justify-end gap-1 cursor-pointer" onclick="sortTable('vl_total')">
-                                    <span class="truncate">Vl. Total <span id="sort_vl_total"></span></span>
+                                    <span class="truncate">Vl. Total <span id="sort_vl_total" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('vl_total')" id="btn_filter_vl_total" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_vl_total" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -659,7 +685,7 @@
 
                             <th class="w-[6.5%] p-1.5 text-center relative group">
                                 <div class="flex items-center justify-center gap-1 cursor-pointer" onclick="sortTable('PROD/MAN/IND')">
-                                    <span class="truncate">PROD/MAN/IND <span id="sort_PROD/MAN/IND"></span></span>
+                                    <span class="truncate">PROD/MAN/IND <span id="sort_PROD/MAN/IND" class="rs-sort-indicator"></span></span>
                                     <button onclick="event.stopPropagation(); toggleColumnFilter('PROD/MAN/IND')" id="btn_filter_PROD/MAN/IND" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition"><i data-lucide="filter" class="w-3 h-3"></i></button>
                                 </div>
                                 <div id="filter_popover_PROD_MAN_IND" class="col-filter-popover absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-30 font-normal"></div>
@@ -689,6 +715,11 @@
                         <option value="250">250 por vez</option>
                         <option value="999999">Exibir Todos</option>
                     </select>
+
+                    <button id="btnResetSortRS" onclick="resetRsSort()" class="rs-sort-reset" title="Voltar à ordenação padrão: Aprovação mais recente primeiro" disabled>
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        <span class="rs-sort-reset-text">Ordem padrão</span>
+                    </button>
                 </div>
 
                 <div class="flex gap-5">
@@ -835,6 +866,10 @@
                     <div class="rs-mc-toolbar-right flex items-center gap-2">
                         <label for="mensalClienteSort" class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase whitespace-nowrap">Ordenar</label>
                         <select id="mensalClienteSort" onchange="changeMensalClienteSort()" class="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-lg text-[11px] focus:outline-none focus:border-amber-500 min-w-[235px]"></select>
+                        <button id="btnResetSortMensalCliente" onclick="resetMensalClienteSort()" class="rs-sort-reset" title="Voltar à ordenação padrão: Cliente A–Z">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            <span>Ordem padrão</span>
+                        </button>
                         <span id="mensalClienteSortHelp" class="text-[10px] text-slate-400 dark:text-slate-500 whitespace-nowrap" title="A ordenação fica salva neste navegador">salvo neste navegador</span>
                     </div>
                 </div>
@@ -930,6 +965,10 @@
                         <p class="text-[10px] text-slate-500 dark:text-slate-400">Dados de /pedido • somente registros com qtde_a_faturar &gt; 0</p>
                     </div>
                     <div class="flex items-center gap-2 text-[10px]">
+                        <button id="btnResetSortPedidos" onclick="resetPedidoSort()" class="rs-sort-reset" title="Voltar à ordenação padrão da tela" disabled>
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            <span>Ordem padrão</span>
+                        </button>
                         <span id="pedidoItensBadge" class="bg-slate-200 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full font-mono">0 itens</span>
                         <span id="pedidoSaldoBadge" class="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded-full font-mono">R$ 0,00</span>
                     </div>
@@ -937,29 +976,197 @@
 
                 <div id="pedidoTableScroll" class="flex-1 overflow-auto relative">
                     <table id="tablePedidos" class="w-max min-w-[2350px] text-left text-[10.5px] border-separate border-spacing-0">
-                        <thead class="sticky top-0 z-20 bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold">
+                                                <thead class="sticky top-0 z-20 bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold">
                             <tr>
-                                <th onclick="sortPedidos('prazo_status')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">Prazo status <span id="pedidoSort_prazo_status" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('dias')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Dias <span id="pedidoSort_dias" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('os')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">OS <span id="pedidoSort_os" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('orcamento')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Orçamento <span id="pedidoSort_orcamento" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('cliente')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 min-w-[190px]">Cliente <span id="pedidoSort_cliente" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('codigo_cliente')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">Cód. Cliente <span id="pedidoSort_codigo_cliente" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('pedido')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">Pedido <span id="pedidoSort_pedido" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('item')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">Item <span id="pedidoSort_item" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('sc')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">SC <span id="pedidoSort_sc" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('descricao')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 min-w-[330px]">Descrição <span id="pedidoSort_descricao" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('qtde')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Qtde. <span id="pedidoSort_qtde" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('aprovacao')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-center whitespace-nowrap">Aprovação <span id="pedidoSort_aprovacao" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('prazo')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-center whitespace-nowrap">Prazo <span id="pedidoSort_prazo" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('vl_unitario')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Vl. unit. <span id="pedidoSort_vl_unitario" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('vl_total')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Vl. total <span id="pedidoSort_vl_total" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('qtde_a_faturar')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Qtde. a faturar <span id="pedidoSort_qtde_a_faturar" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('vl_a_faturar')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Vl. a faturar <span id="pedidoSort_vl_a_faturar" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('qtde_liberada')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Qtde. liberada <span id="pedidoSort_qtde_liberada" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('classificacao')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">Classificação <span id="pedidoSort_classificacao" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('tipo')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">Tipo <span id="pedidoSort_tipo" class="rs-sort-indicator"></span></th>
-                                <th onclick="sortPedidos('liberado_faturar')" class="rs-sortable-head px-2 py-2 border-b border-slate-300 dark:border-slate-800 whitespace-nowrap">Liberado faturar <span id="pedidoSort_liberado_faturar" class="rs-sort-indicator"></span></th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortPedidos('prazo_status')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Prazo status">
+                                            <span class="truncate">Prazo status</span><span id="pedidoSort_prazo_status" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('prazo_status')" id="pedido_btn_filter_prazo_status" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Prazo status"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_prazo_status" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortPedidos('dias')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 " title="Ordenar por Dias">
+                                            <span class="truncate">Dias</span><span id="pedidoSort_dias" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('dias')" id="pedido_btn_filter_dias" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Dias"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_dias" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortPedidos('os')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por OS">
+                                            <span class="truncate">OS</span><span id="pedidoSort_os" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('os')" id="pedido_btn_filter_os" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar OS"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_os" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortPedidos('orcamento')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 " title="Ordenar por Orçamento">
+                                            <span class="truncate">Orçamento</span><span id="pedidoSort_orcamento" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('orcamento')" id="pedido_btn_filter_orcamento" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Orçamento"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_orcamento" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 min-w-[190px] relative group">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortPedidos('cliente')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Cliente">
+                                            <span class="truncate">Cliente</span><span id="pedidoSort_cliente" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('cliente')" id="pedido_btn_filter_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Cliente"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_cliente" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortPedidos('codigo_cliente')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Cód. Cliente">
+                                            <span class="truncate">Cód. Cliente</span><span id="pedidoSort_codigo_cliente" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('codigo_cliente')" id="pedido_btn_filter_codigo_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Cód. Cliente"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_codigo_cliente" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortPedidos('pedido')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Pedido">
+                                            <span class="truncate">Pedido</span><span id="pedidoSort_pedido" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('pedido')" id="pedido_btn_filter_pedido" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Pedido"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_pedido" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortPedidos('item')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Item">
+                                            <span class="truncate">Item</span><span id="pedidoSort_item" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('item')" id="pedido_btn_filter_item" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Item"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_item" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortPedidos('sc')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por SC">
+                                            <span class="truncate">SC</span><span id="pedidoSort_sc" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('sc')" id="pedido_btn_filter_sc" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar SC"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_sc" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 min-w-[330px] relative group">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortPedidos('descricao')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Descrição">
+                                            <span class="truncate">Descrição</span><span id="pedidoSort_descricao" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('descricao')" id="pedido_btn_filter_descricao" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Descrição"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_descricao" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortPedidos('qtde')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 " title="Ordenar por Qtde.">
+                                            <span class="truncate">Qtde.</span><span id="pedidoSort_qtde" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('qtde')" id="pedido_btn_filter_qtde" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Qtde."><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_qtde" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-center whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <button type="button" onclick="sortPedidos('aprovacao')" class="rs-sortable-head flex items-center justify-center gap-1 min-w-0 " title="Ordenar por Aprovação">
+                                            <span class="truncate">Aprovação</span><span id="pedidoSort_aprovacao" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('aprovacao')" id="pedido_btn_filter_aprovacao" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Aprovação"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_aprovacao" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-center whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <button type="button" onclick="sortPedidos('prazo')" class="rs-sortable-head flex items-center justify-center gap-1 min-w-0 " title="Ordenar por Prazo">
+                                            <span class="truncate">Prazo</span><span id="pedidoSort_prazo" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('prazo')" id="pedido_btn_filter_prazo" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Prazo"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_prazo" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortPedidos('vl_unitario')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 " title="Ordenar por Vl. unit.">
+                                            <span class="truncate">Vl. unit.</span><span id="pedidoSort_vl_unitario" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('vl_unitario')" id="pedido_btn_filter_vl_unitario" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Vl. unit."><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_vl_unitario" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortPedidos('vl_total')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 " title="Ordenar por Vl. total">
+                                            <span class="truncate">Vl. total</span><span id="pedidoSort_vl_total" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('vl_total')" id="pedido_btn_filter_vl_total" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Vl. total"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_vl_total" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortPedidos('qtde_a_faturar')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 " title="Ordenar por Qtde. a faturar">
+                                            <span class="truncate">Qtde. a faturar</span><span id="pedidoSort_qtde_a_faturar" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('qtde_a_faturar')" id="pedido_btn_filter_qtde_a_faturar" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Qtde. a faturar"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_qtde_a_faturar" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortPedidos('vl_a_faturar')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 " title="Ordenar por Vl. a faturar">
+                                            <span class="truncate">Vl. a faturar</span><span id="pedidoSort_vl_a_faturar" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('vl_a_faturar')" id="pedido_btn_filter_vl_a_faturar" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Vl. a faturar"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_vl_a_faturar" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortPedidos('qtde_liberada')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 " title="Ordenar por Qtde. liberada">
+                                            <span class="truncate">Qtde. liberada</span><span id="pedidoSort_qtde_liberada" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('qtde_liberada')" id="pedido_btn_filter_qtde_liberada" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Qtde. liberada"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_qtde_liberada" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortPedidos('classificacao')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Classificação">
+                                            <span class="truncate">Classificação</span><span id="pedidoSort_classificacao" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('classificacao')" id="pedido_btn_filter_classificacao" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Classificação"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_classificacao" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortPedidos('tipo')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Tipo">
+                                            <span class="truncate">Tipo</span><span id="pedidoSort_tipo" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('tipo')" id="pedido_btn_filter_tipo" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Tipo"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_tipo" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-slate-300 dark:border-slate-800 whitespace-nowrap relative group">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortPedidos('liberado_faturar')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Liberado faturar">
+                                            <span class="truncate">Liberado faturar</span><span id="pedidoSort_liberado_faturar" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); togglePedidoColumnFilter('liberado_faturar')" id="pedido_btn_filter_liberado_faturar" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Liberado faturar"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="pedido_filter_popover_liberado_faturar" onclick="event.stopPropagation()" class="col-filter-popover pedido-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="tableBodyPedidos" class="text-slate-700 dark:text-slate-300 font-sans"></tbody>
@@ -1001,7 +1208,7 @@
             }
         }
 
-        const APP_VERSION = 'V1.3.0';
+        const APP_VERSION = 'V1.4.0';
         const RS_API_URL = 'https://sintercan.consultoriarf.net/rs';
         const PEDIDO_API_URL = 'https://sintercan.consultoriarf.net/pedido';
         const RS_DB_NAME = 'SINTERCAN_RS_CACHE';
@@ -1035,6 +1242,8 @@
         let pedidoPeriodoConfigured = false;
         let pedidoSortColumn = null;
         let pedidoSortAsc = true;
+        let pedidoColumnSelections = {};
+        let rsSortCustom = false;
         let pedidoClienteEventsBound = false;
         let clienteDropdownEventsBound = false;
         let anoMesGlobalEventsBound = false;
@@ -1729,31 +1938,60 @@
             return true;
         }
 
+        const PEDIDO_COLUMN_KEYS = ['prazo_status','dias','os','orcamento','cliente','codigo_cliente','pedido','item','sc','descricao','qtde','aprovacao','prazo','vl_unitario','vl_total','qtde_a_faturar','vl_a_faturar','qtde_liberada','classificacao','tipo','liberado_faturar'];
+        const PEDIDO_NUMERIC_COLUMNS = new Set(['dias','orcamento','qtde','vl_unitario','vl_total','qtde_a_faturar','vl_a_faturar','qtde_liberada']);
+        const PEDIDO_DATE_COLUMNS = new Set(['aprovacao','prazo','dt_emissao']);
+        const PEDIDO_CURRENCY_COLUMNS = new Set(['vl_unitario','vl_total','vl_a_faturar','vl_faturado']);
+
+        function getPedidoFilterCriteria() {
+            return {
+                globalVal: document.getElementById('filterGlobal')?.value || '',
+                cliente: normalizeSearchText(document.getElementById('pedidoFilterCliente')?.value || ''),
+                periodo: document.getElementById('pedidoFilterPeriodo')?.value || '',
+                prazoStatus: normalizeSearchText(document.getElementById('pedidoFilterPrazoStatus')?.value || ''),
+                liberado: normalizeSearchText(document.getElementById('pedidoFilterLiberado')?.value || ''),
+                quick: normalizeSearchText(document.getElementById('pedidoFilterBusca')?.value || '')
+            };
+        }
+
+        function pedidoColumnDisplayValue(item, colKey) {
+            const raw = item?.[colKey];
+            if (PEDIDO_DATE_COLUMNS.has(colKey)) return formatDateBR(raw) || '(Vazio)';
+            if (PEDIDO_CURRENCY_COLUMNS.has(colKey)) return raw === null || raw === undefined || raw === '' ? '(Vazio)' : formatCurrency(raw);
+            if (PEDIDO_NUMERIC_COLUMNS.has(colKey)) return raw === null || raw === undefined || raw === '' ? '(Vazio)' : formatNumberBR(raw);
+            const val = String(raw ?? '').trim();
+            return val || '(Vazio)';
+        }
+
+        function pedidoMatchesAllFilters(item, criteria, excludeColKey = null) {
+            const qtdeAFaturar = parseFloat(item.qtde_a_faturar || 0);
+            if (!(qtdeAFaturar > 0)) return false;
+            if (criteria.globalVal && !matchesGlobalSearch(item, criteria.globalVal)) return false;
+            if (criteria.cliente && !normalizeSearchText(item.cliente || '').includes(criteria.cliente)) return false;
+            if (!pedidoPeriodoMatches(item, criteria.periodo)) return false;
+            if (criteria.prazoStatus && normalizeSearchText(item.prazo_status || '') !== criteria.prazoStatus) return false;
+            if (criteria.liberado && normalizeSearchText(item.liberado_faturar || '') !== criteria.liberado) return false;
+            if (criteria.quick) {
+                const target = normalizeSearchText(`${item.descricao || ''} ${item.sc || ''} ${item.pedido || ''}`);
+                if (!target.includes(criteria.quick)) return false;
+            }
+
+            for (const [colKey, selectedSet] of Object.entries(pedidoColumnSelections)) {
+                if (colKey === excludeColKey || !selectedSet) continue;
+                if (!selectedSet.has(pedidoColumnDisplayValue(item, colKey))) return false;
+            }
+            return true;
+        }
+
+        function getPedidoFilteredDataExcludingColumn(excludeColKey) {
+            const criteria = getPedidoFilterCriteria();
+            return pedidoData.filter(item => pedidoMatchesAllFilters(item, criteria, excludeColKey));
+        }
+
         function applyPedidoFilters() {
             if (!pedidoDataReady) return;
-
-            const globalVal = document.getElementById('filterGlobal')?.value || '';
-            const cliente = normalizeSearchText(document.getElementById('pedidoFilterCliente')?.value || '');
-            const periodo = document.getElementById('pedidoFilterPeriodo')?.value || '';
-            const prazoStatus = normalizeSearchText(document.getElementById('pedidoFilterPrazoStatus')?.value || '');
-            const liberado = normalizeSearchText(document.getElementById('pedidoFilterLiberado')?.value || '');
-            const quick = normalizeSearchText(document.getElementById('pedidoFilterBusca')?.value || '');
-
-            filteredPedidoData = pedidoData.filter(item => {
-                const qtdeAFaturar = parseFloat(item.qtde_a_faturar || 0);
-                if (!(qtdeAFaturar > 0)) return false;
-                if (globalVal && !matchesGlobalSearch(item, globalVal)) return false;
-                if (cliente && !normalizeSearchText(item.cliente || '').includes(cliente)) return false;
-                if (!pedidoPeriodoMatches(item, periodo)) return false;
-                if (prazoStatus && normalizeSearchText(item.prazo_status || '') !== prazoStatus) return false;
-                if (liberado && normalizeSearchText(item.liberado_faturar || '') !== liberado) return false;
-                if (quick) {
-                    const target = normalizeSearchText(`${item.descricao || ''} ${item.sc || ''} ${item.pedido || ''}`);
-                    if (!target.includes(quick)) return false;
-                }
-                return true;
-            });
-
+            const criteria = getPedidoFilterCriteria();
+            filteredPedidoData = pedidoData.filter(item => pedidoMatchesAllFilters(item, criteria));
             sortPedidoData();
             renderPedidoView();
         }
@@ -1765,16 +2003,25 @@
             renderPedidoView();
         }
 
+        function resetPedidoSort() {
+            pedidoSortColumn = null;
+            pedidoSortAsc = true;
+            applyPedidoFilters();
+        }
+
+        function updatePedidoSortResetButton() {
+            const btn = document.getElementById('btnResetSortPedidos');
+            if (btn) btn.disabled = !pedidoSortColumn;
+        }
+
         function sortPedidoData() {
             if (!pedidoSortColumn) return;
-            const numeric = new Set(['dias','orcamento','qtde','vl_unitario','vl_total','qtde_a_faturar','vl_a_faturar','qtde_liberada']);
-            const dates = new Set(['aprovacao','prazo','dt_emissao']);
             filteredPedidoData.sort((a,b) => {
                 let av = a[pedidoSortColumn];
                 let bv = b[pedidoSortColumn];
-                if (numeric.has(pedidoSortColumn)) {
+                if (PEDIDO_NUMERIC_COLUMNS.has(pedidoSortColumn)) {
                     av = parseFloat(av || 0); bv = parseFloat(bv || 0);
-                } else if (dates.has(pedidoSortColumn)) {
+                } else if (PEDIDO_DATE_COLUMNS.has(pedidoSortColumn)) {
                     av = parseDate(av)?.getTime() || 0; bv = parseDate(bv)?.getTime() || 0;
                 } else {
                     av = normalizeSearchText(av || ''); bv = normalizeSearchText(bv || '');
@@ -1783,6 +2030,107 @@
                 if (av > bv) return pedidoSortAsc ? 1 : -1;
                 return 0;
             });
+        }
+
+        function togglePedidoColumnFilter(colKey) {
+            const el = document.getElementById(`pedido_filter_popover_${colKey}`);
+            if (!el) return;
+            const isVisible = el.classList.contains('active');
+            document.querySelectorAll('.col-filter-popover').forEach(p => p.classList.remove('active'));
+            if (!isVisible) {
+                buildPedidoExcelFilterPopover(colKey);
+                el.classList.add('active');
+            }
+        }
+
+        function buildPedidoExcelFilterPopover(colKey) {
+            const popover = document.getElementById(`pedido_filter_popover_${colKey}`);
+            if (!popover) return;
+            const activeData = getPedidoFilteredDataExcludingColumn(colKey);
+            const uniqueValues = [...new Set(activeData.map(item => pedidoColumnDisplayValue(item, colKey)))]
+                .sort((a,b) => a.localeCompare(b, 'pt-BR', { numeric: true, sensitivity: 'base' }));
+
+            const selectedSet = pedidoColumnSelections[colKey];
+            const isAllSelected = !selectedSet || uniqueValues.every(v => selectedSet.has(v));
+            const safeKey = colKey.replace(/[^a-zA-Z0-9_]/g, '_');
+
+            popover.innerHTML = `
+                <div class="space-y-2">
+                    <input type="text" id="pedido_search_popover_${safeKey}" oninput="filterPedidoPopoverList('${colKey}')" placeholder="Pesquisar..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                    <div class="max-h-48 overflow-y-auto space-y-1 text-xs font-sans py-1 border-t border-b border-slate-200 dark:border-slate-800" id="pedido_list_popover_${safeKey}">
+                        <div class="flex items-center gap-2 px-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
+                            <input type="checkbox" id="pedido_chk_all_${safeKey}" onchange="togglePedidoSelectAll('${colKey}', this.checked)" ${isAllSelected ? 'checked' : ''} class="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                            <label for="pedido_chk_all_${safeKey}" class="text-amber-600 dark:text-amber-400 font-semibold cursor-pointer select-none">(Selecionar Tudo)</label>
+                        </div>
+                        ${uniqueValues.map(val => {
+                            const checked = !selectedSet || selectedSet.has(val);
+                            return `<div class="pedido-popover-row flex items-center gap-2 px-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
+                                <input type="checkbox" value="${escapeHtml(val)}" ${checked ? 'checked' : ''} onchange="syncPedidoSelectAll('${colKey}')" class="pedido_chk_col_${safeKey} rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                                <label onclick="this.previousElementSibling.click()" class="text-slate-700 dark:text-slate-300 truncate cursor-pointer select-none" title="${escapeHtml(val)}">${escapeHtml(val)}</label>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                    <div class="flex justify-between items-center gap-1.5 pt-1">
+                        <span class="text-[9px] text-slate-400">${uniqueValues.length} valores</span>
+                        <div class="flex gap-1.5">
+                            <button onclick="clearPedidoColumnFilter('${colKey}')" class="px-2 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] rounded cursor-pointer">Limpar</button>
+                            <button onclick="applyPedidoColumnFilterFromUI('${colKey}')" class="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] rounded cursor-pointer">Aplicar</button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function filterPedidoPopoverList(colKey) {
+            const safeKey = colKey.replace(/[^a-zA-Z0-9_]/g, '_');
+            const term = normalizeSearchText(document.getElementById(`pedido_search_popover_${safeKey}`)?.value || '');
+            document.querySelectorAll(`#pedido_list_popover_${safeKey} .pedido-popover-row`).forEach(row => {
+                row.style.display = normalizeSearchText(row.textContent || '').includes(term) ? 'flex' : 'none';
+            });
+            syncPedidoSelectAll(colKey);
+        }
+
+        function togglePedidoSelectAll(colKey, checked) {
+            const safeKey = colKey.replace(/[^a-zA-Z0-9_]/g, '_');
+            document.querySelectorAll(`#pedido_list_popover_${safeKey} .pedido-popover-row`).forEach(row => {
+                if (row.style.display !== 'none') {
+                    const chk = row.querySelector(`.pedido_chk_col_${safeKey}`);
+                    if (chk) chk.checked = checked;
+                }
+            });
+        }
+
+        function syncPedidoSelectAll(colKey) {
+            const safeKey = colKey.replace(/[^a-zA-Z0-9_]/g, '_');
+            const visible = [...document.querySelectorAll(`#pedido_list_popover_${safeKey} .pedido-popover-row`)]
+                .filter(row => row.style.display !== 'none')
+                .map(row => row.querySelector(`.pedido_chk_col_${safeKey}`))
+                .filter(Boolean);
+            const master = document.getElementById(`pedido_chk_all_${safeKey}`);
+            if (master) master.checked = visible.length > 0 && visible.every(chk => chk.checked);
+        }
+
+        function applyPedidoColumnFilterFromUI(colKey) {
+            const safeKey = colKey.replace(/[^a-zA-Z0-9_]/g, '_');
+            const all = [...document.querySelectorAll(`.pedido_chk_col_${safeKey}`)];
+            const checked = all.filter(c => c.checked).map(c => c.value);
+            if (all.length === 0 || checked.length === all.length) delete pedidoColumnSelections[colKey];
+            else pedidoColumnSelections[colKey] = new Set(checked);
+            updatePedidoFilterIconState(colKey);
+            document.querySelectorAll('.col-filter-popover').forEach(p => p.classList.remove('active'));
+            applyPedidoFilters();
+        }
+
+        function clearPedidoColumnFilter(colKey) {
+            delete pedidoColumnSelections[colKey];
+            updatePedidoFilterIconState(colKey);
+            document.querySelectorAll('.col-filter-popover').forEach(p => p.classList.remove('active'));
+            applyPedidoFilters();
+        }
+
+        function updatePedidoFilterIconState(colKey) {
+            const btn = document.getElementById(`pedido_btn_filter_${colKey}`);
+            if (!btn) return;
+            btn.classList.toggle('pedido-filter-active', Boolean(pedidoColumnSelections[colKey]));
         }
 
         function formatNumberBR(value, maxDecimals = 2) {
@@ -1827,6 +2175,7 @@
                 const el = document.getElementById(`pedidoSort_${pedidoSortColumn}`);
                 if (el) el.textContent = pedidoSortAsc ? '▲' : '▼';
             }
+            updatePedidoSortResetButton();
 
             let totalQtde = 0, totalVlTotal = 0, totalQtdeAFaturar = 0, totalVlAFaturar = 0, totalLiberada = 0;
             filteredPedidoData.forEach(row => {
@@ -1924,14 +2273,18 @@
         }
 
         function loadMensalClienteSortState() {
-            const fallback = { key: 'cliente', direction: 'asc' };
+            const fallback = { key: 'cliente', direction: 'asc', custom: false };
             try {
                 const raw = localStorage.getItem(MENSAL_CLIENTE_SORT_STORAGE_KEY);
                 if (!raw) return fallback;
                 const parsed = JSON.parse(raw);
                 const keyOk = parsed && typeof parsed.key === 'string' && (parsed.key === 'cliente' || parsed.key === 'total' || /^\d{4}-\d{2}$/.test(parsed.key));
                 const dirOk = parsed && (parsed.direction === 'asc' || parsed.direction === 'desc');
-                return keyOk && dirOk ? parsed : fallback;
+                if (!keyOk || !dirOk) return fallback;
+                const custom = typeof parsed.custom === 'boolean'
+                    ? parsed.custom
+                    : !(parsed.key === 'cliente' && parsed.direction === 'asc');
+                return { key: parsed.key, direction: parsed.direction, custom };
             } catch (_) {
                 return fallback;
             }
@@ -1944,7 +2297,7 @@
         }
 
         function setMensalClienteSort(key, direction = null) {
-            const current = mensalClienteSortState || { key: 'cliente', direction: 'asc' };
+            const current = mensalClienteSortState || { key: 'cliente', direction: 'asc', custom: false };
             let nextDirection = direction;
 
             if (!nextDirection) {
@@ -1955,18 +2308,29 @@
                 }
             }
 
-            mensalClienteSortState = { key, direction: nextDirection };
+            mensalClienteSortState = { key, direction: nextDirection, custom: true };
             saveMensalClienteSortState();
             renderMensalClienteView();
         }
 
         function getMensalClienteSortArrow(key) {
-            if (!mensalClienteSortState || mensalClienteSortState.key !== key) return '';
+            if (!mensalClienteSortState || !mensalClienteSortState.custom || mensalClienteSortState.key !== key) return '';
             return mensalClienteSortState.direction === 'asc' ? '▲' : '▼';
         }
 
+        function resetMensalClienteSort() {
+            mensalClienteSortState = { key: 'cliente', direction: 'asc', custom: false };
+            saveMensalClienteSortState();
+            renderMensalClienteView();
+        }
+
+        function updateMensalClienteResetButton() {
+            const btn = document.getElementById('btnResetSortMensalCliente');
+            if (btn) btn.disabled = !mensalClienteSortState?.custom;
+        }
+
         function getMensalClienteSortLabel(periodInfo = []) {
-            const state = mensalClienteSortState || { key: 'cliente', direction: 'asc' };
+            const state = mensalClienteSortState || { key: 'cliente', direction: 'asc', custom: false };
             if (state.key === 'cliente') return state.direction === 'asc' ? 'Cliente A–Z' : 'Cliente Z–A';
             if (state.key === 'total') return state.direction === 'desc' ? 'Total — maior para menor' : 'Total — menor para maior';
             const p = periodInfo.find(x => x.key === state.key);
@@ -2127,6 +2491,8 @@
 
             columnSelections = {};
             allColumnsKeys.forEach(key => updateFilterIconState(key));
+            pedidoColumnSelections = {};
+            PEDIDO_COLUMN_KEYS.forEach(key => updatePedidoFilterIconState(key));
 
             applyFilters();
         }
@@ -2447,17 +2813,32 @@
                 sortColumn = columnKey;
                 sortAsc = true;
             }
+            rsSortCustom = true;
+            updateRsSortIndicators();
+            sortData();
+            renderTable();
+        }
 
+        function resetRsSort() {
+            sortColumn = 'dt_aprovacao';
+            sortAsc = false;
+            rsSortCustom = false;
+            updateRsSortIndicators();
+            sortData();
+            renderTable();
+        }
+
+        function updateRsSortIndicators() {
             allColumnsKeys.forEach(k => {
                 const el = document.getElementById(`sort_${k}`);
                 if (el) el.textContent = '';
             });
-
-            const activeEl = document.getElementById(`sort_${sortColumn}`);
-            if (activeEl) activeEl.textContent = sortAsc ? '▲' : '▼';
-
-            sortData();
-            renderTable();
+            if (rsSortCustom) {
+                const activeEl = document.getElementById(`sort_${sortColumn}`);
+                if (activeEl) activeEl.textContent = sortAsc ? '▲' : '▼';
+            }
+            const btn = document.getElementById('btnResetSortRS');
+            if (btn) btn.disabled = !rsSortCustom;
         }
 
         function sortData() {
@@ -2483,6 +2864,7 @@
         }
 
         function renderTable() {
+            updateRsSortIndicators();
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
 
@@ -2906,7 +3288,7 @@
                 total: info.total
             }));
 
-            const sortState = mensalClienteSortState || { key: 'cliente', direction: 'asc' };
+            const sortState = mensalClienteSortState || { key: 'cliente', direction: 'asc', custom: false };
             const directionFactor = sortState.direction === 'asc' ? 1 : -1;
 
             clients.sort((a, b) => {
@@ -2931,7 +3313,8 @@
             const direction = separator >= 0 ? raw.slice(separator + 1) : 'asc';
             mensalClienteSortState = {
                 key,
-                direction: direction === 'desc' ? 'desc' : 'asc'
+                direction: direction === 'desc' ? 'desc' : 'asc',
+                custom: true
             };
             saveMensalClienteSortState();
             renderMensalClienteView();
@@ -3073,6 +3456,7 @@
             if (badge) badge.textContent = `${periodInfo.length} ${periodInfo.length === 1 ? 'período' : 'períodos'}`;
 
             buildMensalClienteSortOptions(periodInfo);
+            updateMensalClienteResetButton();
 
             head.innerHTML = `
                 <tr>
@@ -3422,6 +3806,11 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.pedido-col-filter-popover') && !e.target.closest('[id^="pedido_btn_filter_"]')) {
+                    document.querySelectorAll('.pedido-col-filter-popover').forEach(p => p.classList.remove('active'));
+                }
+            });
             if (window.lucide) lucide.createIcons();
             configureMobileLayout();
             switchMainTab(activeTab, false);
