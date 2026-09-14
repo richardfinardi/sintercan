@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.8.5</title>
+    <title>Sintercan - Controle de Faturamento V1.8.6</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -79,7 +79,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.8.5</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.8.6</span></p>
                 </div>
             </div>
 
@@ -143,11 +143,16 @@
         
         <div class="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-sm">
             
-            <!-- Busca Geral -->
-            <div class="flex items-center gap-2 flex-1 min-w-[200px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
-                <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
-                <input type="text" id="searchInput" oninput="renderCalendar()" placeholder="Pesquisar (OS, Orçamento, Cliente, Descrição, NF...)" 
+            <!-- Busca Avançada -->
+            <div class="flex items-center gap-2 flex-1 min-w-[260px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                <input type="text" id="searchInput" oninput="renderCalendar()"
+                       placeholder="Pesquisa avançada: TERMO1, TERMO2 | %TERMO1%TERMO2% | -EXCLUIR"
                        class="w-full text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none placeholder-slate-400 dark:placeholder-slate-500">
+                <button type="button" onclick="openSearchHelp()" title="Ajuda da pesquisa"
+                        class="shrink-0 p-1 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 transition">
+                    <i data-lucide="circle-help" class="w-4 h-4"></i>
+                </button>
             </div>
 
             <!-- Filtro por Status (Faturado / Pendente) -->
@@ -199,6 +204,54 @@
         </div>
     </footer>
 
+    <!-- MODAL DE AJUDA DA PESQUISA AVANÇADA -->
+    <div id="searchHelpModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm hidden items-center justify-center p-4 z-[60]" onclick="closeSearchHelpOnBackdrop(event)">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div class="px-6 py-5 flex justify-between items-center border-b border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                        <i data-lucide="circle-help" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="font-black text-base text-slate-900 dark:text-white">Guia de Pesquisa Rápida & Operadores</h3>
+                </div>
+                <button type="button" onclick="closeSearchHelp()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4 text-sm">
+                <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 p-4">
+                    <div class="font-black text-blue-700 dark:text-blue-400 text-xs uppercase mb-2">1. Buscar vários termos ao mesmo tempo (OU)</div>
+                    <p class="text-slate-600 dark:text-slate-300 mb-3">Use <strong>vírgula (,)</strong>, <strong>ponto e vírgula (;)</strong> ou <strong>barra vertical (|)</strong>. O registro aparece se possuir qualquer um dos grupos informados.</p>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 font-mono font-bold">CLIENTE A, CLIENTE B</div>
+                    <p class="mt-2 text-xs italic text-slate-400">Exemplo genérico: retorna registros do CLIENTE A ou do CLIENTE B.</p>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 p-4">
+                    <div class="font-black text-blue-700 dark:text-blue-400 text-xs uppercase mb-2">2. Combinar termos obrigatórios (E)</div>
+                    <p class="text-slate-600 dark:text-slate-300 mb-3">Use <strong>espaço</strong> ou o sinal de porcentagem <strong>%</strong>. Todos os termos precisam existir no mesmo registro.</p>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 font-mono font-bold">%TERMO1%TERMO2%</div>
+                    <p class="mt-2 text-xs italic text-slate-400">Exemplo genérico: retorna somente registros que contenham TERMO1 e TERMO2.</p>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 p-4">
+                    <div class="font-black text-blue-700 dark:text-blue-400 text-xs uppercase mb-2">3. Ocultar / excluir termos (NÃO CONTÉM)</div>
+                    <p class="text-slate-600 dark:text-slate-300 mb-3">Use o sinal de menos <strong>-</strong> antes da palavra que deseja excluir.</p>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 font-mono font-bold">CLIENTE A, CLIENTE B -CANCELADO</div>
+                    <p class="mt-2 text-xs italic text-slate-400">Exemplo genérico: mantém os grupos pesquisados, mas remove qualquer registro que contenha CANCELADO.</p>
+                </div>
+
+                <div class="rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50 dark:bg-blue-950/30 p-4 text-xs text-slate-700 dark:text-slate-300">
+                    💡 <strong>Dica:</strong> a pesquisa ignora acentos e diferença entre maiúsculas e minúsculas e procura em todos os campos exibidos no registro.
+                </div>
+            </div>
+
+            <div class="px-6 pb-6 flex justify-end">
+                <button type="button" onclick="closeSearchHelp()" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition shadow">Entendi</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL DE ALTERAÇÃO DA DATA PREVISTO/PERMITIDO PARA FATURAR -->
     <div id="editModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 dark:border-slate-800">
@@ -243,6 +296,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             fetchData();
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') closeSearchHelp();
+            });
         });
 
         async function fetchData() {
@@ -271,6 +328,75 @@
             }
         }
 
+        function normalizeSearchText(value) {
+            return String(value ?? '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        }
+
+        // Pesquisa avançada:
+        // , ; |  = OU entre grupos
+        // espaço/% = E entre termos do mesmo grupo
+        // -termo = exclusão global
+        function matchesAdvancedSearch(item, query) {
+            const normalizedQuery = normalizeSearchText(query);
+            if (!normalizedQuery) return true;
+
+            const searchableText = normalizeSearchText(
+                Object.values(item)
+                    .filter(v => v !== null && v !== undefined)
+                    .join(' ')
+            );
+
+            const exclusions = [];
+            const queryWithoutExclusions = normalizedQuery.replace(
+                /(^|[\s,;|%])-([^\s,;|%]+)/g,
+                (match, separator, term) => {
+                    if (term) exclusions.push(term);
+                    return separator;
+                }
+            );
+
+            // Qualquer termo excluído elimina o registro.
+            if (exclusions.some(term => searchableText.includes(term))) {
+                return false;
+            }
+
+            const groups = queryWithoutExclusions
+                .split(/[,;|]+/)
+                .map(group => group.trim())
+                .filter(Boolean)
+                .map(group => group.split(/[%\s]+/).map(t => t.trim()).filter(Boolean))
+                .filter(group => group.length > 0);
+
+            // Consulta somente com exclusões, ex.: -CANCELADO
+            if (groups.length === 0) return true;
+
+            // OU entre grupos; E entre termos de cada grupo.
+            return groups.some(group => group.every(term => searchableText.includes(term)));
+        }
+
+        function openSearchHelp() {
+            const modal = document.getElementById('searchHelpModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function closeSearchHelp() {
+            const modal = document.getElementById('searchHelpModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function closeSearchHelpOnBackdrop(event) {
+            if (event.target && event.target.id === 'searchHelpModal') {
+                closeSearchHelp();
+            }
+        }
+
         function populateDropdowns() {
             const clientSelect = document.getElementById('clientFilter');
             const currentClient = clientSelect.value;
@@ -292,12 +418,12 @@
         // Data usada para posicionar o registro no calendário:
         // - FATURADO: usa a data real de emissão da NF
         // - PENDENTE: usa a data prevista/normalizada para faturamento
-        // Registro faturado sem dt_emissao é uma inconsistência da API e NÃO deve
-        // ser jogado no mês atual por fallback de entrega_normalizada.
+        // Somente registros com valor faturado > 0 são tratados como faturados.
+        // NF de remessa com valor zero não entra no calendário de faturamento.
         function getCalendarReferenceDate(item) {
             const fat = parseValue(item.vl_faturado);
             const temNF = item.numero_nf && String(item.numero_nf).trim() !== '' && String(item.numero_nf) !== 'None';
-            const isFaturado = fat > 0 || temNF;
+            const isFaturado = fat > 0;
 
             const dtRefStr = isFaturado ? item.dt_emissao : item.entrega_normalizada;
             if (!dtRefStr) return null;
@@ -437,7 +563,7 @@
 
             populateWeekFilter();
 
-            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            const search = document.getElementById('searchInput').value.trim();
             const selectedClient = document.getElementById('clientFilter').value;
             const selectedStatus = document.getElementById('statusFilter').value;
             const selectedWeek = document.getElementById('weekFilter').value;
@@ -451,7 +577,11 @@
             let filtered = rawData.filter(item => {
                 const fat = parseValue(item.vl_faturado);
                 const temNF = item.numero_nf && String(item.numero_nf).trim() !== '' && String(item.numero_nf) !== 'None';
-                const isFaturado = fat > 0 || temNF;
+                const isFaturado = fat > 0;
+
+                // NF com valor zero é remessa/movimentação sem faturamento e não deve aparecer.
+                // Se vier da API por inconsistência, é descartada aqui como proteção adicional.
+                if (temNF && fat <= 0) return false;
 
                 // FILTRO DE STATUS (Faturado / Pendente)
                 if (selectedStatus === 'faturado' && !isFaturado) return false;
@@ -478,10 +608,7 @@
 
                 if (selectedClient && item.cliente !== selectedClient) return false;
 
-                if (search) {
-                    const allValuesText = Object.values(item).filter(v => v !== null && v !== undefined).join(' ').toLowerCase();
-                    if (!allValuesText.includes(search)) return false;
-                }
+                if (search && !matchesAdvancedSearch(item, search)) return false;
 
                 return true;
             });
@@ -494,7 +621,7 @@
                 const fat = parseValue(item.vl_faturado);
                 const aFat = parseValue(item.vl_a_faturar);
                 const temNF = item.numero_nf && String(item.numero_nf).trim() !== '' && String(item.numero_nf) !== 'None';
-                const isFaturado = fat > 0 || temNF;
+                const isFaturado = fat > 0;
 
                 totalFaturado += fat;
 
@@ -551,11 +678,11 @@
                 week.items.sort((a, b) => {
                     const fatA = parseValue(a.vl_faturado);
                     const temNfA = a.numero_nf && String(a.numero_nf).trim() !== '' && String(a.numero_nf) !== 'None';
-                    const isFaturadoA = fatA > 0 || temNfA;
+                    const isFaturadoA = fatA > 0;
 
                     const fatB = parseValue(b.vl_faturado);
                     const temNfB = b.numero_nf && String(b.numero_nf).trim() !== '' && String(b.numero_nf) !== 'None';
-                    const isFaturadoB = fatB > 0 || temNfB;
+                    const isFaturadoB = fatB > 0;
 
                     if (isFaturadoA && isFaturadoB) {
                         const timeEmissaoA = a.dt_emissao ? new Date(a.dt_emissao).getTime() : 0;
@@ -590,7 +717,7 @@
                 week.items.forEach(i => {
                     const fat = parseValue(i.vl_faturado);
                     const temNF = i.numero_nf && String(i.numero_nf).trim() !== '' && String(i.numero_nf) !== 'None';
-                    const isFaturado = fat > 0 || temNF;
+                    const isFaturado = fat > 0;
 
                     if (isFaturado) {
                         weekFaturadoVal += fat;
@@ -648,7 +775,7 @@
                                 ${week.items.map(item => {
                                     const fat = parseValue(item.vl_faturado);
                                     const temNF = item.numero_nf && String(item.numero_nf).trim() !== '' && String(item.numero_nf) !== 'None';
-                                    const isFaturado = fat > 0 || temNF;
+                                    const isFaturado = fat > 0;
                                     const valorExibir = isFaturado ? fat : parseValue(item.vl_a_faturar);
 
                                     const payload = JSON.stringify(item).replace(/'/g, "&apos;");
@@ -781,7 +908,7 @@
                 return;
             }
 
-            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            const search = document.getElementById('searchInput').value.trim();
             const selectedClient = document.getElementById('clientFilter').value;
             const selectedStatus = document.getElementById('statusFilter').value;
             const selectedWeek = document.getElementById('weekFilter').value;
@@ -794,7 +921,10 @@
             let items = rawData.filter(item => {
                 const fat = parseValue(item.vl_faturado);
                 const temNF = item.numero_nf && String(item.numero_nf).trim() !== '' && String(item.numero_nf) !== 'None';
-                const isFaturado = fat > 0 || temNF;
+                const isFaturado = fat > 0;
+
+                // Mesma proteção da tela: NF de remessa com valor zero não é exportada.
+                if (temNF && fat <= 0) return false;
 
                 if (selectedStatus === 'faturado' && !isFaturado) return false;
                 if (selectedStatus === 'pendente' && isFaturado) return false;
@@ -815,10 +945,7 @@
                 if (!dateBelongsToSelectedPeriod(date, selectedYear, selectedMonth, selectedWeek)) return false;
                 if (selectedClient && item.cliente !== selectedClient) return false;
 
-                if (search) {
-                    const allValuesText = Object.values(item).filter(v => v !== null && v !== undefined).join(' ').toLowerCase();
-                    if (!allValuesText.includes(search)) return false;
-                }
+                if (search && !matchesAdvancedSearch(item, search)) return false;
 
                 return true;
             });
@@ -836,7 +963,7 @@
             items.forEach(item => {
                 const fat = parseValue(item.vl_faturado);
                 const temNF = item.numero_nf && String(item.numero_nf).trim() !== '' && String(item.numero_nf) !== 'None';
-                const isFaturado = fat > 0 || temNF;
+                const isFaturado = fat > 0;
                 const valorExibir = isFaturado ? fat : parseValue(item.vl_a_faturar);
 
                 const row = [
