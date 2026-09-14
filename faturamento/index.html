@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.7</title>
+    <title>Sintercan - Controle de Faturamento V1.8</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -79,7 +79,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.7</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.8</span></p>
                 </div>
             </div>
 
@@ -157,6 +157,14 @@
                     <option value="" class="bg-white dark:bg-slate-900">Todos os Status</option>
                     <option value="faturado" class="bg-white dark:bg-slate-900">🟢 Somente Faturados</option>
                     <option value="pendente" class="bg-white dark:bg-slate-900">🟡 Somente Pendentes</option>
+                </select>
+            </div>
+
+            <!-- Filtro por Semana -->
+            <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
+                <i data-lucide="calendar-days" class="w-4 h-4 text-slate-400"></i>
+                <select id="weekFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[210px] font-bold">
+                    <option value="" class="bg-white dark:bg-slate-900">Todas as Semanas</option>
                 </select>
             </div>
 
@@ -281,20 +289,62 @@
             clientSelect.value = currentClient;
         }
 
+        function populateWeekFilter() {
+            const weekSelect = document.getElementById('weekFilter');
+            if (!weekSelect) return;
+
+            const currentWeek = weekSelect.value;
+            const selectedYear = currentDate.getFullYear();
+            const selectedMonth = currentDate.getMonth();
+            const weeks = new Map();
+
+            rawData.forEach(item => {
+                const dtRefStr = item.entrega_normalizada;
+                if (!dtRefStr) return;
+
+                const date = new Date(dtRefStr);
+                if (isNaN(date.getTime())) return;
+                if (date.getMonth() !== selectedMonth || date.getFullYear() !== selectedYear) return;
+
+                const weekNo = getISOWeekNumber(date);
+                if (!weeks.has(weekNo)) {
+                    weeks.set(weekNo, getWeekDateRangeStr(date));
+                }
+            });
+
+            weekSelect.innerHTML = '<option value="" class="bg-white dark:bg-slate-900">Todas as Semanas</option>';
+
+            Array.from(weeks.entries())
+                .sort((a, b) => a[0] - b[0])
+                .forEach(([weekNo, rangeStr]) => {
+                    const option = new Option(`Semana ${weekNo} (${rangeStr})`, String(weekNo), false, false);
+                    option.className = 'bg-white dark:bg-slate-900';
+                    weekSelect.appendChild(option);
+                });
+
+            const currentStillExists = Array.from(weekSelect.options).some(opt => opt.value === currentWeek);
+            weekSelect.value = currentStillExists ? currentWeek : '';
+        }
+
         function clearAllFilters() {
             document.getElementById('searchInput').value = '';
             document.getElementById('clientFilter').value = '';
             document.getElementById('statusFilter').value = '';
+            document.getElementById('weekFilter').value = '';
             renderCalendar();
         }
 
         function changeMonth(delta) {
             currentDate.setMonth(currentDate.getMonth() + delta);
+            const weekFilter = document.getElementById('weekFilter');
+            if (weekFilter) weekFilter.value = '';
             renderCalendar();
         }
 
         function resetToToday() {
             currentDate = new Date();
+            const weekFilter = document.getElementById('weekFilter');
+            if (weekFilter) weekFilter.value = '';
             renderCalendar();
         }
 
@@ -343,9 +393,12 @@
             const capitalizedMonth = monthStr.charAt(0).toUpperCase() + monthStr.slice(1);
             document.getElementById('currentMonthYearLabel').textContent = `${capitalizedMonth} De ${currentDate.getFullYear()}`;
 
+            populateWeekFilter();
+
             const search = document.getElementById('searchInput').value.toLowerCase().trim();
             const selectedClient = document.getElementById('clientFilter').value;
             const selectedStatus = document.getElementById('statusFilter').value;
+            const selectedWeek = document.getElementById('weekFilter').value;
 
             const selectedYear = currentDate.getFullYear();
             const selectedMonth = currentDate.getMonth();
@@ -379,6 +432,8 @@
                 if (isNaN(date)) return false;
 
                 if (date.getMonth() !== selectedMonth || date.getFullYear() !== selectedYear) return false;
+
+                if (selectedWeek && String(getISOWeekNumber(date)) !== selectedWeek) return false;
 
                 if (selectedClient && item.cliente !== selectedClient) return false;
 
@@ -680,6 +735,7 @@
             const search = document.getElementById('searchInput').value.toLowerCase().trim();
             const selectedClient = document.getElementById('clientFilter').value;
             const selectedStatus = document.getElementById('statusFilter').value;
+            const selectedWeek = document.getElementById('weekFilter').value;
             const selectedYear = currentDate.getFullYear();
             const selectedMonth = currentDate.getMonth();
 
@@ -706,6 +762,7 @@
 
                 const date = new Date(dtRefStr);
                 if (date.getMonth() !== selectedMonth || date.getFullYear() !== selectedYear) return false;
+                if (selectedWeek && String(getISOWeekNumber(date)) !== selectedWeek) return false;
                 if (selectedClient && item.cliente !== selectedClient) return false;
 
                 if (search) {
