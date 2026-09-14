@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.8.2</title>
+    <title>Sintercan - Controle de Faturamento V1.8.3</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -79,7 +79,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.8.2</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.8.3</span></p>
                 </div>
             </div>
 
@@ -289,6 +289,24 @@
             clientSelect.value = currentClient;
         }
 
+        // Data usada para posicionar o registro no calendário:
+        // - FATURADO: usa a data real de emissão da NF
+        // - PENDENTE: usa a data prevista/normalizada para faturamento
+        // Registro faturado sem dt_emissao é uma inconsistência da API e NÃO deve
+        // ser jogado no mês atual por fallback de entrega_normalizada.
+        function getCalendarReferenceDate(item) {
+            const fat = parseValue(item.vl_faturado);
+            const temNF = item.numero_nf && String(item.numero_nf).trim() !== '' && String(item.numero_nf) !== 'None';
+            const isFaturado = fat > 0 || temNF;
+
+            const dtRefStr = isFaturado ? item.dt_emissao : item.entrega_normalizada;
+            if (!dtRefStr) return null;
+
+            const date = new Date(dtRefStr);
+            if (isNaN(date.getTime())) return null;
+            return date;
+        }
+
         function populateWeekFilter() {
             const weekSelect = document.getElementById('weekFilter');
             if (!weekSelect) return;
@@ -299,11 +317,8 @@
             const weeks = new Map();
 
             rawData.forEach(item => {
-                const dtRefStr = item.entrega_normalizada;
-                if (!dtRefStr) return;
-
-                const date = new Date(dtRefStr);
-                if (isNaN(date.getTime())) return;
+                const date = getCalendarReferenceDate(item);
+                if (!date) return;
                 if (date.getMonth() !== selectedMonth || date.getFullYear() !== selectedYear) return;
 
                 const weekNo = getISOWeekNumber(date);
@@ -451,12 +466,11 @@
                 // Se for mês histórico/passado, oculta os não faturados
                 if (isMesPassado && !isFaturado) return false;
 
-                // USO EXCLUSIVO DA ENTREGA NORMALIZADA PARA FILTRAR O MÊS
-                const dtRefStr = item.entrega_normalizada;
-                if (!dtRefStr) return false;
-
-                const date = new Date(dtRefStr);
-                if (isNaN(date)) return false;
+                // REGRA DE DATA DO CALENDÁRIO:
+                // faturado = dt_emissao | pendente = entrega_normalizada.
+                // Isso impede NF antiga sem data de emissão de cair artificialmente no mês atual.
+                const date = getCalendarReferenceDate(item);
+                if (!date) return false;
 
                 // Sem filtro de semana: mantém o comportamento mensal.
                 // Com filtro de semana: traz a semana inteira, mesmo cruzando mês.
@@ -496,10 +510,12 @@
             document.getElementById('metricAFaturar').textContent = formatBRL(totalAFaturar);
             document.getElementById('metricTotalGeral').textContent = formatBRL(totalFaturado + totalAFaturar);
 
-            // Agrupamento por Semanas via entrega_normalizada
+            // Agrupamento por semanas usando a data correta do calendário:
+            // faturado = dt_emissao | pendente = entrega_normalizada
             const weeksMap = {};
             filtered.forEach(item => {
-                const date = new Date(item.entrega_normalizada);
+                const date = getCalendarReferenceDate(item);
+                if (!date) return;
 
                 const weekNo = getISOWeekNumber(date);
                 const rangeStr = getWeekDateRangeStr(date);
@@ -790,13 +806,11 @@
 
                 if (isMesPassado && !isFaturado) return false;
 
-                const dtRefStr = item.entrega_normalizada;
-                if (!dtRefStr) return false;
-
-                const date = new Date(dtRefStr);
-                if (isNaN(date.getTime())) return false;
+                const date = getCalendarReferenceDate(item);
+                if (!date) return false;
 
                 // Mantém a exportação exatamente com a mesma regra visual:
+                // faturado = dt_emissao; pendente = entrega_normalizada;
                 // semana selecionada = semana completa, inclusive virada de mês.
                 if (!dateBelongsToSelectedPeriod(date, selectedYear, selectedMonth, selectedWeek)) return false;
                 if (selectedClient && item.cliente !== selectedClient) return false;
