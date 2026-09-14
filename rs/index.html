@@ -377,6 +377,51 @@
             </div>
         </div>
 
+        <div id="viewTabMensalCliente" class="h-full w-full hidden flex flex-col gap-2 overflow-hidden">
+            <div class="grid grid-cols-2 xl:grid-cols-4 gap-2 flex-shrink-0">
+                <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg px-3 py-2 shadow-md">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider block">Valor do período</span>
+                    <p id="kpiMensalClienteTotal" class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 font-sans tracking-tight">R$ 0,00</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg px-3 py-2 shadow-md">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider block">Clientes com venda</span>
+                    <p id="kpiMensalClienteClientes" class="text-base font-extrabold text-slate-900 dark:text-white font-sans tracking-tight">0</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg px-3 py-2 shadow-md min-w-0">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider block">Maior cliente</span>
+                    <p id="kpiMensalClienteTop" class="text-sm font-extrabold text-amber-600 dark:text-amber-400 font-sans tracking-tight truncate" title="-">-</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg px-3 py-2 shadow-md">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider block">Média por cliente</span>
+                    <p id="kpiMensalClienteMedia" class="text-base font-extrabold text-slate-900 dark:text-white font-sans tracking-tight">R$ 0,00</p>
+                </div>
+            </div>
+
+            <div class="flex-1 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                <div class="px-3 py-2 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex flex-wrap justify-between items-center gap-2 flex-shrink-0">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Mensal por Cliente</h2>
+                        <span id="mensalClientePeriodoBadge" class="text-[10px] bg-slate-200 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-mono">0 períodos</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="mensalClienteSort" class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Ordenar</label>
+                        <select id="mensalClienteSort" onchange="changeMensalClienteSort()" class="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-lg text-[11px] focus:outline-none focus:border-amber-500">
+                            <option value="cliente">Cliente A-Z</option>
+                            <option value="valor">Maior valor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-auto relative">
+                    <table id="tableMensalCliente" class="w-max min-w-full text-left text-[11px] border-separate border-spacing-0">
+                        <thead id="mensalClienteHead" class="bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-300 sticky top-0 z-20 font-semibold"></thead>
+                        <tbody id="tableBodyMensalCliente" class="text-slate-700 dark:text-slate-300 font-sans"></tbody>
+                        <tfoot id="mensalClienteFoot" class="bg-slate-200 dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold sticky bottom-0 z-20"></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div id="pbiView" class="h-full w-full hidden border border-slate-300 dark:border-slate-800 rounded-xl overflow-hidden">
             <div id="pbiContainer" class="w-full h-full"></div>
         </div>
@@ -387,7 +432,7 @@
         <button id="navBtnRS" onclick="switchMainTab('RS')" class="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer">RS</button>
         <button id="navBtnGrafico" onclick="switchMainTab('Grafico')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Gráfico</button>
         <button id="navBtnMensal" onclick="switchMainTab('Mensal')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Mensal</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Mensal por cliente</button>
+        <button id="navBtnMensalCliente" onclick="switchMainTab('MensalCliente')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Mensal por cliente</button>
         <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Classificação de vendas</button>
         <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Pedidos em aberto</button>
         <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Notas Fiscais</button>
@@ -420,6 +465,7 @@
         let activeTab = 'RS'; 
         let myChartGrafico = null;
         let myChartMensal = null;
+        let mensalClienteSortMode = 'cliente';
 
         let currentRenderLimit = 50;
         let batchStep = 50;
@@ -492,23 +538,25 @@
             const tabRS = document.getElementById('viewTabRS');
             const tabGrafico = document.getElementById('viewTabGrafico');
             const tabMensal = document.getElementById('viewTabMensal');
+            const tabMensalCliente = document.getElementById('viewTabMensalCliente');
 
             const btnRS = document.getElementById('navBtnRS');
             const btnGrafico = document.getElementById('navBtnGrafico');
             const btnMensal = document.getElementById('navBtnMensal');
+            const btnMensalCliente = document.getElementById('navBtnMensalCliente');
 
             const headerSubtitle = document.getElementById('headerSubtitle');
 
             const inactiveClass = "px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
             const activeClass = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
 
-            [btnRS, btnGrafico, btnMensal].forEach(btn => {
+            [btnRS, btnGrafico, btnMensal, btnMensalCliente].forEach(btn => {
                 if (btn) btn.className = inactiveClass;
             });
 
-            tabRS.classList.add('hidden');
-            tabGrafico.classList.add('hidden');
-            tabMensal.classList.add('hidden');
+            [tabRS, tabGrafico, tabMensal, tabMensalCliente].forEach(tab => {
+                if (tab) tab.classList.add('hidden');
+            });
 
             if (tabName === 'RS') {
                 tabRS.classList.remove('hidden');
@@ -524,6 +572,11 @@
                 btnMensal.className = activeClass;
                 headerSubtitle.textContent = "Dashboard Mensal";
                 renderMensalView();
+            } else if (tabName === 'MensalCliente') {
+                tabMensalCliente.classList.remove('hidden');
+                btnMensalCliente.className = activeClass;
+                headerSubtitle.textContent = "Mensal por Cliente";
+                renderMensalClienteView();
             }
         }
 
@@ -1250,6 +1303,159 @@
             });
         }
 
+        function getMensalClienteMatrix() {
+            const periodSet = new Set();
+            const byClient = {};
+            const monthTotals = {};
+            let grandTotal = 0;
+
+            // Sem filtro manual de datas, preserva na matriz todos os meses marcados
+            // no seletor Ano / Mês, mesmo quando um mês não possui venda.
+            const hasCustomDateRange = Boolean(
+                document.getElementById('filterDataDe')?.value ||
+                document.getElementById('filterDataAte')?.value
+            );
+
+            if (!hasCustomDateRange && Object.keys(selectedAnoMes).length > 0) {
+                Object.entries(selectedAnoMes).forEach(([year, months]) => {
+                    months.forEach(month => {
+                        periodSet.add(`${year}-${String(month + 1).padStart(2, '0')}`);
+                    });
+                });
+            }
+
+            filteredData.forEach(item => {
+                const d = parseDate(item.dt_aprovacao || item.dt_previsao_entrega);
+                if (!d) return;
+
+                const year = d.getFullYear();
+                const month = d.getMonth();
+                const key = `${year}-${String(month + 1).padStart(2, '0')}`;
+                periodSet.add(key);
+
+                const client = ((item.cliente || 'SEM CLIENTE').trim() || 'SEM CLIENTE');
+                const value = parseFloat(item.vl_total || 0);
+
+                if (!byClient[client]) byClient[client] = { months: {}, total: 0 };
+                byClient[client].months[key] = (byClient[client].months[key] || 0) + value;
+                byClient[client].total += value;
+
+                monthTotals[key] = (monthTotals[key] || 0) + value;
+                grandTotal += value;
+            });
+
+            const periods = Array.from(periodSet).sort();
+            const years = [...new Set(periods.map(p => p.slice(0, 4)))];
+            const singleYear = years.length === 1;
+
+            const periodInfo = periods.map(key => {
+                const [yearStr, monthStr] = key.split('-');
+                const monthIndex = parseInt(monthStr, 10) - 1;
+                return {
+                    key,
+                    year: parseInt(yearStr, 10),
+                    monthIndex,
+                    label: singleYear ? monthNames[monthIndex] : `${monthNames[monthIndex]}/${yearStr.slice(2)}`,
+                    fullLabel: `${monthNames[monthIndex]}/${yearStr}`
+                };
+            });
+
+            let clients = Object.entries(byClient).map(([name, info]) => ({
+                name,
+                months: info.months,
+                total: info.total
+            }));
+
+            if (mensalClienteSortMode === 'valor') {
+                clients.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'pt-BR'));
+            } else {
+                clients.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+            }
+
+            return { periodInfo, clients, monthTotals, grandTotal };
+        }
+
+        function changeMensalClienteSort() {
+            mensalClienteSortMode = document.getElementById('mensalClienteSort')?.value || 'cliente';
+            renderMensalClienteView();
+        }
+
+        function renderMensalClienteView() {
+            const head = document.getElementById('mensalClienteHead');
+            const body = document.getElementById('tableBodyMensalCliente');
+            const foot = document.getElementById('mensalClienteFoot');
+            if (!head || !body || !foot) return;
+
+            const matrix = getMensalClienteMatrix();
+            const { periodInfo, clients, monthTotals, grandTotal } = matrix;
+
+            const topClient = clients.length
+                ? [...clients].sort((a, b) => b.total - a.total)[0]
+                : null;
+            const avgClient = clients.length ? grandTotal / clients.length : 0;
+
+            document.getElementById('kpiMensalClienteTotal').textContent = formatCurrency(grandTotal);
+            document.getElementById('kpiMensalClienteClientes').textContent = clients.length.toLocaleString('pt-BR');
+            document.getElementById('kpiMensalClienteMedia').textContent = formatCurrency(avgClient);
+
+            const topEl = document.getElementById('kpiMensalClienteTop');
+            if (topEl) {
+                topEl.textContent = topClient ? `${topClient.name} · ${formatCurrency(topClient.total)}` : '-';
+                topEl.title = topClient ? `${topClient.name} — ${formatCurrency(topClient.total)}` : '-';
+            }
+
+            const badge = document.getElementById('mensalClientePeriodoBadge');
+            if (badge) badge.textContent = `${periodInfo.length} ${periodInfo.length === 1 ? 'período' : 'períodos'}`;
+
+            head.innerHTML = `
+                <tr>
+                    <th class="sticky left-0 top-0 z-30 min-w-[260px] w-[260px] px-2 py-2 bg-slate-200 dark:bg-slate-900 border-b border-r border-slate-300 dark:border-slate-800 text-left">Cliente</th>
+                    ${periodInfo.map(p => `
+                        <th class="top-0 z-20 min-w-[118px] px-2 py-2 bg-slate-200 dark:bg-slate-900 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap" title="${p.fullLabel}">${p.label}</th>
+                    `).join('')}
+                    <th class="sticky right-0 top-0 z-30 min-w-[130px] px-2 py-2 bg-amber-100 dark:bg-amber-500/20 border-b border-l border-amber-300 dark:border-amber-500/30 text-right whitespace-nowrap">Total</th>
+                </tr>
+            `;
+
+            if (clients.length === 0 || periodInfo.length === 0) {
+                body.innerHTML = `<tr><td colspan="${periodInfo.length + 2}" class="p-8 text-center text-slate-500">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+                foot.innerHTML = '';
+                return;
+            }
+
+            const frag = document.createDocumentFragment();
+
+            clients.forEach((client, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = (idx % 2 === 0 ? 'bg-slate-50 dark:bg-slate-900/30' : 'bg-white dark:bg-slate-950/30') + ' hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors';
+
+                const monthCells = periodInfo.map(p => {
+                    const val = client.months[p.key] || 0;
+                    return `<td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800/60 text-right font-mono whitespace-nowrap ${val === 0 ? 'text-slate-300 dark:text-slate-700' : 'text-slate-700 dark:text-slate-300'}">${val === 0 ? '' : formatCurrency(val)}</td>`;
+                }).join('');
+
+                tr.innerHTML = `
+                    <td class="sticky left-0 z-10 min-w-[260px] w-[260px] px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 bg-inherit font-medium text-slate-900 dark:text-slate-200 truncate" title="${client.name}">${client.name}</td>
+                    ${monthCells}
+                    <td class="sticky right-0 z-10 min-w-[130px] px-2 py-1.5 border-b border-l border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-slate-900 text-right font-mono font-extrabold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">${formatCurrency(client.total)}</td>
+                `;
+                frag.appendChild(tr);
+            });
+
+            body.innerHTML = '';
+            body.appendChild(frag);
+
+            foot.innerHTML = `
+                <tr>
+                    <td class="sticky left-0 bottom-0 z-30 min-w-[260px] w-[260px] px-2 py-2 bg-slate-200 dark:bg-slate-900 border-t border-r border-slate-400 dark:border-slate-700">Total</td>
+                    ${periodInfo.map(p => `
+                        <td class="bottom-0 z-20 min-w-[118px] px-2 py-2 bg-slate-200 dark:bg-slate-900 border-t border-r border-slate-400 dark:border-slate-700 text-right font-mono whitespace-nowrap">${formatCurrency(monthTotals[p.key] || 0)}</td>
+                    `).join('')}
+                    <td class="sticky right-0 bottom-0 z-30 min-w-[130px] px-2 py-2 bg-amber-100 dark:bg-amber-500/20 border-t border-l border-amber-400 dark:border-amber-500/40 text-right font-mono whitespace-nowrap">${formatCurrency(grandTotal)}</td>
+                </tr>
+            `;
+        }
+
         function loadMoreRecords() {
             currentRenderLimit += batchStep;
             renderTable();
@@ -1323,6 +1529,8 @@
                 renderGraficoView();
             } else if (activeTab === 'Mensal') {
                 renderMensalView();
+            } else if (activeTab === 'MensalCliente') {
+                renderMensalClienteView();
             }
         }
 
@@ -1437,6 +1645,18 @@
                     "Vl. Total": monthlyAgg[k].total,
                     "Qtde. Itens": monthlyAgg[k].countOfItems
                 }));
+            } else if (activeTab === 'MensalCliente') {
+                sheetName = "Mensal_por_Cliente";
+                const matrix = getMensalClienteMatrix();
+
+                exportData = matrix.clients.map(client => {
+                    const row = { "Cliente": client.name };
+                    matrix.periodInfo.forEach(p => {
+                        row[p.fullLabel] = client.months[p.key] || 0;
+                    });
+                    row["Total"] = client.total;
+                    return row;
+                });
             }
 
             const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -1453,6 +1673,7 @@
             const tabRS = document.getElementById('viewTabRS');
             const tabGrafico = document.getElementById('viewTabGrafico');
             const tabMensal = document.getElementById('viewTabMensal');
+            const tabMensalCliente = document.getElementById('viewTabMensalCliente');
             const pbiView = document.getElementById('pbiView');
             const filterSection = document.getElementById('filterSection');
             const btnExport = document.getElementById('btnExport');
@@ -1463,6 +1684,7 @@
                 tabRS.classList.add('hidden');
                 tabGrafico.classList.add('hidden');
                 tabMensal.classList.add('hidden');
+                tabMensalCliente.classList.add('hidden');
                 filterSection.classList.add('hidden');
                 btnExport.classList.add('hidden');
                 pbiView.classList.remove('hidden');
