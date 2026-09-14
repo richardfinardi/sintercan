@@ -3,12 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <!-- SINTERCAN RS | Versão: V1.5.0 | Build: 2026-09-14 -->
-    <meta name="app-version" content="V1.5.0">
+    <!-- SINTERCAN RS | Versão: V1.6.1 | Build: 2026-09-14 -->
+    <meta name="app-version" content="V1.6.1">
     <meta name="app-build-date" content="2026-09-14">
     <meta name="theme-color" content="#0f172a">
-    <title>RS - Sintercan | V1.5.0</title>
-    <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sintercan">
+    <meta name="application-name" content="Sintercan">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
+    <title>Sintercan | V1.6.1</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -82,7 +89,7 @@
         .dark .rs-sort-reset { background: #0f172a; border-color: #334155; color: #94a3b8; }
         .rs-sort-reset:not(:disabled):hover { border-color: #f59e0b; color: #d97706; background: rgba(245,158,11,.08); }
         .rs-sort-reset:disabled { opacity: .42; cursor: default; }
-        .pedido-col-filter-popover { min-width: 220px; max-width: 280px; }
+        .pedido-col-filter-popover, .nota-col-filter-popover { min-width: 220px; max-width: 280px; }
         .pedido-filter-active { color: #f59e0b !important; background: rgba(245,158,11,.16) !important; }
 
         /* ===== PESQUISA AVANÇADA ===== */
@@ -133,7 +140,7 @@
             .rs-actions { gap: .22rem !important; flex: 0 0 auto; position: relative; }
             .rs-action-btn { width: 34px !important; height: 34px !important; padding: 0 !important; justify-content: center !important; border-radius: .6rem !important; }
             .rs-action-btn .rs-action-label { display: none !important; }
-            #btnRefreshData, #btnClearFilters, #btnExport, #btnTogglePbi { display: none !important; }
+            #btnRefreshData, #btnClearFilters, #btnExport, #btnInstallApp { display: none !important; }
             #btnMobileFilters, #btnMobileActions { display: flex !important; }
             #dataStatusBadge {
                 display: flex !important;
@@ -368,13 +375,13 @@
             .rs-header-row { gap: .6rem !important; }
         }
 
-        /* V1.5.0 - telas baseadas em /pedido */
+        /* V1.6.1 - telas baseadas em /pedido + PWA */
         .pedido-summary-head { cursor: pointer; user-select: none; }
         .pedido-summary-head:hover { color: #d97706; }
         .dark .pedido-summary-head:hover { color: #fbbf24; }
         .pedido-summary-arrow { color: #f59e0b; font-weight: 900; margin-left: .2rem; }
         @media (max-width: 639px) {
-            #viewTabPedidoCarteira, #viewTabPrazoEntrega { min-height: 0 !important; }
+            #viewTabPedidoCarteira, #viewTabPrazoEntrega, #viewTabNotasFiscais { min-height: 0 !important; }
             #pedidoCarteiraGrid { display: flex !important; flex-direction: column !important; overflow-y: auto !important; }
             #pedidoCarteiraTableCard { min-height: 420px; flex: 0 0 auto; }
             #pedidoCarteiraChartCard { min-height: 520px; flex: 0 0 auto; }
@@ -382,6 +389,9 @@
             #prazoEntregaCard { min-height: 0; }
             #tablePrazoEntrega { font-size: 10px; }
             #tablePrazoEntrega th, #tablePrazoEntrega td { padding: .42rem .48rem; }
+            #tableNotasFiscais { min-width: 2450px !important; font-size: 9.5px !important; }
+            #tableNotasFiscais th, #tableNotasFiscais td { padding: .42rem .38rem !important; }
+            #notaFiscalTableScroll { -webkit-overflow-scrolling: touch; }
         }
     </style>
 </head>
@@ -448,6 +458,20 @@
         </div>
     </div>
 
+    <div id="installAppModal" class="hidden fixed inset-0 z-[170] bg-slate-950/65 backdrop-blur-sm p-4 items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="installAppTitle" onclick="handleInstallBackdrop(event)">
+        <div class="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between gap-3 px-6 py-5 border-b border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center"><i data-lucide="download" class="w-5 h-5"></i></div>
+                    <div><h2 id="installAppTitle" class="text-lg font-extrabold text-slate-900 dark:text-white">Instalar Sintercan</h2><p class="text-xs text-slate-500 dark:text-slate-400">Abre em janela própria, como aplicativo.</p></div>
+                </div>
+                <button type="button" onclick="closeInstallAppModal()" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="installAppInstructions" class="p-6 space-y-4 text-sm text-slate-700 dark:text-slate-200"></div>
+            <div class="px-6 pb-6 flex justify-end"><button type="button" onclick="closeInstallAppModal()" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold">Entendi</button></div>
+        </div>
+    </div>
+
     <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 shadow-md flex-shrink-0">
         <div class="rs-header-row w-full px-4 py-2 flex justify-between items-center gap-4">
             <div class="rs-brand flex items-center gap-4">
@@ -487,16 +511,16 @@
                     <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
                     <span id="btnExportText" class="rs-action-label">Exportar Excel</span>
                 </button>
-                <button id="btnTogglePbi" onclick="togglePowerBiView()" class="rs-action-btn px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/10 cursor-pointer">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-                    <span id="btnToggleText" class="rs-action-label">Acessar Power BI</span>
+                <button id="btnInstallApp" onclick="installPwaApp()" class="rs-action-btn px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/10 cursor-pointer" title="Instalar como aplicativo no computador ou celular">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span id="btnInstallAppText" class="rs-action-label">Instalar App</span>
                 </button>
                 <button id="btnMobileActions" onclick="toggleMobileActionsMenu()" class="rs-action-btn hidden sm:hidden p-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg border border-slate-300 dark:border-slate-700 items-center justify-center" title="Mais ações" aria-label="Mais ações" aria-expanded="false"><i data-lucide="ellipsis-vertical" class="w-4 h-4"></i></button>
                 <div id="mobileActionsMenu" class="hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden text-sm">
                     <button onclick="closeMobileActionsMenu(); refreshCurrentData(true)" class="w-full px-3 py-3 flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800"><i data-lucide="refresh-cw" class="w-4 h-4 text-sky-500"></i><span>Atualizar dados</span></button>
                     <button onclick="closeMobileActionsMenu(); resetAllFilters()" class="w-full px-3 py-3 flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"><i data-lucide="filter-x" class="w-4 h-4 text-amber-500"></i><span>Limpar filtros</span></button>
                     <button onclick="closeMobileActionsMenu(); exportToExcel()" class="w-full px-3 py-3 flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"><i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-500"></i><span>Exportar Excel</span></button>
-                    <button onclick="closeMobileActionsMenu(); togglePowerBiView()" class="w-full px-3 py-3 flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"><i data-lucide="layout-dashboard" class="w-4 h-4 text-amber-500"></i><span>Power BI</span></button>
+                    <button onclick="closeMobileActionsMenu(); installPwaApp()" class="w-full px-3 py-3 flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"><i data-lucide="download" class="w-4 h-4 text-amber-500"></i><span>Instalar aplicativo</span></button>
                 </div>
             </div>
         </div>
@@ -1192,6 +1216,220 @@
             </div>
         </div>
 
+        <div id="viewTabNotasFiscais" class="h-full w-full hidden flex flex-col overflow-hidden">
+            <div id="notaFiscalTableCard" class="flex-1 min-h-0 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                <div id="notaFiscalToolbar" class="px-3 py-2 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex flex-wrap justify-between items-center gap-2 flex-shrink-0">
+                    <div class="min-w-0">
+                        <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Notas Fiscais</h2>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Somente FATURADO PARCIAL + FATURADO TOTAL</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="btnResetSortNotas" onclick="resetNotasFiscaisSort()" class="rs-sort-reset" title="Voltar à ordenação padrão" disabled><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i><span>Ordem padrão</span></button>
+                        <span id="notaFiscalCountBadge" class="text-[10px] bg-slate-200 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full font-mono">0 registros</span>
+                    </div>
+                </div>
+                <div id="notaFiscalTableScroll" class="flex-1 overflow-auto min-h-0 relative">
+                    <table id="tableNotasFiscais" class="w-max min-w-full text-left text-[10.5px] border-separate border-spacing-0">
+                        <thead class="sticky top-0 z-20 bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold">
+                            <tr>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group ">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('prazo_status')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Prazo status">
+                                            <span class="truncate">Prazo status</span><span id="notaSort_prazo_status" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('prazo_status')" id="nota_btn_filter_prazo_status" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Prazo status"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_prazo_status" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('dias')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 flex-1" title="Ordenar por Dias">
+                                            <span class="truncate">Dias</span><span id="notaSort_dias" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('dias')" id="nota_btn_filter_dias" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Dias"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_dias" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group ">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('os')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por OS">
+                                            <span class="truncate">OS</span><span id="notaSort_os" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('os')" id="nota_btn_filter_os" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar OS"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_os" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('orcamento')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 flex-1" title="Ordenar por Orçamento">
+                                            <span class="truncate">Orçamento</span><span id="notaSort_orcamento" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('orcamento')" id="nota_btn_filter_orcamento" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Orçamento"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_orcamento" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group  min-w-[170px]">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('cliente')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Cliente">
+                                            <span class="truncate">Cliente</span><span id="notaSort_cliente" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('cliente')" id="nota_btn_filter_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Cliente"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_cliente" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group ">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('codigo_cliente')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Código">
+                                            <span class="truncate">Código</span><span id="notaSort_codigo_cliente" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('codigo_cliente')" id="nota_btn_filter_codigo_cliente" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Código"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_codigo_cliente" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group ">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('pedido')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Pedido">
+                                            <span class="truncate">Pedido</span><span id="notaSort_pedido" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('pedido')" id="nota_btn_filter_pedido" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Pedido"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_pedido" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group ">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('item')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Item">
+                                            <span class="truncate">Item</span><span id="notaSort_item" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('item')" id="nota_btn_filter_item" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Item"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_item" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group ">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('sc')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por SC">
+                                            <span class="truncate">SC</span><span id="notaSort_sc" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('sc')" id="nota_btn_filter_sc" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar SC"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_sc" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group  min-w-[330px]">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('descricao')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Descrição">
+                                            <span class="truncate">Descrição</span><span id="notaSort_descricao" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('descricao')" id="nota_btn_filter_descricao" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Descrição"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_descricao" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('qtde')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 flex-1" title="Ordenar por Qtde.">
+                                            <span class="truncate">Qtde.</span><span id="notaSort_qtde" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('qtde')" id="nota_btn_filter_qtde" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Qtde."><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_qtde" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group text-center">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('aprovacao')" class="rs-sortable-head flex items-center justify-center gap-1 min-w-0 flex-1" title="Ordenar por Aprovação">
+                                            <span class="truncate">Aprovação</span><span id="notaSort_aprovacao" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('aprovacao')" id="nota_btn_filter_aprovacao" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Aprovação"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_aprovacao" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group text-center">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('prazo')" class="rs-sortable-head flex items-center justify-center gap-1 min-w-0 flex-1" title="Ordenar por Prazo">
+                                            <span class="truncate">Prazo</span><span id="notaSort_prazo" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('prazo')" id="nota_btn_filter_prazo" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Prazo"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_prazo" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('vl_unitario')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 flex-1" title="Ordenar por Vl. unitário">
+                                            <span class="truncate">Vl. unitário</span><span id="notaSort_vl_unitario" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('vl_unitario')" id="nota_btn_filter_vl_unitario" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Vl. unitário"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_vl_unitario" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('vl_total')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 flex-1" title="Ordenar por Vl. total">
+                                            <span class="truncate">Vl. total</span><span id="notaSort_vl_total" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('vl_total')" id="nota_btn_filter_vl_total" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Vl. total"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_vl_total" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group ">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('classificacao')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Classificação">
+                                            <span class="truncate">Classificação</span><span id="notaSort_classificacao" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('classificacao')" id="nota_btn_filter_classificacao" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Classificação"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_classificacao" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group ">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('tipo')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Tipo">
+                                            <span class="truncate">Tipo</span><span id="notaSort_tipo" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('tipo')" id="nota_btn_filter_tipo" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Tipo"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_tipo" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group  min-w-[170px]">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('liberado_faturar')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Liberado faturar">
+                                            <span class="truncate">Liberado faturar</span><span id="notaSort_liberado_faturar" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('liberado_faturar')" id="nota_btn_filter_liberado_faturar" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Liberado faturar"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_liberado_faturar" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group  min-w-[170px]">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('notas')" class="rs-sortable-head flex items-center justify-between gap-1 min-w-0 flex-1" title="Ordenar por Notas">
+                                            <span class="truncate">Notas</span><span id="notaSort_notas" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('notas')" id="nota_btn_filter_notas" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Notas"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_notas" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute left-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('qtde_faturada')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 flex-1" title="Ordenar por Qtde. faturada">
+                                            <span class="truncate">Qtde. faturada</span><span id="notaSort_qtde_faturada" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('qtde_faturada')" id="nota_btn_filter_qtde_faturada" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Qtde. faturada"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_qtde_faturada" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                                <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap relative group text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button type="button" onclick="sortNotasFiscais('vl_faturado')" class="rs-sortable-head flex items-center justify-end gap-1 min-w-0 flex-1" title="Ordenar por Vl. faturado">
+                                            <span class="truncate">Vl. faturado</span><span id="notaSort_vl_faturado" class="rs-sort-indicator"></span>
+                                        </button>
+                                        <button type="button" onclick="event.stopPropagation(); toggleNotaColumnFilter('vl_faturado')" id="nota_btn_filter_vl_faturado" class="text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 p-0.5 rounded transition flex-shrink-0" title="Filtrar Vl. faturado"><i data-lucide="filter" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <div id="nota_filter_popover_vl_faturado" onclick="event.stopPropagation()" class="col-filter-popover nota-col-filter-popover absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 shadow-2xl z-50 font-normal text-left"></div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyNotasFiscais"></tbody>
+                        <tfoot id="tableFootNotasFiscais" class="sticky bottom-0 z-20 bg-slate-200 dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold"></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div id="viewTabPedidoCarteira" class="h-full w-full hidden flex flex-col overflow-hidden">
             <div id="pedidoCarteiraGrid" class="grid grid-cols-1 lg:grid-cols-[34%_66%] gap-3 h-full min-h-0">
                 <div id="pedidoCarteiraTableCard" class="min-h-0 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
@@ -1257,10 +1495,6 @@
             </div>
         </div>
 
-        <div id="pbiView" class="h-full w-full hidden border border-slate-300 dark:border-slate-800 rounded-xl overflow-hidden">
-            <div id="pbiContainer" class="w-full h-full"></div>
-        </div>
-
     </main>
 
     <nav class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 py-1 flex gap-1 overflow-x-auto text-xs font-medium flex-shrink-0">
@@ -1270,7 +1504,7 @@
         <button id="navBtnMensalCliente" onclick="switchMainTab('MensalCliente')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Mensal por cliente</button>
         <button id="navBtnClassificacao" onclick="switchMainTab('Classificacao')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Classificação de vendas</button>
         <button id="navBtnPedidos" onclick="switchMainTab('Pedidos')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Pedidos em aberto</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Notas Fiscais</button>
+        <button id="navBtnNotasFiscais" onclick="switchMainTab('NotasFiscais')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Notas Fiscais</button>
         <button id="navBtnPedidoCarteira" onclick="switchMainTab('PedidoCarteira')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Pedidos em carteira</button>
         <button id="navBtnPrazoEntrega" onclick="switchMainTab('PrazoEntrega')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Valores por prazo de entrega</button>
     </nav>
@@ -1289,7 +1523,7 @@
             }
         }
 
-        const APP_VERSION = 'V1.5.0';
+        const APP_VERSION = 'V1.6.1';
         const RS_API_URL = 'https://sintercan.consultoriarf.net/rs';
         const PEDIDO_API_URL = 'https://sintercan.consultoriarf.net/pedido';
         const RS_DB_NAME = 'SINTERCAN_RS_CACHE';
@@ -1300,7 +1534,7 @@
         const ACTIVE_TAB_STORAGE_KEY = 'sintercan_rs_active_tab';
         const MENSAL_CLIENTE_SORT_STORAGE_KEY = 'sintercan_rs_mensal_cliente_sort_v1';
         const MOBILE_FILTER_STORAGE_KEY = 'sintercan_rs_mobile_filters_open';
-        const VALID_TABS = ['RS', 'Grafico', 'Mensal', 'MensalCliente', 'Classificacao', 'Pedidos', 'PedidoCarteira', 'PrazoEntrega'];
+        const VALID_TABS = ['RS', 'Grafico', 'Mensal', 'MensalCliente', 'Classificacao', 'Pedidos', 'NotasFiscais', 'PedidoCarteira', 'PrazoEntrega'];
 
         let fullData = [];
         let filteredData = [];
@@ -1324,6 +1558,11 @@
         let pedidoSortColumn = null;
         let pedidoSortAsc = true;
         let pedidoColumnSelections = {};
+        let filteredNotaData = [];
+        let notaColumnSelections = {};
+        let notaSortColumn = 'aprovacao';
+        let notaSortAsc = true;
+        let notaSortCustom = false;
         let rsSortCustom = false;
         let pedidoCarteiraSortColumn = 'total';
         let pedidoCarteiraSortAsc = false;
@@ -1795,7 +2034,7 @@
 
 
         function isPedidoBasedTab(tab = activeTab) {
-            return ['Pedidos', 'PedidoCarteira', 'PrazoEntrega'].includes(tab);
+            return ['Pedidos', 'NotasFiscais', 'PedidoCarteira', 'PrazoEntrega'].includes(tab);
         }
 
         function refreshCurrentData(manual = false) {
@@ -1904,7 +2143,7 @@
         async function loadPedidoData() {
             if (pedidoLoadStarted && (pedidoDataReady || isRefreshingPedidoData)) return;
             pedidoLoadStarted = true;
-            if (activeTab === 'Pedidos') updateDataStatus('loading');
+            if (isPedidoBasedTab()) updateDataStatus('loading');
             setLoadingOverlay(true, 'Carregando pedidos...', 'Verificando o cache local de pedidos deste computador.', false);
 
             let cacheRecord = null;
@@ -2033,6 +2272,12 @@
         const PEDIDO_DATE_COLUMNS = new Set(['aprovacao','prazo','dt_emissao']);
         const PEDIDO_CURRENCY_COLUMNS = new Set(['vl_unitario','vl_total','vl_a_faturar','vl_faturado']);
 
+        const NOTA_COLUMN_KEYS = ['prazo_status','dias','os','orcamento','cliente','codigo_cliente','pedido','item','sc','descricao','qtde','aprovacao','prazo','vl_unitario','vl_total','classificacao','tipo','liberado_faturar','notas','qtde_faturada','vl_faturado'];
+        const NOTA_NUMERIC_COLUMNS = new Set(['dias','orcamento','qtde','vl_unitario','vl_total','qtde_faturada','vl_faturado']);
+        const NOTA_DATE_COLUMNS = new Set(['aprovacao','prazo','dt_emissao']);
+        const NOTA_CURRENCY_COLUMNS = new Set(['vl_unitario','vl_total','vl_faturado']);
+        const NOTA_ALLOWED_STATUS = new Set(['faturado parcial','faturado total']);
+
         function getPedidoFilterCriteria() {
             return {
                 globalVal: document.getElementById('filterGlobal')?.value || '',
@@ -2080,6 +2325,10 @@
 
         function applyPedidoFilters() {
             if (!pedidoDataReady) return;
+            if (activeTab === 'NotasFiscais') {
+                applyNotaFiscalFilters();
+                return;
+            }
             const criteria = getPedidoFilterCriteria();
             filteredPedidoData = pedidoData.filter(item => pedidoMatchesAllFilters(item, criteria));
             sortPedidoData();
@@ -2339,6 +2588,230 @@
                 <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
                 <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
                 <td class="px-2 py-2 border-t border-slate-300 dark:border-slate-700"></td>
+            </tr>`;
+        }
+
+        function notaColumnDisplayValue(item, colKey) {
+            const raw = item?.[colKey];
+            if (NOTA_DATE_COLUMNS.has(colKey)) return formatDateBR(raw) || '(Vazio)';
+            if (NOTA_CURRENCY_COLUMNS.has(colKey)) return raw === null || raw === undefined || raw === '' ? '(Vazio)' : formatCurrency(raw);
+            if (NOTA_NUMERIC_COLUMNS.has(colKey)) return raw === null || raw === undefined || raw === '' ? '(Vazio)' : formatNumberBR(raw);
+            const val = String(raw ?? '').trim();
+            return val || '(Vazio)';
+        }
+
+        function notaMatchesAllFilters(item, criteria, excludeColKey = null) {
+            if (!NOTA_ALLOWED_STATUS.has(normalizeSearchText(item.liberado_faturar || ''))) return false;
+            if (criteria.globalVal && !matchesGlobalSearch(item, criteria.globalVal)) return false;
+            if (criteria.cliente && !normalizeSearchText(item.cliente || '').includes(criteria.cliente)) return false;
+            if (!pedidoPeriodoMatches(item, criteria.periodo)) return false;
+            if (criteria.prazoStatus && normalizeSearchText(item.prazo_status || '') !== criteria.prazoStatus) return false;
+            if (criteria.liberado && normalizeSearchText(item.liberado_faturar || '') !== criteria.liberado) return false;
+            if (criteria.quick) {
+                const target = normalizeSearchText(`${item.descricao || ''} ${item.sc || ''} ${item.pedido || ''}`);
+                if (!target.includes(criteria.quick)) return false;
+            }
+            for (const [colKey, selectedSet] of Object.entries(notaColumnSelections)) {
+                if (colKey === excludeColKey || !selectedSet) continue;
+                if (!selectedSet.has(notaColumnDisplayValue(item, colKey))) return false;
+            }
+            return true;
+        }
+
+        function getNotaFilteredDataExcludingColumn(excludeColKey) {
+            const criteria = getPedidoFilterCriteria();
+            return pedidoData.filter(item => notaMatchesAllFilters(item, criteria, excludeColKey));
+        }
+
+        function applyNotaFiscalFilters() {
+            if (!pedidoDataReady) return;
+            const criteria = getPedidoFilterCriteria();
+            filteredNotaData = pedidoData.filter(item => notaMatchesAllFilters(item, criteria));
+            sortNotaFiscalData();
+            renderNotasFiscaisView();
+        }
+
+        function sortNotasFiscais(column) {
+            if (notaSortColumn === column && notaSortCustom) notaSortAsc = !notaSortAsc;
+            else {
+                notaSortColumn = column;
+                notaSortAsc = true;
+                notaSortCustom = true;
+            }
+            sortNotaFiscalData();
+            renderNotasFiscaisView();
+        }
+
+        function resetNotasFiscaisSort() {
+            notaSortColumn = 'aprovacao';
+            notaSortAsc = true;
+            notaSortCustom = false;
+            sortNotaFiscalData();
+            renderNotasFiscaisView();
+        }
+
+        function sortNotaFiscalData() {
+            if (!notaSortColumn) return;
+            filteredNotaData.sort((a,b) => {
+                let av = a[notaSortColumn];
+                let bv = b[notaSortColumn];
+                if (NOTA_NUMERIC_COLUMNS.has(notaSortColumn)) {
+                    av = parseFloat(av || 0); bv = parseFloat(bv || 0);
+                } else if (NOTA_DATE_COLUMNS.has(notaSortColumn)) {
+                    av = parseDate(av)?.getTime() || 0; bv = parseDate(bv)?.getTime() || 0;
+                } else {
+                    av = normalizeSearchText(av || ''); bv = normalizeSearchText(bv || '');
+                }
+                if (av < bv) return notaSortAsc ? -1 : 1;
+                if (av > bv) return notaSortAsc ? 1 : -1;
+                return 0;
+            });
+        }
+
+        function toggleNotaColumnFilter(colKey) {
+            const el = document.getElementById(`nota_filter_popover_${colKey}`);
+            if (!el) return;
+            const isVisible = el.classList.contains('active');
+            document.querySelectorAll('.col-filter-popover').forEach(p => p.classList.remove('active'));
+            if (!isVisible) {
+                buildNotaExcelFilterPopover(colKey);
+                el.classList.add('active');
+            }
+        }
+
+        function buildNotaExcelFilterPopover(colKey) {
+            const popover = document.getElementById(`nota_filter_popover_${colKey}`);
+            if (!popover) return;
+            const activeData = getNotaFilteredDataExcludingColumn(colKey);
+            const uniqueValues = [...new Set(activeData.map(item => notaColumnDisplayValue(item, colKey)))]
+                .sort((a,b) => a.localeCompare(b, 'pt-BR', { numeric: true, sensitivity: 'base' }));
+            const selectedSet = notaColumnSelections[colKey];
+            const isAllSelected = !selectedSet || uniqueValues.every(v => selectedSet.has(v));
+            popover.innerHTML = `
+                <div class="space-y-2">
+                    <input type="text" id="nota_search_${colKey}" oninput="filterNotaPopoverList('${colKey}')" placeholder="Pesquisar..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500">
+                    <div class="max-h-44 overflow-y-auto space-y-1 text-xs font-sans py-1 border-t border-b border-slate-200 dark:border-slate-800" id="nota_list_${colKey}">
+                        <div class="flex items-center gap-2 px-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
+                            <input type="checkbox" id="nota_chk_all_${colKey}" onchange="toggleSelectAllNotaColumn('${colKey}', this.checked)" ${isAllSelected ? 'checked' : ''} class="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer">
+                            <label for="nota_chk_all_${colKey}" class="text-amber-600 dark:text-amber-400 font-semibold cursor-pointer">(Selecionar Tudo)</label>
+                        </div>
+                        ${uniqueValues.map(val => {
+                            const checked = !selectedSet || selectedSet.has(val);
+                            return `<div class="flex items-center gap-2 px-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded nota-filter-row"><input type="checkbox" value="${escapeHtml(val)}" ${checked ? 'checked' : ''} onchange="syncNotaSelectAll('${colKey}')" class="nota_chk_${colKey} rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer"><label onclick="this.previousElementSibling.click()" class="truncate cursor-pointer" title="${escapeHtml(val)}">${escapeHtml(val)}</label></div>`;
+                        }).join('')}
+                    </div>
+                    <div class="flex justify-end gap-1.5 pt-1"><button onclick="clearNotaColumnFilter('${colKey}')" class="px-2 py-1 bg-slate-200 dark:bg-slate-800 rounded text-[10px]">Limpar</button><button onclick="applyNotaColumnFilterFromUI('${colKey}')" class="px-2 py-1 bg-amber-500 text-slate-950 font-bold rounded text-[10px]">Aplicar</button></div>
+                </div>`;
+        }
+
+        function filterNotaPopoverList(colKey) {
+            const term = normalizeSearchText(document.getElementById(`nota_search_${colKey}`)?.value || '');
+            document.querySelectorAll(`#nota_list_${colKey} .nota-filter-row`).forEach(row => {
+                row.style.display = normalizeSearchText(row.textContent).includes(term) ? 'flex' : 'none';
+            });
+            syncNotaSelectAll(colKey);
+        }
+
+        function toggleSelectAllNotaColumn(colKey, checked) {
+            document.querySelectorAll(`#nota_list_${colKey} .nota-filter-row`).forEach(row => {
+                if (row.style.display !== 'none') {
+                    const chk = row.querySelector(`.nota_chk_${colKey}`);
+                    if (chk) chk.checked = checked;
+                }
+            });
+        }
+
+        function syncNotaSelectAll(colKey) {
+            const visible = [...document.querySelectorAll(`#nota_list_${colKey} .nota-filter-row`)].filter(r => r.style.display !== 'none');
+            const checks = visible.map(r => r.querySelector(`.nota_chk_${colKey}`)).filter(Boolean);
+            const all = document.getElementById(`nota_chk_all_${colKey}`);
+            if (all) all.checked = checks.length > 0 && checks.every(c => c.checked);
+        }
+
+        function applyNotaColumnFilterFromUI(colKey) {
+            const allChks = [...document.querySelectorAll(`.nota_chk_${colKey}`)];
+            const checkedVals = allChks.filter(c => c.checked).map(c => c.value);
+            if (checkedVals.length === allChks.length) delete notaColumnSelections[colKey];
+            else notaColumnSelections[colKey] = new Set(checkedVals);
+            updateNotaFilterIconState(colKey);
+            document.querySelectorAll('.nota-col-filter-popover').forEach(p => p.classList.remove('active'));
+            applyNotaFiscalFilters();
+        }
+
+        function clearNotaColumnFilter(colKey) {
+            delete notaColumnSelections[colKey];
+            updateNotaFilterIconState(colKey);
+            document.querySelectorAll('.nota-col-filter-popover').forEach(p => p.classList.remove('active'));
+            applyNotaFiscalFilters();
+        }
+
+        function updateNotaFilterIconState(colKey) {
+            const btn = document.getElementById(`nota_btn_filter_${colKey}`);
+            if (!btn) return;
+            btn.classList.toggle('pedido-filter-active', Boolean(notaColumnSelections[colKey]));
+        }
+
+        function renderNotasFiscaisView() {
+            const tbody = document.getElementById('tableBodyNotasFiscais');
+            const tfoot = document.getElementById('tableFootNotasFiscais');
+            if (!tbody || !tfoot) return;
+
+            const rows = filteredNotaData;
+            document.getElementById('notaFiscalCountBadge').textContent = `${rows.length.toLocaleString('pt-BR')} registros`;
+            const resetBtn = document.getElementById('btnResetSortNotas');
+            if (resetBtn) resetBtn.disabled = !notaSortCustom;
+            NOTA_COLUMN_KEYS.forEach(k => {
+                const el = document.getElementById(`notaSort_${k}`);
+                if (el) el.textContent = notaSortCustom && notaSortColumn === k ? (notaSortAsc ? '▲' : '▼') : '';
+            });
+
+            if (!rows.length) {
+                tbody.innerHTML = `<tr><td colspan="21" class="p-8 text-center text-slate-500">Nenhum registro encontrado.</td></tr>`;
+                tfoot.innerHTML = '';
+                return;
+            }
+
+            let totalQtde = 0, totalVlTotal = 0, totalQtdeFaturada = 0, totalVlFaturado = 0;
+            tbody.innerHTML = rows.map((row, idx) => {
+                totalQtde += parseFloat(row.qtde || 0) || 0;
+                totalVlTotal += parseFloat(row.vl_total || 0) || 0;
+                totalQtdeFaturada += parseFloat(row.qtde_faturada || 0) || 0;
+                totalVlFaturado += parseFloat(row.vl_faturado || 0) || 0;
+                return `<tr class="${idx%2?'bg-white dark:bg-slate-950/30':'bg-slate-50/70 dark:bg-slate-900/30'} hover:bg-amber-50 dark:hover:bg-slate-800/60 transition">
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${pedidoPrazoStatusHtml(row.prazo_status)}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono">${formatNumberBR(row.dias)}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.os || '')}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono">${escapeHtml(row.orcamento ?? '')}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap font-medium">${escapeHtml(row.cliente || '')}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.codigo_cliente || '')}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.pedido || '')}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.item || '')}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap font-mono">${escapeHtml(row.sc || '')}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 max-w-[360px] truncate" title="${escapeHtml(row.descricao || '')}">${escapeHtml(row.descricao || '')}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono">${formatNumberBR(row.qtde)}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-center whitespace-nowrap">${formatDateBR(row.aprovacao)}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-center whitespace-nowrap">${formatDateBR(row.prazo)}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono whitespace-nowrap">${formatCurrency(row.vl_unitario)}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono whitespace-nowrap">${formatCurrency(row.vl_total)}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.classificacao || '')}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.tipo || '')}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${pedidoLiberadoHtml(row.liberado_faturar)}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 max-w-[220px] truncate" title="${escapeHtml(row.notas || '')}">${escapeHtml(row.notas || '')}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-sky-700 dark:text-sky-300">${formatNumberBR(row.qtde_faturada)}</td>
+                    <td class="px-2 py-1.5 border-b border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">${formatCurrency(row.vl_faturado)}</td>
+                </tr>`;
+            }).join('');
+
+            const blank = '<td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>';
+            tfoot.innerHTML = `<tr>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700">Total</td>
+                ${blank.repeat(9)}
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700 text-right font-mono">${formatNumberBR(totalQtde)}</td>
+                ${blank.repeat(3)}
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700 text-right font-mono">${formatCurrency(totalVlTotal)}</td>
+                ${blank.repeat(4)}
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700 text-right font-mono text-sky-700 dark:text-sky-300">${formatNumberBR(totalQtdeFaturada)}</td>
+                <td class="px-2 py-2 border-t border-slate-300 dark:border-slate-700 text-right font-mono text-emerald-700 dark:text-emerald-300">${formatCurrency(totalVlFaturado)}</td>
             </tr>`;
         }
 
@@ -2619,6 +3092,7 @@
             const tabMensalCliente = document.getElementById('viewTabMensalCliente');
             const tabClassificacao = document.getElementById('viewTabClassificacao');
             const tabPedidos = document.getElementById('viewTabPedidos');
+            const tabNotasFiscais = document.getElementById('viewTabNotasFiscais');
             const tabPedidoCarteira = document.getElementById('viewTabPedidoCarteira');
             const tabPrazoEntrega = document.getElementById('viewTabPrazoEntrega');
 
@@ -2628,6 +3102,7 @@
             const btnMensalCliente = document.getElementById('navBtnMensalCliente');
             const btnClassificacao = document.getElementById('navBtnClassificacao');
             const btnPedidos = document.getElementById('navBtnPedidos');
+            const btnNotasFiscais = document.getElementById('navBtnNotasFiscais');
             const btnPedidoCarteira = document.getElementById('navBtnPedidoCarteira');
             const btnPrazoEntrega = document.getElementById('navBtnPrazoEntrega');
 
@@ -2636,11 +3111,11 @@
             const inactiveClass = "px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
             const activeClass = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
 
-            [btnRS, btnGrafico, btnMensal, btnMensalCliente, btnClassificacao, btnPedidos, btnPedidoCarteira, btnPrazoEntrega].forEach(btn => {
+            [btnRS, btnGrafico, btnMensal, btnMensalCliente, btnClassificacao, btnPedidos, btnNotasFiscais, btnPedidoCarteira, btnPrazoEntrega].forEach(btn => {
                 if (btn) btn.className = inactiveClass;
             });
 
-            [tabRS, tabGrafico, tabMensal, tabMensalCliente, tabClassificacao, tabPedidos, tabPedidoCarteira, tabPrazoEntrega].forEach(tab => {
+            [tabRS, tabGrafico, tabMensal, tabMensalCliente, tabClassificacao, tabPedidos, tabNotasFiscais, tabPedidoCarteira, tabPrazoEntrega].forEach(tab => {
                 if (tab) tab.classList.add('hidden');
             });
 
@@ -2673,6 +3148,11 @@
                 btnPedidos.className = activeClass;
                 headerSubtitle.textContent = "Pedidos em Aberto";
                 if (pedidoDataReady) renderPedidoView();
+            } else if (tabName === 'NotasFiscais') {
+                tabNotasFiscais.classList.remove('hidden');
+                btnNotasFiscais.className = activeClass;
+                headerSubtitle.textContent = "Notas Fiscais";
+                if (pedidoDataReady) applyNotaFiscalFilters();
             } else if (tabName === 'PedidoCarteira') {
                 tabPedidoCarteira.classList.remove('hidden');
                 btnPedidoCarteira.className = activeClass;
@@ -2696,7 +3176,7 @@
             ensureActiveDatasetLoaded();
 
             if (window.innerWidth < 640) {
-                const activeBtn = { RS: btnRS, Grafico: btnGrafico, Mensal: btnMensal, MensalCliente: btnMensalCliente, Classificacao: btnClassificacao, Pedidos: btnPedidos, PedidoCarteira: btnPedidoCarteira, PrazoEntrega: btnPrazoEntrega }[tabName];
+                const activeBtn = { RS: btnRS, Grafico: btnGrafico, Mensal: btnMensal, MensalCliente: btnMensalCliente, Classificacao: btnClassificacao, Pedidos: btnPedidos, NotasFiscais: btnNotasFiscais, PedidoCarteira: btnPedidoCarteira, PrazoEntrega: btnPrazoEntrega }[tabName];
                 requestAnimationFrame(() => activeBtn?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }));
             }
         }
@@ -2723,6 +3203,8 @@
             allColumnsKeys.forEach(key => updateFilterIconState(key));
             pedidoColumnSelections = {};
             PEDIDO_COLUMN_KEYS.forEach(key => updatePedidoFilterIconState(key));
+            notaColumnSelections = {};
+            NOTA_COLUMN_KEYS.forEach(key => updateNotaFilterIconState(key));
 
             applyFilters();
         }
@@ -3757,7 +4239,7 @@
         }
 
         function applyFilters() {
-            if (activeTab === 'Pedidos') { applyPedidoFilters(); return; }
+            if (isPedidoBasedTab()) { applyPedidoFilters(); return; }
             const globalVal = document.getElementById('filterGlobal').value;
             const clienteVal = normalizeSearchText(document.getElementById('filterClienteInput').value);
             const dataDeVal = document.getElementById('filterDataDe').value;
@@ -3873,7 +4355,7 @@
         }
 
         function exportToExcel() {
-            const activeExportData = isPedidoBasedTab() ? filteredPedidoData : filteredData;
+            const activeExportData = activeTab === 'NotasFiscais' ? filteredNotaData : (isPedidoBasedTab() ? filteredPedidoData : filteredData);
             if (!activeExportData || activeExportData.length === 0) {
                 alert("Sem dados para exportar.");
                 return;
@@ -3942,8 +4424,34 @@
                     "Vl. Total": monthlyAgg[k].total,
                     "Qtde. Itens": monthlyAgg[k].countOfItems
                 }));
+            } else if (activeTab === 'NotasFiscais') {
+                sheetName = "Notas_Fiscais";
+                exportData = filteredNotaData.map(item => ({
+                    "Prazo Status": item.prazo_status || '',
+                    "Dias": parseFloat(item.dias || 0),
+                    "OS": item.os || '',
+                    "Orçamento": item.orcamento || '',
+                    "Cliente": item.cliente || '',
+                    "Código Cliente": item.codigo_cliente || '',
+                    "Pedido": item.pedido || '',
+                    "Item": item.item || '',
+                    "SC": item.sc || '',
+                    "Descrição": item.descricao || '',
+                    "Qtde": parseFloat(item.qtde || 0),
+                    "Aprovação": formatDateBR(item.aprovacao),
+                    "Prazo": formatDateBR(item.prazo),
+                    "Vl. Unitário": parseFloat(item.vl_unitario || 0),
+                    "Vl. Total": parseFloat(item.vl_total || 0),
+                    "Classificação": item.classificacao || '',
+                    "Tipo": item.tipo || '',
+                    "Liberado Faturar": item.liberado_faturar || '',
+                    "Notas": item.notas || '',
+                    "Qtde Faturada": parseFloat(item.qtde_faturada || 0),
+                    "Vl. Faturado": parseFloat(item.vl_faturado || 0),
+                    "Dt. Emissão": formatDateBR(item.dt_emissao)
+                }));
             } else if (isPedidoBasedTab()) {
-                sheetName = "Pedidos_em_Aberto";
+                sheetName = activeTab === 'PedidoCarteira' ? "Pedidos_em_Carteira" : (activeTab === 'PrazoEntrega' ? "Valores_por_Prazo" : "Pedidos_em_Aberto");
                 exportData = filteredPedidoData.map(item => ({
                     "Prazo Status": item.prazo_status || '',
                     "Dias": parseFloat(item.dias || 0),
@@ -4006,48 +4514,87 @@
             XLSX.writeFile(workbook, fileName);
         }
 
-        let isPbiOpen = false;
-        const PBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiZGVhNmFkYTMtYjZiZS00MDA5LTkwZTUtYjQwZjEzYTRlNTlkIiwidCI6ImQ2OWIzZmE3LTBhMGEtNDhhZC1hNDZmLWVhYmM5YzFiMDRjOCJ9";
+        let deferredInstallPrompt = null;
 
-        function togglePowerBiView() {
-            isPbiOpen = !isPbiOpen;
-            const tabRS = document.getElementById('viewTabRS');
-            const tabGrafico = document.getElementById('viewTabGrafico');
-            const tabMensal = document.getElementById('viewTabMensal');
-            const tabMensalCliente = document.getElementById('viewTabMensalCliente');
-            const tabClassificacao = document.getElementById('viewTabClassificacao');
-            const tabPedidos = document.getElementById('viewTabPedidos');
-            const tabPedidoCarteira = document.getElementById('viewTabPedidoCarteira');
-            const tabPrazoEntrega = document.getElementById('viewTabPrazoEntrega');
-            const pbiView = document.getElementById('pbiView');
-            const filterSection = document.getElementById('filterSection');
-            const btnExport = document.getElementById('btnExport');
-            const btnToggleText = document.getElementById('btnToggleText');
-            const pbiContainer = document.getElementById('pbiContainer');
+        function isStandaloneApp() {
+            return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        }
 
-            if (isPbiOpen) {
-                tabRS.classList.add('hidden');
-                tabGrafico.classList.add('hidden');
-                tabMensal.classList.add('hidden');
-                tabMensalCliente.classList.add('hidden');
-                tabClassificacao.classList.add('hidden');
-                tabPedidos.classList.add('hidden');
-                tabPedidoCarteira.classList.add('hidden');
-                tabPrazoEntrega.classList.add('hidden');
-                filterSection.classList.add('hidden');
-                btnExport.classList.add('hidden');
-                pbiView.classList.remove('hidden');
-                btnToggleText.textContent = "Voltar ao Dashboard";
-
-                if (!pbiContainer.innerHTML.trim()) {
-                    pbiContainer.innerHTML = `<iframe title="RS Power BI" class="w-full h-full border-0" src="${PBI_URL}" allowFullScreen="true"></iframe>`;
-                }
+        function updateInstallAppButton() {
+            const btn = document.getElementById('btnInstallApp');
+            const txt = document.getElementById('btnInstallAppText');
+            if (!btn) return;
+            if (isStandaloneApp()) {
+                btn.disabled = true;
+                btn.classList.add('opacity-60','cursor-default');
+                if (txt) txt.textContent = 'App instalado';
             } else {
-                pbiView.classList.add('hidden');
-                filterSection.classList.remove('hidden');
-                btnExport.classList.remove('hidden');
-                btnToggleText.textContent = "Acessar Power BI";
-                switchMainTab(activeTab);
+                btn.disabled = false;
+                btn.classList.remove('opacity-60','cursor-default');
+                if (txt) txt.textContent = 'Instalar App';
+            }
+        }
+
+        function closeInstallAppModal() {
+            const modal = document.getElementById('installAppModal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+
+        function handleInstallBackdrop(event) {
+            if (event.target?.id === 'installAppModal') closeInstallAppModal();
+        }
+
+        function showInstallInstructions() {
+            const modal = document.getElementById('installAppModal');
+            const box = document.getElementById('installAppInstructions');
+            if (!modal || !box) return;
+            const ua = navigator.userAgent || '';
+            const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const android = /Android/i.test(ua);
+            if (ios) {
+                box.innerHTML = `<div class="rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 p-4"><p class="font-extrabold text-slate-900 dark:text-white">iPhone / iPad (Safari)</p><ol class="mt-3 space-y-2 list-decimal pl-5"><li>Abra esta tela no <strong>Safari</strong>.</li><li>Toque em <strong>Compartilhar</strong>.</li><li>Escolha <strong>Adicionar à Tela de Início</strong>.</li><li>Confirme em <strong>Adicionar</strong>.</li></ol></div>`;
+            } else if (android) {
+                box.innerHTML = `<div class="rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 p-4"><p class="font-extrabold text-slate-900 dark:text-white">Android</p><p class="mt-2">Se o botão de instalação automática não apareceu, abra o menu <strong>⋮</strong> do navegador e escolha <strong>Instalar aplicativo</strong> ou <strong>Adicionar à tela inicial</strong>.</p></div>`;
+            } else {
+                box.innerHTML = `<div class="rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 p-4"><p class="font-extrabold text-slate-900 dark:text-white">PC / Notebook</p><p class="mt-2">Use <strong>Chrome</strong> ou <strong>Edge</strong>. Procure o ícone de instalação na barra de endereço ou abra o menu do navegador e escolha <strong>Instalar Sintercan</strong>.</p></div>`;
+            }
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        async function installPwaApp() {
+            if (isStandaloneApp()) { showDataToast('O Sintercan já está aberto como aplicativo.', 'success'); return; }
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                try {
+                    const choice = await deferredInstallPrompt.userChoice;
+                    if (choice?.outcome === 'accepted') showDataToast('Instalação iniciada.', 'success');
+                } catch (_) {}
+                deferredInstallPrompt = null;
+                updateInstallAppButton();
+                return;
+            }
+            showInstallInstructions();
+        }
+
+        window.addEventListener('beforeinstallprompt', (event) => {
+            event.preventDefault();
+            deferredInstallPrompt = event;
+            updateInstallAppButton();
+        });
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            updateInstallAppButton();
+            closeInstallAppModal();
+            showDataToast('Sintercan instalado com sucesso.', 'success');
+        });
+
+        async function registerPwaServiceWorker() {
+            if (!('serviceWorker' in navigator)) return;
+            try {
+                await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
+            } catch (err) {
+                console.warn('Service Worker não registrado:', err);
             }
         }
 
@@ -4056,8 +4603,13 @@
                 if (!e.target.closest('.pedido-col-filter-popover') && !e.target.closest('[id^="pedido_btn_filter_"]')) {
                     document.querySelectorAll('.pedido-col-filter-popover').forEach(p => p.classList.remove('active'));
                 }
+                if (!e.target.closest('.nota-col-filter-popover') && !e.target.closest('[id^="nota_btn_filter_"]')) {
+                    document.querySelectorAll('.nota-col-filter-popover').forEach(p => p.classList.remove('active'));
+                }
             });
             if (window.lucide) lucide.createIcons();
+            registerPwaServiceWorker();
+            updateInstallAppButton();
             configureMobileLayout();
             switchMainTab(activeTab, false);
 
@@ -4065,6 +4617,7 @@
                 if (event.key === 'Escape') {
                     closeSearchHelpModal();
                     closeMobileActionsMenu();
+                    closeInstallAppModal();
                 }
             });
 
@@ -4086,6 +4639,7 @@
                 if (activeTab === 'Grafico') renderGraficoView();
                 if (activeTab === 'Mensal') renderMensalView();
                 if (activeTab === 'Pedidos' && pedidoDataReady) renderPedidoView();
+                if (activeTab === 'NotasFiscais' && pedidoDataReady) renderNotasFiscaisView();
                 if (activeTab === 'PedidoCarteira' && pedidoDataReady) renderPedidoCarteiraView();
                 if (activeTab === 'PrazoEntrega' && pedidoDataReady) renderPrazoEntregaView();
             }, 160);
