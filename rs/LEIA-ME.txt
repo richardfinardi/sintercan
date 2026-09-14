@@ -1,0 +1,33 @@
+SINTERCAN RS PWA - V1.6.4
+
+ARQUIVOS PARA PUBLICAR JUNTOS EM /sintercan/rs/:
+- index.html
+- manifest.webmanifest
+- service-worker.js
+- pasta icons/
+
+CONTROLE DE ACESSO V1.6.4:
+- O módulo RS agora verifica localStorage.sintercan_user e valida o usuário em POST /me antes de carregar qualquer dado.
+- Também exige u_rs = 1.
+- Sem sessão, redireciona para /sintercan/?next=/sintercan/rs/.
+- Sem permissão, redireciona para o portal com aviso de acesso negado.
+- Use também o arquivo "index raiz - LOGIN MODULOS V1.1.0.html" como /sintercan/index.html para o portal retornar automaticamente ao módulo depois do login.
+
+IMPORTANTE:
+1. A instalação PWA só funciona via HTTPS.
+2. O service-worker.js precisa ficar no mesmo diretório do index.html do RS.
+3. Depois de publicar esta versão, faça um Ctrl+F5 no PC ou feche/reabra o app instalado para o novo Service Worker assumir.
+4. Esta proteção impede o acesso normal direto à tela. Segurança real dos dados exige que /rs e /pedido também sejam protegidos no backend por sessão/token.
+
+ÍCONES:
+- Todos os ícones usam o LOGO MINIMALISTA fornecido.
+- As versões maskable têm margem de segurança.
+
+ALTERAÇÕES V1.6.4:
+- Notas Fiscais: removidas as colunas Prazo status e Dias.
+- Notas Fiscais: Data de emissão passa a ser a primeira coluna, com filtro e ordenação próprios.
+- Notas Fiscais: Ano/Mês passa a filtrar exclusivamente por dt_emissao.
+- Demais telas baseadas em /pedido continuam filtrando Ano/Mês pelo prazo.
+- Parser de datas atualizado para aceitar também datas no formato dd/mm/aa retornadas em dt_emissao.
+- Service Worker atualizado para sintercan-rs-v1.6.4.
+- Mantido guard de autenticação/permissão u_rs da V1.6.3.

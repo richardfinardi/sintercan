@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Sintercan - Dashboard RS",
   "short_name": "Sintercan",
-  "description": "Dashboard RS, pedidos, carteira, notas fiscais e prazos da Sintercan.",
+  "description": "Dashboard RS, pedidos, carteira, notas fiscais e prazos da Sintercan. V1.6.4.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
