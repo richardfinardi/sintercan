@@ -2,8 +2,12 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RS - Sintercan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- SINTERCAN RS | Versão: V1.0.0 | Build: 2026-09-14 -->
+    <meta name="app-version" content="V1.0.0">
+    <meta name="app-build-date" content="2026-09-14">
+    <meta name="theme-color" content="#0f172a">
+    <title>RS - Sintercan | V1.0.0</title>
     <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -52,6 +56,70 @@
             animation: rs-progress 1.35s ease-in-out infinite;
         }
         .rs-data-pulse { animation: pulse 1.5s cubic-bezier(.4,0,.6,1) infinite; }
+
+        /* ===== MOBILE / RESPONSIVO ===== */
+        body { min-height: 100dvh; height: 100dvh; }
+        .rs-sortable-head { cursor: pointer; transition: background-color .15s ease, color .15s ease; }
+        .rs-sortable-head:hover { background-color: rgba(245, 158, 11, .12); }
+        .rs-sort-indicator { display: inline-flex; min-width: 12px; justify-content: center; margin-left: 4px; color: #f59e0b; font-weight: 900; }
+
+        @media (max-width: 639px) {
+            .rs-header-row { padding: .35rem .45rem !important; gap: .35rem !important; }
+            .rs-brand { gap: .35rem !important; min-width: 0; }
+            .rs-brand-logo { display: none !important; }
+            .rs-brand-title { font-size: .82rem !important; }
+            .rs-brand-subtitle { font-size: .58rem !important; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .rs-actions { gap: .22rem !important; flex-shrink: 0; }
+            .rs-action-btn { width: 34px !important; height: 34px !important; padding: 0 !important; justify-content: center !important; border-radius: .55rem !important; }
+            .rs-action-btn .rs-action-label { display: none !important; }
+            #dataStatusBadge { display: flex !important; max-width: 102px; padding: .35rem .45rem !important; font-size: 9px !important; overflow: hidden; }
+            #dataStatusText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            #dataStatusDot { flex: 0 0 auto; }
+
+            #filterSection { padding: .4rem !important; }
+            #filterSection.mobile-collapsed { display: none !important; }
+            #filterSection > div { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: .4rem !important; }
+            #filterSection .rs-filter-wide { grid-column: span 2 / span 2 !important; }
+            #filterSection label { font-size: 9px !important; margin-bottom: 2px !important; }
+            #filterSection input, #filterSection button { min-height: 34px; font-size: 11px !important; }
+            #dateRangeFilters { grid-column: span 2 / span 2 !important; }
+
+            main { padding: .3rem !important; }
+            #viewTabRS > div:first-child { overflow: auto !important; }
+            #mainTable { min-width: 1180px !important; }
+
+            #viewTabGrafico, #viewTabMensal { overflow-y: auto !important; overflow-x: hidden !important; }
+            #viewTabGrafico > div, #viewTabMensal > div { min-height: 320px; }
+
+            #viewTabMensalCliente { gap: .35rem !important; }
+            #viewTabMensalCliente > div:first-child { gap: .35rem !important; }
+            #viewTabMensalCliente > div:first-child > div { padding: .4rem .5rem !important; }
+            #viewTabMensalCliente > div:first-child span { font-size: 8px !important; }
+            #viewTabMensalCliente > div:first-child p { font-size: 12px !important; }
+            #mensalClienteToolbar { padding: .4rem .5rem !important; align-items: stretch !important; }
+            #mensalClienteToolbar .rs-mc-toolbar-left { width: 100%; justify-content: space-between; }
+            #mensalClienteToolbar .rs-mc-toolbar-right { width: 100%; display: grid !important; grid-template-columns: auto 1fr; gap: .35rem !important; align-items: center; }
+            #mensalClienteSort { width: 100% !important; min-height: 36px; font-size: 10px !important; }
+            #mensalClienteSortHelp { display: none !important; }
+            #tableMensalCliente { font-size: 9.5px !important; }
+            #tableMensalCliente th:first-child, #tableMensalCliente td:first-child { min-width: 178px !important; width: 178px !important; max-width: 178px !important; }
+            #tableMensalCliente th:not(:first-child):not(:last-child), #tableMensalCliente td:not(:first-child):not(:last-child) { min-width: 98px !important; }
+            #tableMensalCliente th:last-child, #tableMensalCliente td:last-child { min-width: 108px !important; }
+            #tableMensalCliente th, #tableMensalCliente td { padding-left: .4rem !important; padding-right: .4rem !important; }
+
+            nav { padding: .25rem !important; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+            nav button { min-height: 38px; padding-left: .65rem !important; padding-right: .65rem !important; scroll-snap-align: center; font-size: 10px !important; }
+
+            #loadingOverlay > div { padding: 1.1rem !important; }
+            #loadingTitle { font-size: 1rem !important; }
+            #loadingMessage { font-size: .75rem !important; }
+            #dataToast { left: .5rem !important; right: .5rem !important; top: 3.4rem !important; max-width: none !important; }
+        }
+
+        @media (min-width: 640px) and (max-width: 1023px) {
+            #mainTable { min-width: 1280px; }
+            .rs-header-row { gap: .6rem !important; }
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-hidden transition-colors duration-200">
@@ -75,13 +143,13 @@
     <div id="dataToast" class="hidden fixed top-20 right-4 z-[110] max-w-sm rounded-xl border px-4 py-3 shadow-2xl text-sm font-semibold"></div>
 
     <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 shadow-md flex-shrink-0">
-        <div class="w-full px-4 py-2 flex justify-between items-center gap-4">
-            <div class="flex items-center gap-4">
+        <div class="rs-header-row w-full px-4 py-2 flex justify-between items-center gap-4">
+            <div class="rs-brand flex items-center gap-4">
                 <button onclick="goBack()" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-300 dark:border-slate-700 flex items-center justify-center cursor-pointer" title="Voltar ao Menu">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </button>
                 
-                <div class="flex items-center justify-center p-1 bg-slate-950 rounded-xl border border-slate-800 shadow-inner">
+                <div class="rs-brand-logo flex items-center justify-center p-1 bg-slate-950 rounded-xl border border-slate-800 shadow-inner">
                     <img src="../logo.png" alt="Logo" class="h-8 max-h-9 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="hidden p-2 bg-amber-500 rounded-xl text-slate-950 font-bold items-center justify-center">
                         <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
@@ -89,31 +157,32 @@
                 </div>
 
                 <div>
-                    <h1 class="text-base font-extrabold tracking-wide text-slate-900 dark:text-white leading-tight">Sintercan</h1>
-                    <p id="headerSubtitle" class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wider">Dashboard RS</p>
+                    <h1 class="rs-brand-title text-base font-extrabold tracking-wide text-slate-900 dark:text-white leading-tight">Sintercan</h1>
+                    <p id="headerSubtitle" class="rs-brand-subtitle text-[11px] text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wider">Dashboard RS</p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-2">
-                <div id="dataStatusBadge" class="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold whitespace-nowrap" title="Status dos dados">
+            <div class="rs-actions flex items-center gap-2">
+                <button id="btnMobileFilters" onclick="toggleMobileFilters()" class="rs-action-btn sm:hidden p-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg border border-slate-300 dark:border-slate-700 flex items-center justify-center" title="Mostrar/ocultar filtros"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i></button>
+                <div id="dataStatusBadge" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold whitespace-nowrap" title="Status dos dados">
                     <span id="dataStatusDot" class="w-2 h-2 rounded-full bg-amber-500 rs-data-pulse"></span>
                     <span id="dataStatusText">Carregando...</span>
                 </div>
-                <button id="btnRefreshData" onclick="refreshRsData(true)" class="px-3 py-1.5 bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 font-semibold rounded-lg transition text-xs flex items-center gap-1.5 border border-sky-200 dark:border-sky-500/30 cursor-pointer" title="Buscar novamente os dados da API e atualizar o cache local">
+                <button id="btnRefreshData" onclick="refreshRsData(true)" class="rs-action-btn px-3 py-1.5 bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 font-semibold rounded-lg transition text-xs flex items-center gap-1.5 border border-sky-200 dark:border-sky-500/30 cursor-pointer" title="Buscar novamente os dados da API e atualizar o cache local">
                     <i id="refreshIcon" data-lucide="refresh-cw" class="w-4 h-4"></i>
-                    <span>Atualizar</span>
+                    <span class="rs-action-label">Atualizar</span>
                 </button>
-                <button onclick="resetAllFilters()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 cursor-pointer">
+                <button onclick="resetAllFilters()" class="rs-action-btn px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 cursor-pointer">
                     <i data-lucide="filter-x" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
-                    <span>Limpar Filtros</span>
+                    <span class="rs-action-label">Limpar Filtros</span>
                 </button>
-                <button id="btnExport" onclick="exportToExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/10 cursor-pointer">
+                <button id="btnExport" onclick="exportToExcel()" class="rs-action-btn px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/10 cursor-pointer">
                     <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-                    <span id="btnExportText">Exportar Excel</span>
+                    <span id="btnExportText" class="rs-action-label">Exportar Excel</span>
                 </button>
-                <button id="btnTogglePbi" onclick="togglePowerBiView()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/10 cursor-pointer">
+                <button id="btnTogglePbi" onclick="togglePowerBiView()" class="rs-action-btn px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/10 cursor-pointer">
                     <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-                    <span id="btnToggleText">Acessar Power BI</span>
+                    <span id="btnToggleText" class="rs-action-label">Acessar Power BI</span>
                 </button>
             </div>
         </div>
@@ -121,7 +190,7 @@
 
     <section id="filterSection" class="bg-slate-50 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 p-2.5 flex-shrink-0">
         <div class="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 text-xs">
-            <div>
+            <div class="rs-filter-item">
                 <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Pesquisa Geral</label>
                 <div class="relative">
                     <input type="text" id="filterGlobal" oninput="debouncedApplyFilters()" placeholder="Buscar em tudo..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg pl-8 pr-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
@@ -149,7 +218,7 @@
                 </div>
             </div>
 
-            <div class="col-span-1 sm:col-span-2 grid grid-cols-2 gap-2">
+            <div id="dateRangeFilters" class="rs-filter-wide col-span-1 sm:col-span-2 grid grid-cols-2 gap-2">
                 <div>
                     <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Data De</label>
                     <input type="date" id="filterDataDe" onchange="applyFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
@@ -443,17 +512,15 @@
             </div>
 
             <div class="flex-1 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
-                <div class="px-3 py-2 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex flex-wrap justify-between items-center gap-2 flex-shrink-0">
-                    <div class="flex items-center gap-2">
+                <div id="mensalClienteToolbar" class="px-3 py-2 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex flex-wrap justify-between items-center gap-2 flex-shrink-0">
+                    <div class="rs-mc-toolbar-left flex items-center gap-2">
                         <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Mensal por Cliente</h2>
                         <span id="mensalClientePeriodoBadge" class="text-[10px] bg-slate-200 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-mono">0 períodos</span>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <label for="mensalClienteSort" class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Ordenar</label>
-                        <select id="mensalClienteSort" onchange="changeMensalClienteSort()" class="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-lg text-[11px] focus:outline-none focus:border-amber-500">
-                            <option value="cliente">Cliente A-Z</option>
-                            <option value="valor">Maior valor</option>
-                        </select>
+                    <div class="rs-mc-toolbar-right flex items-center gap-2">
+                        <label for="mensalClienteSort" class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase whitespace-nowrap">Ordenar</label>
+                        <select id="mensalClienteSort" onchange="changeMensalClienteSort()" class="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-lg text-[11px] focus:outline-none focus:border-amber-500 min-w-[235px]"></select>
+                        <span id="mensalClienteSortHelp" class="text-[10px] text-slate-400 dark:text-slate-500 whitespace-nowrap" title="A ordenação fica salva neste navegador">salvo neste navegador</span>
                     </div>
                 </div>
 
@@ -499,12 +566,15 @@
             }
         }
 
+        const APP_VERSION = 'V1.0.0';
         const RS_API_URL = 'https://sintercan.consultoriarf.net/rs';
         const RS_DB_NAME = 'SINTERCAN_RS_CACHE';
         const RS_DB_VERSION = 1;
         const RS_STORE_NAME = 'datasets';
         const RS_CACHE_KEY = 'rs_data_v1';
         const ACTIVE_TAB_STORAGE_KEY = 'sintercan_rs_active_tab';
+        const MENSAL_CLIENTE_SORT_STORAGE_KEY = 'sintercan_rs_mensal_cliente_sort_v1';
+        const MOBILE_FILTER_STORAGE_KEY = 'sintercan_rs_mobile_filters_open';
         const VALID_TABS = ['RS', 'Grafico', 'Mensal', 'MensalCliente'];
 
         let fullData = [];
@@ -525,7 +595,7 @@
         let activeTab = VALID_TABS.includes(storedTab) ? storedTab : 'RS';
         let myChartGrafico = null;
         let myChartMensal = null;
-        let mensalClienteSortMode = 'cliente';
+        let mensalClienteSortState = loadMensalClienteSortState();
 
         let currentRenderLimit = 50;
         let batchStep = 50;
@@ -632,7 +702,7 @@
                 title = 'Carregando dados.';
             }
 
-            badge.className = `hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold whitespace-nowrap ${badgeClass}`;
+            badge.className = `flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold whitespace-nowrap ${badgeClass}`;
             dot.className = `w-2 h-2 rounded-full ${dotClass}`;
             textEl.textContent = text;
             badge.title = title;
@@ -842,6 +912,104 @@
             return isNaN(d) ? null : d;
         }
 
+        function loadMensalClienteSortState() {
+            const fallback = { key: 'cliente', direction: 'asc' };
+            try {
+                const raw = localStorage.getItem(MENSAL_CLIENTE_SORT_STORAGE_KEY);
+                if (!raw) return fallback;
+                const parsed = JSON.parse(raw);
+                const keyOk = parsed && typeof parsed.key === 'string' && (parsed.key === 'cliente' || parsed.key === 'total' || /^\d{4}-\d{2}$/.test(parsed.key));
+                const dirOk = parsed && (parsed.direction === 'asc' || parsed.direction === 'desc');
+                return keyOk && dirOk ? parsed : fallback;
+            } catch (_) {
+                return fallback;
+            }
+        }
+
+        function saveMensalClienteSortState() {
+            try {
+                localStorage.setItem(MENSAL_CLIENTE_SORT_STORAGE_KEY, JSON.stringify(mensalClienteSortState));
+            } catch (_) {}
+        }
+
+        function setMensalClienteSort(key, direction = null) {
+            const current = mensalClienteSortState || { key: 'cliente', direction: 'asc' };
+            let nextDirection = direction;
+
+            if (!nextDirection) {
+                if (current.key === key) {
+                    nextDirection = current.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    nextDirection = key === 'cliente' ? 'asc' : 'desc';
+                }
+            }
+
+            mensalClienteSortState = { key, direction: nextDirection };
+            saveMensalClienteSortState();
+            renderMensalClienteView();
+        }
+
+        function getMensalClienteSortArrow(key) {
+            if (!mensalClienteSortState || mensalClienteSortState.key !== key) return '';
+            return mensalClienteSortState.direction === 'asc' ? '▲' : '▼';
+        }
+
+        function getMensalClienteSortLabel(periodInfo = []) {
+            const state = mensalClienteSortState || { key: 'cliente', direction: 'asc' };
+            if (state.key === 'cliente') return state.direction === 'asc' ? 'Cliente A–Z' : 'Cliente Z–A';
+            if (state.key === 'total') return state.direction === 'desc' ? 'Total — maior para menor' : 'Total — menor para maior';
+            const p = periodInfo.find(x => x.key === state.key);
+            const label = p ? p.fullLabel : state.key;
+            return `${label} — ${state.direction === 'desc' ? 'maior para menor' : 'menor para maior'}`;
+        }
+
+        function buildMensalClienteSortOptions(periodInfo = []) {
+            const select = document.getElementById('mensalClienteSort');
+            if (!select) return;
+
+            const options = [
+                { value: 'cliente|asc', label: 'Cliente A–Z' },
+                { value: 'cliente|desc', label: 'Cliente Z–A' },
+                { value: 'total|desc', label: 'Total — maior para menor' },
+                { value: 'total|asc', label: 'Total — menor para maior' }
+            ];
+
+            periodInfo.forEach(p => {
+                options.push({ value: `${p.key}|desc`, label: `${p.fullLabel} — maior para menor` });
+                options.push({ value: `${p.key}|asc`, label: `${p.fullLabel} — menor para maior` });
+            });
+
+            // Se a ordenação salva for de um mês fora do filtro atual, mantém a memória,
+            // mas oferece uma opção visível para deixar claro o critério em uso.
+            const savedValue = `${mensalClienteSortState.key}|${mensalClienteSortState.direction}`;
+            if (!options.some(o => o.value === savedValue) && /^\d{4}-\d{2}$/.test(mensalClienteSortState.key)) {
+                options.unshift({ value: savedValue, label: `${getMensalClienteSortLabel(periodInfo)} (fora do filtro)` });
+            }
+
+            select.innerHTML = options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+            select.value = savedValue;
+        }
+
+        function toggleMobileFilters(force = null) {
+            const section = document.getElementById('filterSection');
+            if (!section) return;
+            const currentlyOpen = !section.classList.contains('mobile-collapsed');
+            const nextOpen = force === null ? !currentlyOpen : Boolean(force);
+            section.classList.toggle('mobile-collapsed', !nextOpen);
+            try { localStorage.setItem(MOBILE_FILTER_STORAGE_KEY, nextOpen ? '1' : '0'); } catch (_) {}
+        }
+
+        function configureMobileLayout() {
+            if (window.innerWidth >= 640) {
+                document.getElementById('filterSection')?.classList.remove('mobile-collapsed');
+                return;
+            }
+            // No celular, começa compacto por padrão. Se o usuário abriu antes, preserva.
+            let open = false;
+            try { open = localStorage.getItem(MOBILE_FILTER_STORAGE_KEY) === '1'; } catch (_) {}
+            toggleMobileFilters(open);
+        }
+
         function switchMainTab(tabName, persist = true) {
             if (!VALID_TABS.includes(tabName)) tabName = 'RS';
             activeTab = tabName;
@@ -889,6 +1057,11 @@
                 btnMensalCliente.className = activeClass;
                 headerSubtitle.textContent = "Mensal por Cliente";
                 if (dataReady) renderMensalClienteView();
+            }
+
+            if (window.innerWidth < 640) {
+                const activeBtn = { RS: btnRS, Grafico: btnGrafico, Mensal: btnMensal, MensalCliente: btnMensalCliente }[tabName];
+                requestAnimationFrame(() => activeBtn?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }));
             }
         }
 
@@ -1681,17 +1854,34 @@
                 total: info.total
             }));
 
-            if (mensalClienteSortMode === 'valor') {
-                clients.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'pt-BR'));
-            } else {
-                clients.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-            }
+            const sortState = mensalClienteSortState || { key: 'cliente', direction: 'asc' };
+            const directionFactor = sortState.direction === 'asc' ? 1 : -1;
+
+            clients.sort((a, b) => {
+                if (sortState.key === 'cliente') {
+                    return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }) * directionFactor;
+                }
+
+                const valA = sortState.key === 'total' ? a.total : (a.months[sortState.key] || 0);
+                const valB = sortState.key === 'total' ? b.total : (b.months[sortState.key] || 0);
+                const numericCompare = (valA - valB) * directionFactor;
+                if (numericCompare !== 0) return numericCompare;
+                return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
+            });
 
             return { periodInfo, clients, monthTotals, grandTotal };
         }
 
         function changeMensalClienteSort() {
-            mensalClienteSortMode = document.getElementById('mensalClienteSort')?.value || 'cliente';
+            const raw = document.getElementById('mensalClienteSort')?.value || 'cliente|asc';
+            const separator = raw.lastIndexOf('|');
+            const key = separator >= 0 ? raw.slice(0, separator) : 'cliente';
+            const direction = separator >= 0 ? raw.slice(separator + 1) : 'asc';
+            mensalClienteSortState = {
+                key,
+                direction: direction === 'desc' ? 'desc' : 'asc'
+            };
+            saveMensalClienteSortState();
             renderMensalClienteView();
         }
 
@@ -1722,13 +1912,15 @@
             const badge = document.getElementById('mensalClientePeriodoBadge');
             if (badge) badge.textContent = `${periodInfo.length} ${periodInfo.length === 1 ? 'período' : 'períodos'}`;
 
+            buildMensalClienteSortOptions(periodInfo);
+
             head.innerHTML = `
                 <tr>
-                    <th class="sticky left-0 top-0 z-30 min-w-[260px] w-[260px] px-2 py-2 bg-slate-200 dark:bg-slate-900 border-b border-r border-slate-300 dark:border-slate-800 text-left">Cliente</th>
+                    <th onclick="setMensalClienteSort('cliente')" class="rs-sortable-head sticky left-0 top-0 z-30 min-w-[260px] w-[260px] px-2 py-2 bg-slate-200 dark:bg-slate-900 border-b border-r border-slate-300 dark:border-slate-800 text-left" title="Ordenar por cliente">Cliente <span class="rs-sort-indicator">${getMensalClienteSortArrow('cliente')}</span></th>
                     ${periodInfo.map(p => `
-                        <th class="top-0 z-20 min-w-[118px] px-2 py-2 bg-slate-200 dark:bg-slate-900 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap" title="${p.fullLabel}">${p.label}</th>
+                        <th onclick="setMensalClienteSort('${p.key}')" class="rs-sortable-head top-0 z-20 min-w-[118px] px-2 py-2 bg-slate-200 dark:bg-slate-900 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap" title="Ordenar por ${p.fullLabel}">${p.label}<span class="rs-sort-indicator">${getMensalClienteSortArrow(p.key)}</span></th>
                     `).join('')}
-                    <th class="sticky right-0 top-0 z-30 min-w-[130px] px-2 py-2 bg-amber-100 dark:bg-amber-500/20 border-b border-l border-amber-300 dark:border-amber-500/30 text-right whitespace-nowrap">Total</th>
+                    <th onclick="setMensalClienteSort('total')" class="rs-sortable-head sticky right-0 top-0 z-30 min-w-[130px] px-2 py-2 bg-amber-100 dark:bg-amber-500/20 border-b border-l border-amber-300 dark:border-amber-500/30 text-right whitespace-nowrap" title="Ordenar pelo valor total">Total <span class="rs-sort-indicator">${getMensalClienteSortArrow('total')}</span></th>
                 </tr>
             `;
 
@@ -2022,8 +2214,15 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             if (window.lucide) lucide.createIcons();
+            configureMobileLayout();
             switchMainTab(activeTab, false);
             loadRsData();
+        });
+
+        let mobileResizeTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(mobileResizeTimer);
+            mobileResizeTimer = setTimeout(configureMobileLayout, 120);
         });
     </script>
 </body>
