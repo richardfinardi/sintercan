@@ -1,4 +1,4 @@
-SINTERCAN RS PWA - V1.6.4
+SINTERCAN RS PWA - V1.6.5
 
 ARQUIVOS PARA PUBLICAR JUNTOS EM /sintercan/rs/:
 - index.html
@@ -6,7 +6,7 @@ ARQUIVOS PARA PUBLICAR JUNTOS EM /sintercan/rs/:
 - service-worker.js
 - pasta icons/
 
-CONTROLE DE ACESSO V1.6.4:
+CONTROLE DE ACESSO V1.6.5:
 - O módulo RS agora verifica localStorage.sintercan_user e valida o usuário em POST /me antes de carregar qualquer dado.
 - Também exige u_rs = 1.
 - Sem sessão, redireciona para /sintercan/?next=/sintercan/rs/.
@@ -23,7 +23,7 @@ IMPORTANTE:
 - Todos os ícones usam o LOGO MINIMALISTA fornecido.
 - As versões maskable têm margem de segurança.
 
-ALTERAÇÕES V1.6.4:
+ALTERAÇÕES V1.6.5:
 - Notas Fiscais: removidas as colunas Prazo status e Dias.
 - Notas Fiscais: Data de emissão passa a ser a primeira coluna, com filtro e ordenação próprios.
 - Notas Fiscais: Ano/Mês passa a filtrar exclusivamente por dt_emissao.
@@ -31,3 +31,6 @@ ALTERAÇÕES V1.6.4:
 - Parser de datas atualizado para aceitar também datas no formato dd/mm/aa retornadas em dt_emissao.
 - Service Worker atualizado para sintercan-rs-v1.6.4.
 - Mantido guard de autenticação/permissão u_rs da V1.6.3.
+
+
+V1.6.5: sincronização automática silenciosa a cada 5 minutos do dataset da tela ativa. Ao retornar ao app após 5 minutos em segundo plano, sincroniza imediatamente.
