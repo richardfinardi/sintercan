@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <!-- SINTERCAN RS | Versão: V1.2.0 | Build: 2026-09-14 -->
-    <meta name="app-version" content="V1.2.0">
+    <!-- SINTERCAN RS | Versão: V1.3.0 | Build: 2026-09-14 -->
+    <meta name="app-version" content="V1.3.0">
     <meta name="app-build-date" content="2026-09-14">
     <meta name="theme-color" content="#0f172a">
-    <title>RS - Sintercan | V1.2.0</title>
+    <title>RS - Sintercan | V1.3.0</title>
     <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -283,6 +283,54 @@
             #searchHelpModal .rs-search-example { font-size: .72rem !important; padding: .7rem .75rem !important; }
         }
 
+        /* ===== PEDIDOS EM ABERTO ===== */
+        .rs-pedido-status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            padding: 2px 7px;
+            font-size: 9px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .rs-pedido-status-atrasado { background: rgba(244, 63, 94, .11); color: #be123c; border: 1px solid rgba(244, 63, 94, .22); }
+        .rs-pedido-status-prazo { background: rgba(16, 185, 129, .10); color: #047857; border: 1px solid rgba(16, 185, 129, .20); }
+        .dark .rs-pedido-status-atrasado { color: #fda4af; background: rgba(244, 63, 94, .13); border-color: rgba(244, 63, 94, .25); }
+        .dark .rs-pedido-status-prazo { color: #6ee7b7; background: rgba(16, 185, 129, .13); border-color: rgba(16, 185, 129, .25); }
+        .rs-pedido-liberado { display:inline-flex; padding:2px 7px; border-radius:9999px; font-size:9px; font-weight:800; white-space:nowrap; }
+        .rs-pedido-total { background:rgba(16,185,129,.12); color:#047857; }
+        .rs-pedido-parcial { background:rgba(245,158,11,.14); color:#b45309; }
+        .rs-pedido-nenhum { background:rgba(100,116,139,.12); color:#475569; }
+        .dark .rs-pedido-total { color:#6ee7b7; }
+        .dark .rs-pedido-parcial { color:#fcd34d; }
+        .dark .rs-pedido-nenhum { color:#cbd5e1; }
+
+        @media (max-width: 639px) {
+            #filterSection.mobile-collapsed #pedidoFilterPanel { display: none !important; }
+            #pedidoFilterPanel {
+                grid-template-columns: minmax(0, 1fr) !important;
+                gap: .42rem !important;
+                margin-top: .45rem !important;
+            }
+            #pedidoFilterPanel label { font-size: 9.5px !important; margin-bottom: 2px !important; }
+            #pedidoFilterPanel input, #pedidoFilterPanel select { min-height: 36px; font-size: 11px !important; }
+            #pedidoClienteDropdown { max-height: 42dvh !important; }
+
+            #viewTabPedidos { min-height: 0 !important; gap: .38rem !important; }
+            #pedidoKpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: .35rem !important; }
+            #pedidoKpis > div { padding: .48rem .55rem !important; min-width: 0; }
+            #pedidoKpis p { font-size: 12px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            #pedidoKpis span { font-size: 8px !important; }
+            #pedidoTableCard { min-height: 0 !important; }
+            #pedidoTableToolbar { padding: .45rem .55rem !important; gap: .35rem !important; }
+            #pedidoTableToolbar h2 { font-size: 10px !important; }
+            #pedidoTableToolbar p { display: none !important; }
+            #tablePedidos { min-width: 2050px !important; font-size: 9.5px !important; }
+            #tablePedidos th, #tablePedidos td { padding: .42rem .38rem !important; }
+            #pedidoTableScroll { -webkit-overflow-scrolling: touch; }
+        }
+
         /* ===== CLASSIFICAÇÃO DE VENDAS ===== */
         .rs-class-row { transition: filter .15s ease, transform .15s ease; }
         .rs-class-row:hover { filter: brightness(0.98); }
@@ -309,7 +357,7 @@
                 <div class="rs-progress-bar"></div>
             </div>
             <p id="loadingHint" class="mt-3 text-[11px] text-slate-400 dark:text-slate-500">Se houver dados em cache, a tela será liberada imediatamente enquanto a API atualiza em segundo plano.</p>
-            <button id="loadingRetryBtn" onclick="refreshRsData(true)" class="hidden mt-5 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold">Tentar novamente</button>
+            <button id="loadingRetryBtn" onclick="refreshCurrentData(true)" class="hidden mt-5 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold">Tentar novamente</button>
         </div>
     </div>
 
@@ -385,7 +433,7 @@
                     <span id="dataStatusText">Carregando...</span>
                     <span id="dataStatusShort" class="hidden">...</span>
                 </div>
-                <button id="btnRefreshData" onclick="refreshRsData(true)" class="rs-action-btn px-3 py-1.5 bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 font-semibold rounded-lg transition text-xs flex items-center gap-1.5 border border-sky-200 dark:border-sky-500/30 cursor-pointer" title="Buscar novamente os dados da API e atualizar o cache local">
+                <button id="btnRefreshData" onclick="refreshCurrentData(true)" class="rs-action-btn px-3 py-1.5 bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 font-semibold rounded-lg transition text-xs flex items-center gap-1.5 border border-sky-200 dark:border-sky-500/30 cursor-pointer" title="Buscar novamente os dados da API e atualizar o cache local">
                     <i id="refreshIcon" data-lucide="refresh-cw" class="w-4 h-4"></i>
                     <span class="rs-action-label">Atualizar</span>
                 </button>
@@ -403,7 +451,7 @@
                 </button>
                 <button id="btnMobileActions" onclick="toggleMobileActionsMenu()" class="rs-action-btn hidden sm:hidden p-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg border border-slate-300 dark:border-slate-700 items-center justify-center" title="Mais ações" aria-label="Mais ações" aria-expanded="false"><i data-lucide="ellipsis-vertical" class="w-4 h-4"></i></button>
                 <div id="mobileActionsMenu" class="hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden text-sm">
-                    <button onclick="closeMobileActionsMenu(); refreshRsData(true)" class="w-full px-3 py-3 flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800"><i data-lucide="refresh-cw" class="w-4 h-4 text-sky-500"></i><span>Atualizar dados</span></button>
+                    <button onclick="closeMobileActionsMenu(); refreshCurrentData(true)" class="w-full px-3 py-3 flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800"><i data-lucide="refresh-cw" class="w-4 h-4 text-sky-500"></i><span>Atualizar dados</span></button>
                     <button onclick="closeMobileActionsMenu(); resetAllFilters()" class="w-full px-3 py-3 flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"><i data-lucide="filter-x" class="w-4 h-4 text-amber-500"></i><span>Limpar filtros</span></button>
                     <button onclick="closeMobileActionsMenu(); exportToExcel()" class="w-full px-3 py-3 flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"><i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-500"></i><span>Exportar Excel</span></button>
                     <button onclick="closeMobileActionsMenu(); togglePowerBiView()" class="w-full px-3 py-3 flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"><i data-lucide="layout-dashboard" class="w-4 h-4 text-amber-500"></i><span>Power BI</span></button>
@@ -452,6 +500,47 @@
                 <div>
                     <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Data Até</label>
                     <input type="date" id="filterDataAte" onchange="applyFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                </div>
+            </div>
+        </div>
+
+
+        <div id="pedidoFilterPanel" class="hidden w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2.5 text-xs mt-2.5">
+            <div class="relative">
+                <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Cliente</label>
+                <input type="text" id="pedidoFilterCliente" onfocus="openPedidoClienteDropdown()" oninput="filterPedidoClienteList()" placeholder="Todos os clientes" autocomplete="off" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                <div id="pedidoClienteDropdown" class="hidden absolute top-full left-0 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg max-h-48 overflow-y-auto z-50 shadow-2xl">
+                    <div onclick="selectPedidoCliente('')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-amber-600 dark:text-amber-400 border-b border-slate-200 dark:border-slate-800">-- Todos os Clientes --</div>
+                    <div id="pedidoClienteListOptions"></div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Ano / Mês do Prazo</label>
+                <select id="pedidoFilterPeriodo" onchange="applyPedidoFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Prazo status</label>
+                <select id="pedidoFilterPrazoStatus" onchange="applyPedidoFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Liberado faturar</label>
+                <select id="pedidoFilterLiberado" onchange="applyPedidoFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Descrição / SC / Pedido</label>
+                <div class="relative">
+                    <input type="text" id="pedidoFilterBusca" oninput="debouncedApplyFilters()" placeholder="Descrição, SC ou pedido..." autocomplete="off" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg pl-8 pr-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                    <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
                 </div>
             </div>
         </div>
@@ -814,6 +903,72 @@
             </div>
         </div>
 
+        <div id="viewTabPedidos" class="h-full w-full hidden flex flex-col gap-2 overflow-hidden">
+            <div id="pedidoKpis" class="grid grid-cols-2 xl:grid-cols-4 gap-2 flex-shrink-0">
+                <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg px-3 py-2 shadow-md">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider block">Itens em aberto</span>
+                    <p id="pedidoKpiItens" class="text-base font-extrabold text-slate-900 dark:text-white">0</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg px-3 py-2 shadow-md">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider block">Qtde. a faturar</span>
+                    <p id="pedidoKpiQtde" class="text-base font-extrabold text-amber-600 dark:text-amber-400">0</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg px-3 py-2 shadow-md min-w-0">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider block">Vl. a faturar</span>
+                    <p id="pedidoKpiValor" class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 truncate" title="R$ 0,00">R$ 0,00</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg px-3 py-2 shadow-md">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider block">Qtde. liberada</span>
+                    <p id="pedidoKpiLiberada" class="text-base font-extrabold text-sky-600 dark:text-sky-400">0</p>
+                </div>
+            </div>
+
+            <div id="pedidoTableCard" class="flex-1 min-h-0 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                <div id="pedidoTableToolbar" class="px-3 py-2 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex flex-wrap justify-between items-center gap-2 flex-shrink-0">
+                    <div class="min-w-0">
+                        <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Pedidos em Aberto</h2>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Dados de /pedido • somente registros com qtde_a_faturar &gt; 0</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-[10px]">
+                        <span id="pedidoItensBadge" class="bg-slate-200 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full font-mono">0 itens</span>
+                        <span id="pedidoSaldoBadge" class="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded-full font-mono">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div id="pedidoTableScroll" class="flex-1 overflow-auto relative">
+                    <table id="tablePedidos" class="w-max min-w-[2350px] text-left text-[10.5px] border-separate border-spacing-0">
+                        <thead class="sticky top-0 z-20 bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold">
+                            <tr>
+                                <th onclick="sortPedidos('prazo_status')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">Prazo status <span id="pedidoSort_prazo_status" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('dias')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Dias <span id="pedidoSort_dias" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('os')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">OS <span id="pedidoSort_os" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('orcamento')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Orçamento <span id="pedidoSort_orcamento" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('cliente')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 min-w-[190px]">Cliente <span id="pedidoSort_cliente" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('codigo_cliente')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">Cód. Cliente <span id="pedidoSort_codigo_cliente" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('pedido')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">Pedido <span id="pedidoSort_pedido" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('item')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">Item <span id="pedidoSort_item" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('sc')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">SC <span id="pedidoSort_sc" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('descricao')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 min-w-[330px]">Descrição <span id="pedidoSort_descricao" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('qtde')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Qtde. <span id="pedidoSort_qtde" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('aprovacao')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-center whitespace-nowrap">Aprovação <span id="pedidoSort_aprovacao" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('prazo')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-center whitespace-nowrap">Prazo <span id="pedidoSort_prazo" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('vl_unitario')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Vl. unit. <span id="pedidoSort_vl_unitario" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('vl_total')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Vl. total <span id="pedidoSort_vl_total" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('qtde_a_faturar')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Qtde. a faturar <span id="pedidoSort_qtde_a_faturar" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('vl_a_faturar')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Vl. a faturar <span id="pedidoSort_vl_a_faturar" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('qtde_liberada')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">Qtde. liberada <span id="pedidoSort_qtde_liberada" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('classificacao')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">Classificação <span id="pedidoSort_classificacao" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('tipo')" class="rs-sortable-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 whitespace-nowrap">Tipo <span id="pedidoSort_tipo" class="rs-sort-indicator"></span></th>
+                                <th onclick="sortPedidos('liberado_faturar')" class="rs-sortable-head px-2 py-2 border-b border-slate-300 dark:border-slate-800 whitespace-nowrap">Liberado faturar <span id="pedidoSort_liberado_faturar" class="rs-sort-indicator"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyPedidos" class="text-slate-700 dark:text-slate-300 font-sans"></tbody>
+                        <tfoot id="tableFootPedidos" class="sticky bottom-0 z-20 bg-slate-200 dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold"></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div id="pbiView" class="h-full w-full hidden border border-slate-300 dark:border-slate-800 rounded-xl overflow-hidden">
             <div id="pbiContainer" class="w-full h-full"></div>
         </div>
@@ -826,7 +981,7 @@
         <button id="navBtnMensal" onclick="switchMainTab('Mensal')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Mensal</button>
         <button id="navBtnMensalCliente" onclick="switchMainTab('MensalCliente')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Mensal por cliente</button>
         <button id="navBtnClassificacao" onclick="switchMainTab('Classificacao')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Classificação de vendas</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Pedidos em aberto</button>
+        <button id="navBtnPedidos" onclick="switchMainTab('Pedidos')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Pedidos em aberto</button>
         <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Notas Fiscais</button>
         <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Pedidos em carteira</button>
         <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Valores por prazo de entrega</button>
@@ -846,24 +1001,41 @@
             }
         }
 
-        const APP_VERSION = 'V1.2.0';
+        const APP_VERSION = 'V1.3.0';
         const RS_API_URL = 'https://sintercan.consultoriarf.net/rs';
+        const PEDIDO_API_URL = 'https://sintercan.consultoriarf.net/pedido';
         const RS_DB_NAME = 'SINTERCAN_RS_CACHE';
         const RS_DB_VERSION = 1;
         const RS_STORE_NAME = 'datasets';
         const RS_CACHE_KEY = 'rs_data_v1';
+        const PEDIDO_CACHE_KEY = 'pedido_data_v1';
         const ACTIVE_TAB_STORAGE_KEY = 'sintercan_rs_active_tab';
         const MENSAL_CLIENTE_SORT_STORAGE_KEY = 'sintercan_rs_mensal_cliente_sort_v1';
         const MOBILE_FILTER_STORAGE_KEY = 'sintercan_rs_mobile_filters_open';
-        const VALID_TABS = ['RS', 'Grafico', 'Mensal', 'MensalCliente', 'Classificacao'];
+        const VALID_TABS = ['RS', 'Grafico', 'Mensal', 'MensalCliente', 'Classificacao', 'Pedidos'];
 
         let fullData = [];
         let filteredData = [];
         let allClientes = [];
         let dataReady = false;
         let isRefreshingData = false;
+        let rsLoadStarted = false;
         let initialPeriodConfigured = false;
         let currentCacheSavedAt = null;
+        let rsLastSourceMode = 'loading';
+
+        let pedidoData = [];
+        let filteredPedidoData = [];
+        let pedidoClientes = [];
+        let pedidoDataReady = false;
+        let pedidoLoadStarted = false;
+        let isRefreshingPedidoData = false;
+        let pedidoCacheSavedAt = null;
+        let pedidoLastSourceMode = 'loading';
+        let pedidoPeriodoConfigured = false;
+        let pedidoSortColumn = null;
+        let pedidoSortAsc = true;
+        let pedidoClienteEventsBound = false;
         let clienteDropdownEventsBound = false;
         let anoMesGlobalEventsBound = false;
         let globalSearchCache = new WeakMap();
@@ -1170,6 +1342,40 @@
             }
         }
 
+
+        async function readPedidoCache() {
+            let db;
+            try {
+                db = await openRsCacheDb();
+                return await new Promise((resolve, reject) => {
+                    const tx = db.transaction(RS_STORE_NAME, 'readonly');
+                    const store = tx.objectStore(RS_STORE_NAME);
+                    const request = store.get(PEDIDO_CACHE_KEY);
+                    request.onsuccess = () => resolve(request.result || null);
+                    request.onerror = () => reject(request.error || new Error('Falha ao ler cache de pedidos'));
+                });
+            } finally {
+                if (db) db.close();
+            }
+        }
+
+        async function writePedidoCache(data, savedAt) {
+            let db;
+            try {
+                db = await openRsCacheDb();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(RS_STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(RS_STORE_NAME);
+                    store.put({ key: PEDIDO_CACHE_KEY, savedAt, data });
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error || new Error('Falha ao salvar cache de pedidos'));
+                    tx.onabort = () => reject(tx.error || new Error('Cache de pedidos interrompido'));
+                });
+            } finally {
+                if (db) db.close();
+            }
+        }
+
         function configureDefaultPeriodIfNeeded() {
             if (initialPeriodConfigured) return;
 
@@ -1195,18 +1401,17 @@
 
             dataReady = true;
             currentCacheSavedAt = savedAt || currentCacheSavedAt;
-            applyFilters();
-            switchMainTab(activeTab, false);
-
-            if (source === 'cache') {
-                updateDataStatus('cache', savedAt);
-            } else if (source === 'api') {
-                updateDataStatus('api', savedAt);
+            rsLastSourceMode = source === 'cache' ? 'cache' : 'api';
+            if (activeTab !== 'Pedidos') {
+                applyFilters();
+                switchMainTab(activeTab, false);
+                updateDataStatus(rsLastSourceMode, savedAt);
             }
         }
 
         async function refreshRsData(manual = false) {
             if (isRefreshingData) return;
+            rsLoadStarted = true;
             isRefreshingData = true;
             setRefreshButtonBusy(true);
 
@@ -1217,7 +1422,7 @@
                     'Buscando a versão mais recente diretamente da API.',
                     false
                 );
-            } else {
+            } else if (activeTab !== 'Pedidos') {
                 updateDataStatus('updating', currentCacheSavedAt);
             }
 
@@ -1238,23 +1443,23 @@
                 try {
                     await writeRsCache(data, savedAt);
                     currentCacheSavedAt = savedAt;
-                    updateDataStatus('api', savedAt);
+                    if (activeTab !== 'Pedidos') updateDataStatus('api', savedAt);
                 } catch (cacheErr) {
                     console.warn('Não foi possível atualizar o cache local:', cacheErr);
-                    updateDataStatus('api', savedAt);
+                    if (activeTab !== 'Pedidos') updateDataStatus('api', savedAt);
                 }
 
                 if (manual) showDataToast('Dados atualizados pela API e cache local renovado.', 'success');
-                setLoadingOverlay(false);
+                if (activeTab !== 'Pedidos' || manual) setLoadingOverlay(false);
             } catch (err) {
                 console.error('Erro ao carregar RS pela API:', err);
 
                 if (dataReady) {
-                    updateDataStatus('cache', currentCacheSavedAt, 'A API não respondeu; mantendo o cache local na tela.');
-                    setLoadingOverlay(false);
+                    if (activeTab !== 'Pedidos') updateDataStatus('cache', currentCacheSavedAt, 'A API não respondeu; mantendo o cache local na tela.');
+                    if (activeTab !== 'Pedidos' || manual) setLoadingOverlay(false);
                     showDataToast('API indisponível. Mantendo os dados do cache local.', 'warning');
                 } else {
-                    updateDataStatus('error', null, err.message);
+                    if (activeTab !== 'Pedidos') updateDataStatus('error', null, err.message);
                     setLoadingOverlay(true,
                         'Não foi possível carregar os dados',
                         'A API não respondeu e não existe cache local disponível neste computador.',
@@ -1263,12 +1468,14 @@
                 }
             } finally {
                 isRefreshingData = false;
-                setRefreshButtonBusy(false);
+                setRefreshButtonBusy(isRefreshingPedidoData);
             }
         }
 
         async function loadRsData() {
-            updateDataStatus('loading');
+            if (rsLoadStarted && (dataReady || isRefreshingData)) return;
+            rsLoadStarted = true;
+            if (activeTab !== 'Pedidos') updateDataStatus('loading');
             setLoadingOverlay(true, 'Carregando dados...', 'Verificando o cache local deste computador.', false);
 
             let cacheRecord = null;
@@ -1289,6 +1496,409 @@
                 setLoadingOverlay(true, 'Carregando dados...', 'Cache local não encontrado. Buscando dados da API.', false);
                 await refreshRsData(false);
             }
+        }
+
+
+        function refreshCurrentData(manual = false) {
+            if (activeTab === 'Pedidos') return refreshPedidoData(manual);
+            return refreshRsData(manual);
+        }
+
+        function ensureActiveDatasetLoaded() {
+            if (activeTab === 'Pedidos') {
+                document.getElementById('advancedFilterPanel')?.classList.add('hidden');
+                document.getElementById('pedidoFilterPanel')?.classList.remove('hidden');
+                if (pedidoDataReady) {
+                    updateDataStatus(pedidoLastSourceMode, pedidoCacheSavedAt);
+                    applyPedidoFilters();
+                } else if (!pedidoLoadStarted) {
+                    loadPedidoData();
+                }
+            } else {
+                document.getElementById('pedidoFilterPanel')?.classList.add('hidden');
+                document.getElementById('advancedFilterPanel')?.classList.remove('hidden');
+                if (dataReady) {
+                    updateDataStatus(rsLastSourceMode, currentCacheSavedAt);
+                    applyFilters();
+                } else if (!rsLoadStarted) {
+                    loadRsData();
+                }
+            }
+        }
+
+        function normalizePedidoRecord(item) {
+            return item && typeof item === 'object' ? item : {};
+        }
+
+        function applyPedidoDataset(data, source = 'api', savedAt = null) {
+            pedidoData = Array.isArray(data) ? data.map(normalizePedidoRecord) : [];
+            pedidoDataReady = true;
+            pedidoCacheSavedAt = savedAt || pedidoCacheSavedAt;
+            pedidoLastSourceMode = source === 'cache' ? 'cache' : 'api';
+            setupPedidoFilters();
+            applyPedidoFilters();
+            if (activeTab === 'Pedidos') updateDataStatus(pedidoLastSourceMode, savedAt);
+        }
+
+        async function refreshPedidoData(manual = false) {
+            if (isRefreshingPedidoData) return;
+            pedidoLoadStarted = true;
+            isRefreshingPedidoData = true;
+            setRefreshButtonBusy(true);
+
+            const shouldBlock = manual || !pedidoDataReady;
+            if (shouldBlock) {
+                setLoadingOverlay(true,
+                    manual ? 'Atualizando pedidos...' : 'Carregando pedidos...',
+                    'Buscando os pedidos em aberto diretamente da API /pedido.',
+                    false
+                );
+            } else if (activeTab === 'Pedidos') {
+                updateDataStatus('updating', pedidoCacheSavedAt);
+            }
+
+            try {
+                const response = await fetch(PEDIDO_API_URL, {
+                    method: 'GET',
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                if (!response.ok) throw new Error(`API /pedido respondeu HTTP ${response.status}`);
+
+                const data = await response.json();
+                if (!Array.isArray(data)) throw new Error('Formato de resposta inválido da API /pedido');
+
+                const savedAt = new Date().toISOString();
+                applyPedidoDataset(data, 'api', savedAt);
+
+                try {
+                    await writePedidoCache(data, savedAt);
+                    pedidoCacheSavedAt = savedAt;
+                } catch (cacheErr) {
+                    console.warn('Não foi possível atualizar o cache local de pedidos:', cacheErr);
+                }
+
+                if (activeTab === 'Pedidos') updateDataStatus('api', savedAt);
+                if (manual) showDataToast('Pedidos atualizados pela API e cache local renovado.', 'success');
+                if (activeTab === 'Pedidos' || manual) setLoadingOverlay(false);
+            } catch (err) {
+                console.error('Erro ao carregar /pedido:', err);
+
+                if (pedidoDataReady) {
+                    if (activeTab === 'Pedidos') updateDataStatus('cache', pedidoCacheSavedAt, 'A API /pedido não respondeu; mantendo o cache local.');
+                    if (activeTab === 'Pedidos' || manual) setLoadingOverlay(false);
+                    showDataToast('API /pedido indisponível. Mantendo os pedidos do cache local.', 'warning');
+                } else {
+                    if (activeTab === 'Pedidos') updateDataStatus('error', null, err.message);
+                    setLoadingOverlay(true,
+                        'Não foi possível carregar os pedidos',
+                        'A API /pedido não respondeu e não existe cache local de pedidos neste computador.',
+                        true
+                    );
+                }
+            } finally {
+                isRefreshingPedidoData = false;
+                setRefreshButtonBusy(isRefreshingData);
+            }
+        }
+
+        async function loadPedidoData() {
+            if (pedidoLoadStarted && (pedidoDataReady || isRefreshingPedidoData)) return;
+            pedidoLoadStarted = true;
+            if (activeTab === 'Pedidos') updateDataStatus('loading');
+            setLoadingOverlay(true, 'Carregando pedidos...', 'Verificando o cache local de pedidos deste computador.', false);
+
+            let cacheRecord = null;
+            try {
+                cacheRecord = await readPedidoCache();
+            } catch (cacheErr) {
+                console.warn('Cache local de pedidos indisponível:', cacheErr);
+            }
+
+            if (cacheRecord && Array.isArray(cacheRecord.data) && cacheRecord.data.length > 0) {
+                pedidoCacheSavedAt = cacheRecord.savedAt || null;
+                applyPedidoDataset(cacheRecord.data, 'cache', pedidoCacheSavedAt);
+                setLoadingOverlay(false);
+                refreshPedidoData(false);
+            } else {
+                setLoadingOverlay(true, 'Carregando pedidos...', 'Cache local de pedidos não encontrado. Buscando dados da API /pedido.', false);
+                await refreshPedidoData(false);
+            }
+        }
+
+        function setupPedidoFilters() {
+            pedidoClientes = [...new Set(pedidoData.map(i => String(i.cliente || '').trim()).filter(Boolean))]
+                .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+            renderPedidoClienteOptions(pedidoClientes);
+
+            const periodoSelect = document.getElementById('pedidoFilterPeriodo');
+            const prazoStatusSelect = document.getElementById('pedidoFilterPrazoStatus');
+            const liberadoSelect = document.getElementById('pedidoFilterLiberado');
+
+            if (periodoSelect) {
+                const currentValue = periodoSelect.value;
+                const periods = new Map();
+                pedidoData.forEach(item => {
+                    const d = parseDate(item.prazo);
+                    if (!d) return;
+                    const y = d.getFullYear();
+                    const m = d.getMonth();
+                    if (!periods.has(y)) periods.set(y, new Set());
+                    periods.get(y).add(m);
+                });
+
+                const years = [...periods.keys()].sort((a,b) => b-a);
+                let options = '<option value="">Todos</option>';
+                years.forEach(y => {
+                    options += `<option value="Y:${y}">Ano ${y}</option>`;
+                    [...periods.get(y)].sort((a,b) => a-b).forEach(m => {
+                        options += `<option value="M:${y}-${String(m+1).padStart(2,'0')}">${monthNames[m]}/${y}</option>`;
+                    });
+                });
+                periodoSelect.innerHTML = options;
+
+                if (!pedidoPeriodoConfigured) {
+                    const defaultYear = years.includes(currentYear) ? currentYear : years[0];
+                    periodoSelect.value = defaultYear ? `Y:${defaultYear}` : '';
+                    pedidoPeriodoConfigured = true;
+                } else if ([...periodoSelect.options].some(o => o.value === currentValue)) {
+                    periodoSelect.value = currentValue;
+                }
+            }
+
+            fillPedidoSelect(prazoStatusSelect, pedidoData.map(i => i.prazo_status));
+            fillPedidoSelect(liberadoSelect, pedidoData.map(i => i.liberado_faturar));
+
+            if (!pedidoClienteEventsBound) {
+                document.addEventListener('click', (e) => {
+                    const dropdown = document.getElementById('pedidoClienteDropdown');
+                    const input = document.getElementById('pedidoFilterCliente');
+                    if (dropdown && !dropdown.contains(e.target) && e.target !== input) dropdown.classList.add('hidden');
+                });
+                pedidoClienteEventsBound = true;
+            }
+        }
+
+        function fillPedidoSelect(selectEl, values) {
+            if (!selectEl) return;
+            const currentValue = selectEl.value;
+            const unique = [...new Set(values.map(v => String(v || '').trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'pt-BR'));
+            selectEl.innerHTML = '<option value="">Todos</option>' + unique.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+            if (unique.includes(currentValue)) selectEl.value = currentValue;
+        }
+
+        function openPedidoClienteDropdown() {
+            document.getElementById('pedidoClienteDropdown')?.classList.remove('hidden');
+        }
+
+        function filterPedidoClienteList() {
+            const term = normalizeSearchText(document.getElementById('pedidoFilterCliente')?.value || '');
+            renderPedidoClienteOptions(pedidoClientes.filter(c => normalizeSearchText(c).includes(term)));
+            debouncedApplyFilters();
+        }
+
+        function renderPedidoClienteOptions(list) {
+            const container = document.getElementById('pedidoClienteListOptions');
+            if (!container) return;
+            container.innerHTML = '';
+            list.slice(0, 150).forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'p-2 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-700 dark:text-slate-300 font-sans';
+                div.textContent = c;
+                div.onclick = () => selectPedidoCliente(c);
+                container.appendChild(div);
+            });
+        }
+
+        function selectPedidoCliente(value) {
+            const input = document.getElementById('pedidoFilterCliente');
+            if (input) input.value = value;
+            document.getElementById('pedidoClienteDropdown')?.classList.add('hidden');
+            applyPedidoFilters();
+        }
+
+        function pedidoPeriodoMatches(item, periodValue) {
+            if (!periodValue) return true;
+            const d = parseDate(item.prazo);
+            if (!d) return false;
+            if (periodValue.startsWith('Y:')) return d.getFullYear() === Number(periodValue.slice(2));
+            if (periodValue.startsWith('M:')) {
+                const [y,m] = periodValue.slice(2).split('-').map(Number);
+                return d.getFullYear() === y && d.getMonth() === m - 1;
+            }
+            return true;
+        }
+
+        function applyPedidoFilters() {
+            if (!pedidoDataReady) return;
+
+            const globalVal = document.getElementById('filterGlobal')?.value || '';
+            const cliente = normalizeSearchText(document.getElementById('pedidoFilterCliente')?.value || '');
+            const periodo = document.getElementById('pedidoFilterPeriodo')?.value || '';
+            const prazoStatus = normalizeSearchText(document.getElementById('pedidoFilterPrazoStatus')?.value || '');
+            const liberado = normalizeSearchText(document.getElementById('pedidoFilterLiberado')?.value || '');
+            const quick = normalizeSearchText(document.getElementById('pedidoFilterBusca')?.value || '');
+
+            filteredPedidoData = pedidoData.filter(item => {
+                const qtdeAFaturar = parseFloat(item.qtde_a_faturar || 0);
+                if (!(qtdeAFaturar > 0)) return false;
+                if (globalVal && !matchesGlobalSearch(item, globalVal)) return false;
+                if (cliente && !normalizeSearchText(item.cliente || '').includes(cliente)) return false;
+                if (!pedidoPeriodoMatches(item, periodo)) return false;
+                if (prazoStatus && normalizeSearchText(item.prazo_status || '') !== prazoStatus) return false;
+                if (liberado && normalizeSearchText(item.liberado_faturar || '') !== liberado) return false;
+                if (quick) {
+                    const target = normalizeSearchText(`${item.descricao || ''} ${item.sc || ''} ${item.pedido || ''}`);
+                    if (!target.includes(quick)) return false;
+                }
+                return true;
+            });
+
+            sortPedidoData();
+            renderPedidoView();
+        }
+
+        function sortPedidos(column) {
+            if (pedidoSortColumn === column) pedidoSortAsc = !pedidoSortAsc;
+            else { pedidoSortColumn = column; pedidoSortAsc = true; }
+            sortPedidoData();
+            renderPedidoView();
+        }
+
+        function sortPedidoData() {
+            if (!pedidoSortColumn) return;
+            const numeric = new Set(['dias','orcamento','qtde','vl_unitario','vl_total','qtde_a_faturar','vl_a_faturar','qtde_liberada']);
+            const dates = new Set(['aprovacao','prazo','dt_emissao']);
+            filteredPedidoData.sort((a,b) => {
+                let av = a[pedidoSortColumn];
+                let bv = b[pedidoSortColumn];
+                if (numeric.has(pedidoSortColumn)) {
+                    av = parseFloat(av || 0); bv = parseFloat(bv || 0);
+                } else if (dates.has(pedidoSortColumn)) {
+                    av = parseDate(av)?.getTime() || 0; bv = parseDate(bv)?.getTime() || 0;
+                } else {
+                    av = normalizeSearchText(av || ''); bv = normalizeSearchText(bv || '');
+                }
+                if (av < bv) return pedidoSortAsc ? -1 : 1;
+                if (av > bv) return pedidoSortAsc ? 1 : -1;
+                return 0;
+            });
+        }
+
+        function formatNumberBR(value, maxDecimals = 2) {
+            const num = parseFloat(value || 0);
+            return num.toLocaleString('pt-BR', { minimumFractionDigits: Number.isInteger(num) ? 0 : Math.min(2, maxDecimals), maximumFractionDigits: maxDecimals });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function pedidoStatusHtml(status) {
+            const raw = String(status || '').trim();
+            if (!raw) return '';
+            const norm = normalizeSearchText(raw);
+            const cls = norm.includes('atras') ? 'rs-pedido-status-atrasado' : 'rs-pedido-status-prazo';
+            return `<span class="rs-pedido-status ${cls}">${escapeHtml(raw)}</span>`;
+        }
+
+        function pedidoLiberadoHtml(status) {
+            const raw = String(status || '').trim();
+            if (!raw) return '';
+            const norm = normalizeSearchText(raw);
+            let cls = 'rs-pedido-nenhum';
+            if (norm.includes('total')) cls = 'rs-pedido-total';
+            else if (norm.includes('parcial')) cls = 'rs-pedido-parcial';
+            return `<span class="rs-pedido-liberado ${cls}">${escapeHtml(raw)}</span>`;
+        }
+
+        function renderPedidoView() {
+            const tbody = document.getElementById('tableBodyPedidos');
+            const tfoot = document.getElementById('tableFootPedidos');
+            if (!tbody || !tfoot) return;
+
+            document.querySelectorAll('[id^="pedidoSort_"]').forEach(el => el.textContent = '');
+            if (pedidoSortColumn) {
+                const el = document.getElementById(`pedidoSort_${pedidoSortColumn}`);
+                if (el) el.textContent = pedidoSortAsc ? '▲' : '▼';
+            }
+
+            let totalQtde = 0, totalVlTotal = 0, totalQtdeAFaturar = 0, totalVlAFaturar = 0, totalLiberada = 0;
+            filteredPedidoData.forEach(row => {
+                totalQtde += parseFloat(row.qtde || 0);
+                totalVlTotal += parseFloat(row.vl_total || 0);
+                totalQtdeAFaturar += parseFloat(row.qtde_a_faturar || 0);
+                totalVlAFaturar += parseFloat(row.vl_a_faturar || 0);
+                totalLiberada += parseFloat(row.qtde_liberada || 0);
+            });
+
+            document.getElementById('pedidoKpiItens').textContent = filteredPedidoData.length.toLocaleString('pt-BR');
+            document.getElementById('pedidoKpiQtde').textContent = formatNumberBR(totalQtdeAFaturar);
+            document.getElementById('pedidoKpiValor').textContent = formatCurrency(totalVlAFaturar);
+            document.getElementById('pedidoKpiValor').title = formatCurrency(totalVlAFaturar);
+            document.getElementById('pedidoKpiLiberada').textContent = formatNumberBR(totalLiberada);
+            document.getElementById('pedidoItensBadge').textContent = `${filteredPedidoData.length.toLocaleString('pt-BR')} itens`;
+            document.getElementById('pedidoSaldoBadge').textContent = formatCurrency(totalVlAFaturar);
+
+            if (!filteredPedidoData.length) {
+                tbody.innerHTML = `<tr><td colspan="21" class="p-8 text-center text-slate-500">Nenhum pedido em aberto encontrado com os filtros atuais.</td></tr>`;
+            } else {
+                tbody.innerHTML = filteredPedidoData.map((row, idx) => {
+                    const bg = idx % 2 === 0 ? 'bg-slate-50/60 dark:bg-slate-900/25' : 'bg-white dark:bg-slate-950/35';
+                    return `<tr class="${bg} hover:bg-amber-50/60 dark:hover:bg-slate-800/60 transition">
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800">${pedidoStatusHtml(row.prazo_status)}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono">${formatNumberBR(row.dias, 0)}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.os || '')}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono">${escapeHtml(row.orcamento ?? '')}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 font-semibold max-w-[220px] truncate" title="${escapeHtml(row.cliente || '')}">${escapeHtml(row.cliente || '')}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.codigo_cliente || '')}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.pedido || '')}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.item || '')}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap font-mono">${escapeHtml(row.sc || '')}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 max-w-[360px] truncate" title="${escapeHtml(row.descricao || '')}">${escapeHtml(row.descricao || '')}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono">${formatNumberBR(row.qtde)}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-center whitespace-nowrap">${formatDateBR(row.aprovacao)}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-center whitespace-nowrap">${formatDateBR(row.prazo)}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono whitespace-nowrap">${formatCurrency(row.vl_unitario)}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono whitespace-nowrap">${formatCurrency(row.vl_total)}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-amber-700 dark:text-amber-300">${formatNumberBR(row.qtde_a_faturar)}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">${formatCurrency(row.vl_a_faturar)}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono text-sky-700 dark:text-sky-300">${formatNumberBR(row.qtde_liberada)}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.classificacao || '')}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.tipo || '')}</td>
+                        <td class="px-2 py-1.5 border-b border-slate-200 dark:border-slate-800">${pedidoLiberadoHtml(row.liberado_faturar)}</td>
+                    </tr>`;
+                }).join('');
+            }
+
+            tfoot.innerHTML = `<tr>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700">Total</td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700 text-right font-mono">${formatNumberBR(totalQtde)}</td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700 text-right font-mono">${formatCurrency(totalVlTotal)}</td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700 text-right font-mono">${formatNumberBR(totalQtdeAFaturar)}</td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700 text-right font-mono text-emerald-700 dark:text-emerald-300">${formatCurrency(totalVlAFaturar)}</td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700 text-right font-mono text-sky-700 dark:text-sky-300">${formatNumberBR(totalLiberada)}</td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700"></td>
+                <td class="px-2 py-2 border-t border-slate-300 dark:border-slate-700"></td>
+            </tr>`;
         }
 
         function formatCurrency(val) {
@@ -1428,23 +2038,25 @@
             const tabMensal = document.getElementById('viewTabMensal');
             const tabMensalCliente = document.getElementById('viewTabMensalCliente');
             const tabClassificacao = document.getElementById('viewTabClassificacao');
+            const tabPedidos = document.getElementById('viewTabPedidos');
 
             const btnRS = document.getElementById('navBtnRS');
             const btnGrafico = document.getElementById('navBtnGrafico');
             const btnMensal = document.getElementById('navBtnMensal');
             const btnMensalCliente = document.getElementById('navBtnMensalCliente');
             const btnClassificacao = document.getElementById('navBtnClassificacao');
+            const btnPedidos = document.getElementById('navBtnPedidos');
 
             const headerSubtitle = document.getElementById('headerSubtitle');
 
             const inactiveClass = "px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
             const activeClass = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
 
-            [btnRS, btnGrafico, btnMensal, btnMensalCliente, btnClassificacao].forEach(btn => {
+            [btnRS, btnGrafico, btnMensal, btnMensalCliente, btnClassificacao, btnPedidos].forEach(btn => {
                 if (btn) btn.className = inactiveClass;
             });
 
-            [tabRS, tabGrafico, tabMensal, tabMensalCliente, tabClassificacao].forEach(tab => {
+            [tabRS, tabGrafico, tabMensal, tabMensalCliente, tabClassificacao, tabPedidos].forEach(tab => {
                 if (tab) tab.classList.add('hidden');
             });
 
@@ -1472,10 +2084,25 @@
                 btnClassificacao.className = activeClass;
                 headerSubtitle.textContent = "Classificação de Vendas";
                 if (dataReady) renderClassificacaoView();
+            } else if (tabName === 'Pedidos') {
+                tabPedidos.classList.remove('hidden');
+                btnPedidos.className = activeClass;
+                headerSubtitle.textContent = "Pedidos em Aberto";
+                if (pedidoDataReady) renderPedidoView();
             }
 
+            if (tabName === 'Pedidos') {
+                document.getElementById('advancedFilterPanel')?.classList.add('hidden');
+                document.getElementById('pedidoFilterPanel')?.classList.remove('hidden');
+            } else {
+                document.getElementById('pedidoFilterPanel')?.classList.add('hidden');
+                document.getElementById('advancedFilterPanel')?.classList.remove('hidden');
+            }
+
+            ensureActiveDatasetLoaded();
+
             if (window.innerWidth < 640) {
-                const activeBtn = { RS: btnRS, Grafico: btnGrafico, Mensal: btnMensal, MensalCliente: btnMensalCliente, Classificacao: btnClassificacao }[tabName];
+                const activeBtn = { RS: btnRS, Grafico: btnGrafico, Mensal: btnMensal, MensalCliente: btnMensalCliente, Classificacao: btnClassificacao, Pedidos: btnPedidos }[tabName];
                 requestAnimationFrame(() => activeBtn?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }));
             }
         }
@@ -1485,6 +2112,14 @@
             document.getElementById('filterClienteInput').value = '';
             document.getElementById('filterDataDe').value = '';
             document.getElementById('filterDataAte').value = '';
+            if (document.getElementById('pedidoFilterCliente')) document.getElementById('pedidoFilterCliente').value = '';
+            if (document.getElementById('pedidoFilterPrazoStatus')) document.getElementById('pedidoFilterPrazoStatus').value = '';
+            if (document.getElementById('pedidoFilterLiberado')) document.getElementById('pedidoFilterLiberado').value = '';
+            if (document.getElementById('pedidoFilterBusca')) document.getElementById('pedidoFilterBusca').value = '';
+            if (document.getElementById('pedidoFilterPeriodo')) {
+                const defaultOption = [...document.getElementById('pedidoFilterPeriodo').options].find(o => o.value === `Y:${currentYear}`);
+                document.getElementById('pedidoFilterPeriodo').value = defaultOption ? defaultOption.value : '';
+            }
 
             selectedAnoMes = {};
             selectedAnoMes[currentYear] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
@@ -2508,6 +3143,7 @@
         }
 
         function applyFilters() {
+            if (activeTab === 'Pedidos') { applyPedidoFilters(); return; }
             const globalVal = document.getElementById('filterGlobal').value;
             const clienteVal = normalizeSearchText(document.getElementById('filterClienteInput').value);
             const dataDeVal = document.getElementById('filterDataDe').value;
@@ -2611,7 +3247,8 @@
         }
 
         function exportToExcel() {
-            if (!filteredData || filteredData.length === 0) {
+            const activeExportData = activeTab === 'Pedidos' ? filteredPedidoData : filteredData;
+            if (!activeExportData || activeExportData.length === 0) {
                 alert("Sem dados para exportar.");
                 return;
             }
@@ -2679,6 +3316,39 @@
                     "Vl. Total": monthlyAgg[k].total,
                     "Qtde. Itens": monthlyAgg[k].countOfItems
                 }));
+            } else if (activeTab === 'Pedidos') {
+                sheetName = "Pedidos_em_Aberto";
+                exportData = filteredPedidoData.map(item => ({
+                    "Prazo Status": item.prazo_status || '',
+                    "Dias": parseFloat(item.dias || 0),
+                    "OS": item.os || '',
+                    "Orçamento": item.orcamento || '',
+                    "Cliente": item.cliente || '',
+                    "Cód. Cliente": item.codigo_cliente || '',
+                    "Pedido": item.pedido || '',
+                    "Item": item.item || '',
+                    "SC": item.sc || '',
+                    "Descrição": item.descricao || '',
+                    "Qtde": parseFloat(item.qtde || 0),
+                    "Qtde Solicitada": parseFloat(item.qtde_solicitada || 0),
+                    "Qtde Reservada": parseFloat(item.qtde_reservada || 0),
+                    "Qtde Faturada": parseFloat(item.qtde_faturada || 0),
+                    "Qtde Cancelada": parseFloat(item.qtde_cancelada || 0),
+                    "Não Produzido": parseFloat(item.nao_produzido || 0),
+                    "Qtde a Faturar": parseFloat(item.qtde_a_faturar || 0),
+                    "Aprovação": formatDateBR(item.aprovacao),
+                    "Prazo": formatDateBR(item.prazo),
+                    "Vl. Unitário": parseFloat(item.vl_unitario || 0),
+                    "Vl. Total": parseFloat(item.vl_total || 0),
+                    "Vl. a Faturar": parseFloat(item.vl_a_faturar || 0),
+                    "Classificação": item.classificacao || '',
+                    "Tipo": item.tipo || '',
+                    "Qtde Liberada": parseFloat(item.qtde_liberada || 0),
+                    "Liberado Faturar": item.liberado_faturar || '',
+                    "Notas": item.notas || '',
+                    "Dt. Emissão": formatDateBR(item.dt_emissao),
+                    "Vl. Faturado": parseFloat(item.vl_faturado || 0)
+                }));
             } else if (activeTab === 'Classificacao') {
                 sheetName = "Classificacao_Vendas";
                 const classificacao = getClassificacaoData();
@@ -2720,6 +3390,7 @@
             const tabMensal = document.getElementById('viewTabMensal');
             const tabMensalCliente = document.getElementById('viewTabMensalCliente');
             const tabClassificacao = document.getElementById('viewTabClassificacao');
+            const tabPedidos = document.getElementById('viewTabPedidos');
             const pbiView = document.getElementById('pbiView');
             const filterSection = document.getElementById('filterSection');
             const btnExport = document.getElementById('btnExport');
@@ -2732,6 +3403,7 @@
                 tabMensal.classList.add('hidden');
                 tabMensalCliente.classList.add('hidden');
                 tabClassificacao.classList.add('hidden');
+                tabPedidos.classList.add('hidden');
                 filterSection.classList.add('hidden');
                 btnExport.classList.add('hidden');
                 pbiView.classList.remove('hidden');
@@ -2753,7 +3425,6 @@
             if (window.lucide) lucide.createIcons();
             configureMobileLayout();
             switchMainTab(activeTab, false);
-            loadRsData();
 
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape') {
@@ -2779,6 +3450,7 @@
                 if (!dataReady) return;
                 if (activeTab === 'Grafico') renderGraficoView();
                 if (activeTab === 'Mensal') renderMensalView();
+                if (activeTab === 'Pedidos' && pedidoDataReady) renderPedidoView();
             }, 160);
         });
     </script>
