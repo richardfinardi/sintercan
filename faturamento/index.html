@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.8.6</title>
+    <title>Sintercan - Controle de Faturamento V1.8.8</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -79,7 +79,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.8.6</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.8.8</span></p>
                 </div>
             </div>
 
@@ -675,38 +675,38 @@
 
             sortedWeeks.forEach(week => {
                 // REGRA DE ORDENAÇÃO DENTRO DA SEMANA
+                // 1) Data efetiva da tela:
+                //    FATURADO -> DT_EMISSAO
+                //    PENDENTE -> ENTREGA_NORMALIZADA
+                // 2) Número da NF (quando houver)
                 week.items.sort((a, b) => {
-                    const fatA = parseValue(a.vl_faturado);
-                    const temNfA = a.numero_nf && String(a.numero_nf).trim() !== '' && String(a.numero_nf) !== 'None';
-                    const isFaturadoA = fatA > 0;
+                    const dateA = getCalendarReferenceDate(a);
+                    const dateB = getCalendarReferenceDate(b);
 
-                    const fatB = parseValue(b.vl_faturado);
-                    const temNfB = b.numero_nf && String(b.numero_nf).trim() !== '' && String(b.numero_nf) !== 'None';
-                    const isFaturadoB = fatB > 0;
+                    const timeA = dateA ? dateA.getTime() : Infinity;
+                    const timeB = dateB ? dateB.getTime() : Infinity;
 
-                    if (isFaturadoA && isFaturadoB) {
-                        const timeEmissaoA = a.dt_emissao ? new Date(a.dt_emissao).getTime() : 0;
-                        const timeEmissaoB = b.dt_emissao ? new Date(b.dt_emissao).getTime() : 0;
-
-                        if (timeEmissaoA !== timeEmissaoB) {
-                            return timeEmissaoA - timeEmissaoB;
-                        }
-                        const numNfA = parseValue(a.numero_nf);
-                        const numNfB = parseValue(b.numero_nf);
-                        return numNfA - numNfB;
-                    }
-
-                    if (!isFaturadoA && !isFaturadoB) {
-                        const dateStrA = a.dt_prevista_fat || a.entrega_normalizada;
-                        const dateStrB = b.dt_prevista_fat || b.entrega_normalizada;
-
-                        const timeA = dateStrA ? new Date(dateStrA).getTime() : Infinity;
-                        const timeB = dateStrB ? new Date(dateStrB).getTime() : Infinity;
-
+                    if (timeA !== timeB) {
                         return timeA - timeB;
                     }
 
-                    return isFaturadoA ? -1 : 1;
+                    const nfA = (a.numero_nf && String(a.numero_nf).trim() !== '' && String(a.numero_nf) !== 'None')
+                        ? parseValue(a.numero_nf)
+                        : Infinity;
+                    const nfB = (b.numero_nf && String(b.numero_nf).trim() !== '' && String(b.numero_nf) !== 'None')
+                        ? parseValue(b.numero_nf)
+                        : Infinity;
+
+                    if (nfA !== nfB) {
+                        return nfA - nfB;
+                    }
+
+                    // Desempate estável para itens pendentes sem NF.
+                    const orcA = String(a.n_orcamento || '');
+                    const orcB = String(b.n_orcamento || '');
+                    if (orcA !== orcB) return orcA.localeCompare(orcB, 'pt-BR', { numeric: true });
+
+                    return String(a.cod_interno || '').localeCompare(String(b.cod_interno || ''), 'pt-BR', { numeric: true });
                 });
 
                 // CALCULOS ESPECÍFICOS DO CABEÇALHO DA SEMANA
@@ -793,7 +793,7 @@
                                                     ${isFaturado ? (item.numero_nf ? `FATURADO (NF ${item.numero_nf})` : 'FATURADO') : 'PENDENTE'}
                                                 </span>
                                             </td>
-                                            <td class="p-3 text-center font-bold ${isFaturado ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}">${formatDateOnly(item.entrega_normalizada)}</td>
+                                            <td class="p-3 text-center font-bold ${isFaturado ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}">${formatDateOnly(isFaturado ? item.dt_emissao : item.entrega_normalizada)}</td>
                                             <td class="p-3 text-right font-mono font-bold ${isFaturado ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}">${formatBRL(valorExibir)}</td>
                                             <td class="p-3 text-center">
                                                 ${!isFaturado ? `
@@ -976,7 +976,7 @@
                     `"${formatDateOnly(item.dt_item || item.dt_previsao_entrega)}"`,
                     `"${isFaturado ? 'FATURADO' : 'PENDENTE'}"`,
                     `"${item.numero_nf || ''}"`,
-                    `"${formatDateOnly(item.entrega_normalizada)}"`,
+                    `"${formatDateOnly(isFaturado ? item.dt_emissao : item.entrega_normalizada)}"`,
                     valorExibir.toFixed(2).replace('.', ',')
                 ];
 
