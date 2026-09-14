@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.8.3</title>
+    <title>Sintercan - Controle de Faturamento V1.8.4</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -79,7 +79,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.8.3</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.8.4</span></p>
                 </div>
             </div>
 
@@ -660,7 +660,7 @@
                                             <td class="p-3 font-mono text-slate-500 dark:text-slate-400">${item.cod_interno || '-'}</td>
                                             <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">OS ${item.n_os || '-'}</td>
                                             <td class="p-3 text-slate-700 dark:text-slate-300 truncate max-w-[200px]" title="${item.descricao || ''}">${item.descricao || '-'}</td>
-                                            <td class="p-3 text-center font-medium text-slate-500 dark:text-slate-400">${formatDateOnly(item.dt_previsao_entrega)}</td>
+                                            <td class="p-3 text-center font-medium text-slate-500 dark:text-slate-400">${formatDateOnly(item.dt_item || item.dt_previsao_entrega)}</td>
                                             <td class="p-3 text-center">
                                                 <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${isFaturado ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'}">
                                                     ${isFaturado ? (item.numero_nf ? `FATURADO (NF ${item.numero_nf})` : 'FATURADO') : 'PENDENTE'}
@@ -828,7 +828,9 @@
                 return;
             }
 
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            // Usa Blob em vez de data URI. Isso evita que caracteres como #
+            // interrompam o arquivo CSV durante o download.
+            let csvContent = "\uFEFF";
             csvContent += "Orçamento;Cliente;Cod. Interno;OS;Descrição;Qtd;Dt Prev. Entrega;Status;NF;Dt Previsto/Permitido Faturar;Valor\n";
 
             items.forEach(item => {
@@ -844,7 +846,7 @@
                     `"${item.n_os || ''}"`,
                     `"${(item.descricao || '').replace(/"/g, '""')}"`,
                     item.qtde || 0,
-                    `"${formatDateOnly(item.dt_previsao_entrega)}"`,
+                    `"${formatDateOnly(item.dt_item || item.dt_previsao_entrega)}"`,
                     `"${isFaturado ? 'FATURADO' : 'PENDENTE'}"`,
                     `"${item.numero_nf || ''}"`,
                     `"${formatDateOnly(item.entrega_normalizada)}"`,
@@ -854,13 +856,18 @@
                 csvContent += row.join(";") + "\n";
             });
 
-            const encodedUri = encodeURI(csvContent);
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Faturamento_Sintercan_${selectedYear}_${String(selectedMonth + 1).padStart(2, '0')}.csv`);
+
+            link.href = url;
+            link.download = `Faturamento_Sintercan_${selectedYear}_${String(selectedMonth + 1).padStart(2, '0')}.csv`;
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
