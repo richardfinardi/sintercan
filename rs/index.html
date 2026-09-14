@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <!-- SINTERCAN RS | Versão: V1.0.0 | Build: 2026-09-14 -->
-    <meta name="app-version" content="V1.0.0">
+    <!-- SINTERCAN RS | Versão: V1.1.0 | Build: 2026-09-14 -->
+    <meta name="app-version" content="V1.1.0">
     <meta name="app-build-date" content="2026-09-14">
     <meta name="theme-color" content="#0f172a">
-    <title>RS - Sintercan | V1.0.0</title>
+    <title>RS - Sintercan | V1.1.0</title>
     <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -116,6 +116,22 @@
             #dataToast { left: .5rem !important; right: .5rem !important; top: 3.4rem !important; max-width: none !important; }
         }
 
+        /* ===== CLASSIFICAÇÃO DE VENDAS ===== */
+        .rs-class-row { transition: filter .15s ease, transform .15s ease; }
+        .rs-class-row:hover { filter: brightness(0.98); }
+        .dark .rs-class-row:hover { filter: brightness(1.08); }
+        .rs-priority-dot { width: 10px; height: 10px; border-radius: 9999px; display: inline-block; flex: 0 0 auto; }
+
+        @media (max-width: 639px) {
+            #viewTabClassificacao { overflow-y: auto !important; overflow-x: hidden !important; }
+            #classificacaoGrid { display: flex !important; flex-direction: column !important; min-height: 0; overflow: visible !important; }
+            #classificacaoTableCard { min-height: 430px; overflow: hidden; }
+            #classificacaoLegendCard { min-height: auto; flex: 0 0 auto; }
+            #tableClassificacao { min-width: 670px !important; font-size: 10px !important; }
+            #tableClassificacao th, #tableClassificacao td { padding: .45rem .5rem !important; }
+            #classificacaoLegendCard .rs-class-legend-row { padding: .55rem !important; }
+        }
+
         @media (min-width: 640px) and (max-width: 1023px) {
             #mainTable { min-width: 1280px; }
             .rs-header-row { gap: .6rem !important; }
@@ -193,7 +209,7 @@
             <div class="rs-filter-item">
                 <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Pesquisa Geral</label>
                 <div class="relative">
-                    <input type="text" id="filterGlobal" oninput="debouncedApplyFilters()" placeholder="Buscar em tudo..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg pl-8 pr-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+                    <input type="text" id="filterGlobal" oninput="debouncedApplyFilters()" placeholder="Cliente, OS, pedido, SC, descrição..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg pl-8 pr-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
                     <i data-lucide="search" class="w-4 h-4 absolute left-2 top-1.5 text-slate-400 dark:text-slate-500"></i>
                 </div>
             </div>
@@ -534,6 +550,60 @@
             </div>
         </div>
 
+        <div id="viewTabClassificacao" class="h-full w-full hidden overflow-hidden">
+            <div id="classificacaoGrid" class="h-full grid grid-cols-1 xl:grid-cols-3 gap-3 overflow-hidden">
+                <div id="classificacaoTableCard" class="xl:col-span-2 h-full min-h-0 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                    <div class="px-3 py-2 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex flex-wrap justify-between items-center gap-2 flex-shrink-0">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <div>
+                                <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Classificação de Vendas</h2>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400">Ranking de clientes pelo valor vendido no período filtrado</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 text-[10px]">
+                            <span id="classificacaoClientesBadge" class="bg-slate-200 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full font-mono">0 clientes</span>
+                            <span id="classificacaoTotalBadge" class="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded-full font-mono">R$ 0,00</span>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-auto relative">
+                        <table id="tableClassificacao" class="w-full min-w-[720px] text-left text-[11px] border-separate border-spacing-0">
+                            <thead class="sticky top-0 z-20 bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold">
+                                <tr>
+                                    <th class="w-[70px] px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-center">Class.</th>
+                                    <th class="px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800">Cliente</th>
+                                    <th class="w-[170px] px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right">Vl. Total</th>
+                                    <th class="w-[110px] px-2 py-2 border-b border-slate-300 dark:border-slate-800 text-right">Qtde.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBodyClassificacao"></tbody>
+                            <tfoot id="tableFootClassificacao" class="sticky bottom-0 z-20 bg-slate-200 dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold"></tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="classificacaoLegendCard" class="h-full min-h-0 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                    <div class="px-3 py-2 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex-shrink-0">
+                        <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Faixas de Prioridade</h2>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Mesma regra usada no Power BI</p>
+                    </div>
+                    <div id="classificacaoLegend" class="p-3 space-y-2 overflow-y-auto"></div>
+                    <div class="mt-auto border-t border-slate-200 dark:border-slate-800 p-3 bg-slate-50 dark:bg-slate-900/80">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-2">
+                                <span class="text-[9px] uppercase font-semibold text-slate-500 dark:text-slate-400 block">Maior cliente</span>
+                                <strong id="classificacaoMaiorCliente" class="text-[11px] text-slate-900 dark:text-white block truncate" title="-">-</strong>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-2">
+                                <span class="text-[9px] uppercase font-semibold text-slate-500 dark:text-slate-400 block">Média / cliente</span>
+                                <strong id="classificacaoMediaCliente" class="text-[11px] text-slate-900 dark:text-white block">R$ 0,00</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="pbiView" class="h-full w-full hidden border border-slate-300 dark:border-slate-800 rounded-xl overflow-hidden">
             <div id="pbiContainer" class="w-full h-full"></div>
         </div>
@@ -545,7 +615,7 @@
         <button id="navBtnGrafico" onclick="switchMainTab('Grafico')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Gráfico</button>
         <button id="navBtnMensal" onclick="switchMainTab('Mensal')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Mensal</button>
         <button id="navBtnMensalCliente" onclick="switchMainTab('MensalCliente')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Mensal por cliente</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Classificação de vendas</button>
+        <button id="navBtnClassificacao" onclick="switchMainTab('Classificacao')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Classificação de vendas</button>
         <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Pedidos em aberto</button>
         <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Notas Fiscais</button>
         <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Pedidos em carteira</button>
@@ -566,7 +636,7 @@
             }
         }
 
-        const APP_VERSION = 'V1.0.0';
+        const APP_VERSION = 'V1.1.0';
         const RS_API_URL = 'https://sintercan.consultoriarf.net/rs';
         const RS_DB_NAME = 'SINTERCAN_RS_CACHE';
         const RS_DB_VERSION = 1;
@@ -575,7 +645,7 @@
         const ACTIVE_TAB_STORAGE_KEY = 'sintercan_rs_active_tab';
         const MENSAL_CLIENTE_SORT_STORAGE_KEY = 'sintercan_rs_mensal_cliente_sort_v1';
         const MOBILE_FILTER_STORAGE_KEY = 'sintercan_rs_mobile_filters_open';
-        const VALID_TABS = ['RS', 'Grafico', 'Mensal', 'MensalCliente'];
+        const VALID_TABS = ['RS', 'Grafico', 'Mensal', 'MensalCliente', 'Classificacao'];
 
         let fullData = [];
         let filteredData = [];
@@ -586,6 +656,7 @@
         let currentCacheSavedAt = null;
         let clienteDropdownEventsBound = false;
         let anoMesGlobalEventsBound = false;
+        let globalSearchCache = new WeakMap();
         
         let columnSelections = {};
         let filterTimeout = null;
@@ -616,6 +687,38 @@
 
         function getSafeColId(colKey) {
             return colKey.replace(/[^a-zA-Z0-9_]/g, '_');
+        }
+
+        function normalizeSearchText(value) {
+            return String(value ?? '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function getItemSearchText(item) {
+            if (!item || typeof item !== 'object') return '';
+            const cached = globalSearchCache.get(item);
+            if (cached !== undefined) return cached;
+
+            const extra = [
+                formatDateBR(item.dt_aprovacao),
+                formatDateBR(item.dt_previsao_entrega),
+                formatCurrency(item.vl_unitario),
+                formatCurrency(item.vl_total)
+            ];
+            const text = normalizeSearchText([...Object.values(item), ...extra].join(' '));
+            globalSearchCache.set(item, text);
+            return text;
+        }
+
+        function matchesGlobalSearch(item, query) {
+            const terms = normalizeSearchText(query).split(' ').filter(Boolean);
+            if (!terms.length) return true;
+            const haystack = getItemSearchText(item);
+            return terms.every(term => haystack.includes(term));
         }
 
         function setLoadingOverlay(show, title = 'Carregando dados...', message = 'Aguarde enquanto preparamos o dashboard.', allowRetry = false) {
@@ -1019,22 +1122,24 @@
             const tabGrafico = document.getElementById('viewTabGrafico');
             const tabMensal = document.getElementById('viewTabMensal');
             const tabMensalCliente = document.getElementById('viewTabMensalCliente');
+            const tabClassificacao = document.getElementById('viewTabClassificacao');
 
             const btnRS = document.getElementById('navBtnRS');
             const btnGrafico = document.getElementById('navBtnGrafico');
             const btnMensal = document.getElementById('navBtnMensal');
             const btnMensalCliente = document.getElementById('navBtnMensalCliente');
+            const btnClassificacao = document.getElementById('navBtnClassificacao');
 
             const headerSubtitle = document.getElementById('headerSubtitle');
 
             const inactiveClass = "px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
             const activeClass = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
 
-            [btnRS, btnGrafico, btnMensal, btnMensalCliente].forEach(btn => {
+            [btnRS, btnGrafico, btnMensal, btnMensalCliente, btnClassificacao].forEach(btn => {
                 if (btn) btn.className = inactiveClass;
             });
 
-            [tabRS, tabGrafico, tabMensal, tabMensalCliente].forEach(tab => {
+            [tabRS, tabGrafico, tabMensal, tabMensalCliente, tabClassificacao].forEach(tab => {
                 if (tab) tab.classList.add('hidden');
             });
 
@@ -1057,10 +1162,15 @@
                 btnMensalCliente.className = activeClass;
                 headerSubtitle.textContent = "Mensal por Cliente";
                 if (dataReady) renderMensalClienteView();
+            } else if (tabName === 'Classificacao') {
+                tabClassificacao.classList.remove('hidden');
+                btnClassificacao.className = activeClass;
+                headerSubtitle.textContent = "Classificação de Vendas";
+                if (dataReady) renderClassificacaoView();
             }
 
             if (window.innerWidth < 640) {
-                const activeBtn = { RS: btnRS, Grafico: btnGrafico, Mensal: btnMensal, MensalCliente: btnMensalCliente }[tabName];
+                const activeBtn = { RS: btnRS, Grafico: btnGrafico, Mensal: btnMensal, MensalCliente: btnMensalCliente, Classificacao: btnClassificacao }[tabName];
                 requestAnimationFrame(() => activeBtn?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }));
             }
         }
@@ -1096,8 +1206,8 @@
         }
 
         function getFilteredDataExcludingColumn(excludeColKey) {
-            const globalVal = document.getElementById('filterGlobal').value.toLowerCase();
-            const clienteVal = document.getElementById('filterClienteInput').value.toLowerCase();
+            const globalVal = document.getElementById('filterGlobal').value;
+            const clienteVal = normalizeSearchText(document.getElementById('filterClienteInput').value);
             const dataDeVal = document.getElementById('filterDataDe').value;
             const dataAteVal = document.getElementById('filterDataAte').value;
 
@@ -1116,12 +1226,9 @@
                     if (!selectedAnoMes[y] || !selectedAnoMes[y].includes(m)) return false;
                 }
 
-                if (globalVal) {
-                    const str = `${item.n_orcamento || ''} ${item.n_os || ''} ${item.cliente || ''} ${item.cod_mat_no_cliente || ''} ${item.pedido_cliente || ''} ${item.cod_interno || ''} ${item.descricao || ''} ${item['PROD/MAN/IND'] || ''}`.toLowerCase();
-                    if (!str.includes(globalVal)) return false;
-                }
+                if (globalVal && !matchesGlobalSearch(item, globalVal)) return false;
 
-                if (clienteVal && !(item.cliente || '').toLowerCase().includes(clienteVal)) return false;
+                if (clienteVal && !normalizeSearchText(item.cliente || '').includes(clienteVal)) return false;
 
                 if (dateDe && d && d < dateDe) return false;
                 if (dateAte && d && d > dateAte) return false;
@@ -1885,6 +1992,114 @@
             renderMensalClienteView();
         }
 
+        const SALES_PRIORITY_RULES = [
+            { priority: 1, min: 1000000, label: 'Acima de 1 Milhão', color: '#EF0000', soft: '#fee2e2', text: '#ffffff' },
+            { priority: 2, min: 400000,  label: 'Acima de 400 Mil', color: '#FFA500', soft: '#ffedd5', text: '#111827' },
+            { priority: 3, min: 100000,  label: 'Acima de 100 Mil', color: '#0000FF', soft: '#dbeafe', text: '#ffffff' },
+            { priority: 4, min: 20000,   label: 'Acima dos 20 Mil', color: '#00B050', soft: '#dcfce7', text: '#052e16' },
+            { priority: 5, min: -Infinity, label: 'Esporádicos abaixo dos 20 Mil', color: '#FFC0CB', soft: '#ffe4e6', text: '#4c0519' }
+        ];
+
+        function getSalesPriority(total) {
+            const value = Number(total) || 0;
+            return SALES_PRIORITY_RULES.find(rule => value >= rule.min) || SALES_PRIORITY_RULES[SALES_PRIORITY_RULES.length - 1];
+        }
+
+        function getClassificacaoData() {
+            const byClient = {};
+            filteredData.forEach(item => {
+                const client = String(item.cliente || 'SEM CLIENTE').trim() || 'SEM CLIENTE';
+                if (!byClient[client]) byClient[client] = { name: client, total: 0, qty: 0 };
+                byClient[client].total += Number(item.vl_total) || 0;
+                byClient[client].qty += Number(item.qtde) || 0;
+            });
+
+            return Object.values(byClient)
+                .sort((a, b) => (b.total - a.total) || a.name.localeCompare(b.name, 'pt-BR'))
+                .map((client, index) => ({
+                    ...client,
+                    rank: index + 1,
+                    priority: getSalesPriority(client.total)
+                }));
+        }
+
+        function renderClassificacaoView() {
+            const tbody = document.getElementById('tableBodyClassificacao');
+            const tfoot = document.getElementById('tableFootClassificacao');
+            const legend = document.getElementById('classificacaoLegend');
+            if (!tbody || !tfoot || !legend) return;
+
+            const clients = getClassificacaoData();
+            const grandTotal = clients.reduce((sum, c) => sum + c.total, 0);
+            const grandQty = clients.reduce((sum, c) => sum + c.qty, 0);
+            const avg = clients.length ? grandTotal / clients.length : 0;
+            const top = clients[0] || null;
+
+            const clientBadge = document.getElementById('classificacaoClientesBadge');
+            const totalBadge = document.getElementById('classificacaoTotalBadge');
+            const maiorEl = document.getElementById('classificacaoMaiorCliente');
+            const mediaEl = document.getElementById('classificacaoMediaCliente');
+
+            if (clientBadge) clientBadge.textContent = `${clients.length.toLocaleString('pt-BR')} ${clients.length === 1 ? 'cliente' : 'clientes'}`;
+            if (totalBadge) totalBadge.textContent = formatCurrency(grandTotal);
+            if (maiorEl) {
+                maiorEl.textContent = top ? top.name : '-';
+                maiorEl.title = top ? `${top.name} — ${formatCurrency(top.total)}` : '-';
+            }
+            if (mediaEl) mediaEl.textContent = formatCurrency(avg);
+
+            if (!clients.length) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+                tfoot.innerHTML = '';
+            } else {
+                const frag = document.createDocumentFragment();
+                clients.forEach(client => {
+                    const rule = client.priority;
+                    const tr = document.createElement('tr');
+                    tr.className = 'rs-class-row';
+                    tr.style.backgroundColor = rule.color;
+                    tr.style.color = rule.text;
+                    tr.innerHTML = `
+                        <td class="px-2 py-1.5 border-b border-r border-white/30 text-center font-mono font-bold">${client.rank}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-white/30 font-semibold" title="${client.name}">${client.name}</td>
+                        <td class="px-2 py-1.5 border-b border-r border-white/30 text-right font-mono font-bold whitespace-nowrap">${formatCurrency(client.total)}</td>
+                        <td class="px-2 py-1.5 border-b border-white/30 text-right font-mono whitespace-nowrap">${client.qty.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</td>
+                    `;
+                    frag.appendChild(tr);
+                });
+                tbody.innerHTML = '';
+                tbody.appendChild(frag);
+
+                tfoot.innerHTML = `
+                    <tr>
+                        <td class="px-2 py-2 border-t border-r border-slate-400 dark:border-slate-700 text-center">${clients.length.toLocaleString('pt-BR')}</td>
+                        <td class="px-2 py-2 border-t border-r border-slate-400 dark:border-slate-700">Total</td>
+                        <td class="px-2 py-2 border-t border-r border-slate-400 dark:border-slate-700 text-right font-mono whitespace-nowrap">${formatCurrency(grandTotal)}</td>
+                        <td class="px-2 py-2 border-t border-slate-400 dark:border-slate-700 text-right font-mono whitespace-nowrap">${grandQty.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</td>
+                    </tr>
+                `;
+            }
+
+            const counts = clients.reduce((acc, c) => {
+                acc[c.priority.priority] = (acc[c.priority.priority] || 0) + 1;
+                return acc;
+            }, {});
+
+            legend.innerHTML = SALES_PRIORITY_RULES.map(rule => `
+                <div class="rs-class-legend-row rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-extrabold shadow-sm" style="background:${rule.color};color:${rule.text}">${rule.priority}</div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-xs font-bold text-slate-800 dark:text-slate-200">${rule.label}</div>
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400">Prioridade ${rule.priority}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-extrabold text-slate-900 dark:text-white">${(counts[rule.priority] || 0).toLocaleString('pt-BR')}</div>
+                        <div class="text-[9px] uppercase text-slate-400">clientes</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         function renderMensalClienteView() {
             const head = document.getElementById('mensalClienteHead');
             const body = document.getElementById('tableBodyMensalCliente');
@@ -1983,8 +2198,8 @@
         }
 
         function applyFilters() {
-            const globalVal = document.getElementById('filterGlobal').value.toLowerCase();
-            const clienteVal = document.getElementById('filterClienteInput').value.toLowerCase();
+            const globalVal = document.getElementById('filterGlobal').value;
+            const clienteVal = normalizeSearchText(document.getElementById('filterClienteInput').value);
             const dataDeVal = document.getElementById('filterDataDe').value;
             const dataAteVal = document.getElementById('filterDataAte').value;
 
@@ -2003,12 +2218,9 @@
                     if (!selectedAnoMes[y] || !selectedAnoMes[y].includes(m)) return false;
                 }
 
-                if (globalVal) {
-                    const str = `${item.n_orcamento || ''} ${item.n_os || ''} ${item.cliente || ''} ${item.cod_mat_no_cliente || ''} ${item.pedido_cliente || ''} ${item.cod_interno || ''} ${item.descricao || ''} ${item['PROD/MAN/IND'] || ''}`.toLowerCase();
-                    if (!str.includes(globalVal)) return false;
-                }
+                if (globalVal && !matchesGlobalSearch(item, globalVal)) return false;
 
-                if (clienteVal && !(item.cliente || '').toLowerCase().includes(clienteVal)) return false;
+                if (clienteVal && !normalizeSearchText(item.cliente || '').includes(clienteVal)) return false;
 
                 if (dateDe && d && d < dateDe) return false;
                 if (dateAte && d && d > dateAte) return false;
@@ -2038,6 +2250,8 @@
                 renderMensalView();
             } else if (activeTab === 'MensalCliente') {
                 renderMensalClienteView();
+            } else if (activeTab === 'Classificacao') {
+                renderClassificacaoView();
             }
         }
 
@@ -2062,8 +2276,8 @@
         }
 
         function filterClienteList() {
-            const term = document.getElementById('filterClienteInput').value.toLowerCase();
-            const filtered = allClientes.filter(c => c.toLowerCase().includes(term));
+            const term = normalizeSearchText(document.getElementById('filterClienteInput').value);
+            const filtered = allClientes.filter(c => normalizeSearchText(c).includes(term));
             renderClienteOptions(filtered);
             debouncedApplyFilters();
         }
@@ -2155,6 +2369,17 @@
                     "Vl. Total": monthlyAgg[k].total,
                     "Qtde. Itens": monthlyAgg[k].countOfItems
                 }));
+            } else if (activeTab === 'Classificacao') {
+                sheetName = "Classificacao_Vendas";
+                const classificacao = getClassificacaoData();
+                exportData = classificacao.map(c => ({
+                    "Classificação": c.rank,
+                    "Cliente": c.name,
+                    "Valor Total": c.total,
+                    "Quantidade": c.qty,
+                    "Prioridade": c.priority.priority,
+                    "Faixa": c.priority.label
+                }));
             } else if (activeTab === 'MensalCliente') {
                 sheetName = "Mensal_por_Cliente";
                 const matrix = getMensalClienteMatrix();
@@ -2184,6 +2409,7 @@
             const tabGrafico = document.getElementById('viewTabGrafico');
             const tabMensal = document.getElementById('viewTabMensal');
             const tabMensalCliente = document.getElementById('viewTabMensalCliente');
+            const tabClassificacao = document.getElementById('viewTabClassificacao');
             const pbiView = document.getElementById('pbiView');
             const filterSection = document.getElementById('filterSection');
             const btnExport = document.getElementById('btnExport');
@@ -2195,6 +2421,7 @@
                 tabGrafico.classList.add('hidden');
                 tabMensal.classList.add('hidden');
                 tabMensalCliente.classList.add('hidden');
+                tabClassificacao.classList.add('hidden');
                 filterSection.classList.add('hidden');
                 btnExport.classList.add('hidden');
                 pbiView.classList.remove('hidden');
