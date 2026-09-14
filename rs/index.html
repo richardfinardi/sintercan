@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <!-- SINTERCAN RS | Versão: V1.6.1 | Build: 2026-09-14 -->
-    <meta name="app-version" content="V1.6.1">
+    <!-- SINTERCAN RS | Versão: V1.6.2 | Build: 2026-09-14 -->
+    <meta name="app-version" content="V1.6.2">
     <meta name="app-build-date" content="2026-09-14">
     <meta name="theme-color" content="#0f172a">
     <meta name="mobile-web-app-capable" content="yes">
@@ -14,7 +14,7 @@
     <meta name="application-name" content="Sintercan">
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
-    <title>Sintercan | V1.6.1</title>
+    <title>Sintercan | V1.6.2</title>
     <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -375,7 +375,7 @@
             .rs-header-row { gap: .6rem !important; }
         }
 
-        /* V1.6.1 - telas baseadas em /pedido + PWA */
+        /* V1.6.2 - telas baseadas em /pedido + PWA */
         .pedido-summary-head { cursor: pointer; user-select: none; }
         .pedido-summary-head:hover { color: #d97706; }
         .dark .pedido-summary-head:hover { color: #fbbf24; }
@@ -1523,7 +1523,7 @@
             }
         }
 
-        const APP_VERSION = 'V1.6.1';
+        const APP_VERSION = 'V1.6.2';
         const RS_API_URL = 'https://sintercan.consultoriarf.net/rs';
         const PEDIDO_API_URL = 'https://sintercan.consultoriarf.net/pedido';
         const RS_DB_NAME = 'SINTERCAN_RS_CACHE';
@@ -2778,7 +2778,7 @@
                 totalQtdeFaturada += parseFloat(row.qtde_faturada || 0) || 0;
                 totalVlFaturado += parseFloat(row.vl_faturado || 0) || 0;
                 return `<tr class="${idx%2?'bg-white dark:bg-slate-950/30':'bg-slate-50/70 dark:bg-slate-900/30'} hover:bg-amber-50 dark:hover:bg-slate-800/60 transition">
-                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${pedidoPrazoStatusHtml(row.prazo_status)}</td>
+                    <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${pedidoStatusHtml(row.prazo_status)}</td>
                     <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono">${formatNumberBR(row.dias)}</td>
                     <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">${escapeHtml(row.os || '')}</td>
                     <td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono">${escapeHtml(row.orcamento ?? '')}</td>
