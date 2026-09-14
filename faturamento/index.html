@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.8</title>
+    <title>Sintercan - Controle de Faturamento V1.8.2</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -79,7 +79,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.8</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.8.2</span></p>
                 </div>
             </div>
 
@@ -388,6 +388,33 @@
             return `${formatShort(monday)} A ${formatShort(sunday)}`;
         }
 
+        // Quando uma semana é selecionada, ela deve ser exibida COMPLETA,
+        // inclusive os dias que caem no mês anterior ou no mês seguinte.
+        // Ex.: Semana 36/2026 = 31/08 a 06/09. Ao visualizar setembro,
+        // o dia 31/08 também precisa fazer parte da Semana 36.
+        function dateBelongsToSelectedPeriod(date, selectedYear, selectedMonth, selectedWeek) {
+            if (selectedWeek) {
+                if (String(getISOWeekNumber(date)) !== String(selectedWeek)) return false;
+
+                const monday = new Date(date);
+                monday.setHours(0, 0, 0, 0);
+                monday.setDate(date.getDate() - (date.getDay() === 0 ? 6 : date.getDay() - 1));
+
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+                sunday.setHours(23, 59, 59, 999);
+
+                const monthStart = new Date(selectedYear, selectedMonth, 1);
+                const monthEnd = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59, 999);
+
+                // Garante que estamos pegando a ocorrência da semana que cruza
+                // o mês atualmente aberto, evitando misturar a mesma semana de outro ano.
+                return monday <= monthEnd && sunday >= monthStart;
+            }
+
+            return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
+        }
+
         function renderCalendar() {
             const monthStr = currentDate.toLocaleDateString('pt-BR', { month: 'long' });
             const capitalizedMonth = monthStr.charAt(0).toUpperCase() + monthStr.slice(1);
@@ -431,9 +458,9 @@
                 const date = new Date(dtRefStr);
                 if (isNaN(date)) return false;
 
-                if (date.getMonth() !== selectedMonth || date.getFullYear() !== selectedYear) return false;
-
-                if (selectedWeek && String(getISOWeekNumber(date)) !== selectedWeek) return false;
+                // Sem filtro de semana: mantém o comportamento mensal.
+                // Com filtro de semana: traz a semana inteira, mesmo cruzando mês.
+                if (!dateBelongsToSelectedPeriod(date, selectedYear, selectedMonth, selectedWeek)) return false;
 
                 if (selectedClient && item.cliente !== selectedClient) return false;
 
@@ -452,9 +479,15 @@
             filtered.forEach(item => {
                 const fat = parseValue(item.vl_faturado);
                 const aFat = parseValue(item.vl_a_faturar);
-                
+                const temNF = item.numero_nf && String(item.numero_nf).trim() !== '' && String(item.numero_nf) !== 'None';
+                const isFaturado = fat > 0 || temNF;
+
                 totalFaturado += fat;
-                if (!isMesPassado) {
+
+                // "A Faturar" considera somente itens ainda pendentes.
+                // Um item já faturado pode continuar trazendo vl_a_faturar da API,
+                // mas esse valor não deve entrar no KPI.
+                if (!isMesPassado && !isFaturado) {
                     totalAFaturar += aFat;
                 }
             });
@@ -761,8 +794,11 @@
                 if (!dtRefStr) return false;
 
                 const date = new Date(dtRefStr);
-                if (date.getMonth() !== selectedMonth || date.getFullYear() !== selectedYear) return false;
-                if (selectedWeek && String(getISOWeekNumber(date)) !== selectedWeek) return false;
+                if (isNaN(date.getTime())) return false;
+
+                // Mantém a exportação exatamente com a mesma regra visual:
+                // semana selecionada = semana completa, inclusive virada de mês.
+                if (!dateBelongsToSelectedPeriod(date, selectedYear, selectedMonth, selectedWeek)) return false;
                 if (selectedClient && item.cliente !== selectedClient) return false;
 
                 if (search) {
