@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <!-- SINTERCAN RS | Versão: V1.4.0 | Build: 2026-09-14 -->
-    <meta name="app-version" content="V1.4.0">
+    <!-- SINTERCAN RS | Versão: V1.5.0 | Build: 2026-09-14 -->
+    <meta name="app-version" content="V1.5.0">
     <meta name="app-build-date" content="2026-09-14">
     <meta name="theme-color" content="#0f172a">
-    <title>RS - Sintercan | V1.4.0</title>
+    <title>RS - Sintercan | V1.5.0</title>
     <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -366,6 +366,22 @@
         @media (min-width: 640px) and (max-width: 1023px) {
             #mainTable { min-width: 1280px; }
             .rs-header-row { gap: .6rem !important; }
+        }
+
+        /* V1.5.0 - telas baseadas em /pedido */
+        .pedido-summary-head { cursor: pointer; user-select: none; }
+        .pedido-summary-head:hover { color: #d97706; }
+        .dark .pedido-summary-head:hover { color: #fbbf24; }
+        .pedido-summary-arrow { color: #f59e0b; font-weight: 900; margin-left: .2rem; }
+        @media (max-width: 639px) {
+            #viewTabPedidoCarteira, #viewTabPrazoEntrega { min-height: 0 !important; }
+            #pedidoCarteiraGrid { display: flex !important; flex-direction: column !important; overflow-y: auto !important; }
+            #pedidoCarteiraTableCard { min-height: 420px; flex: 0 0 auto; }
+            #pedidoCarteiraChartCard { min-height: 520px; flex: 0 0 auto; }
+            #pedidoCarteiraChartWrap { min-height: 430px; }
+            #prazoEntregaCard { min-height: 0; }
+            #tablePrazoEntrega { font-size: 10px; }
+            #tablePrazoEntrega th, #tablePrazoEntrega td { padding: .42rem .48rem; }
         }
     </style>
 </head>
@@ -1176,6 +1192,71 @@
             </div>
         </div>
 
+        <div id="viewTabPedidoCarteira" class="h-full w-full hidden flex flex-col overflow-hidden">
+            <div id="pedidoCarteiraGrid" class="grid grid-cols-1 lg:grid-cols-[34%_66%] gap-3 h-full min-h-0">
+                <div id="pedidoCarteiraTableCard" class="min-h-0 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                    <div class="px-3 py-2 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex justify-between items-center gap-2 flex-shrink-0">
+                        <div class="min-w-0">
+                            <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Pedidos em carteira</h2>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Vl. a faturar por cliente • qtde_a_faturar &gt; 0</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="btnResetSortCarteira" onclick="resetPedidoCarteiraSort()" class="rs-sort-reset" title="Voltar à ordenação padrão" disabled>
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i><span>Ordem padrão</span>
+                            </button>
+                            <span id="pedidoCarteiraClientesBadge" class="text-[10px] bg-slate-200 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full font-mono">0 clientes</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-auto min-h-0">
+                        <table class="w-full min-w-[430px] text-left text-[11px] border-separate border-spacing-0">
+                            <thead class="sticky top-0 z-20 bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold">
+                                <tr>
+                                    <th onclick="sortPedidoCarteira('cliente')" class="pedido-summary-head px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800">Cliente <span id="carteiraSort_cliente" class="pedido-summary-arrow"></span></th>
+                                    <th onclick="sortPedidoCarteira('total')" class="pedido-summary-head px-2 py-2 border-b border-slate-300 dark:border-slate-800 text-right">Vl. a faturar <span id="carteiraSort_total" class="pedido-summary-arrow"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBodyPedidoCarteira"></tbody>
+                            <tfoot id="tableFootPedidoCarteira" class="sticky bottom-0 z-20 bg-slate-200 dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold"></tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="pedidoCarteiraChartCard" class="min-h-0 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 p-3 flex flex-col overflow-hidden shadow-2xl">
+                    <div class="bg-slate-950 text-white px-3 py-1.5 text-center font-extrabold text-xs uppercase tracking-widest rounded mb-2 flex-shrink-0">A faturar por cliente</div>
+                    <div class="flex items-center justify-between gap-2 px-1 mb-1 flex-shrink-0">
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400">Top 15 clientes + demais agrupados em “Outros”</span>
+                        <span id="pedidoCarteiraTotalBadge" class="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">R$ 0,00</span>
+                    </div>
+                    <div id="pedidoCarteiraChartWrap" class="flex-1 relative min-h-[320px]"><canvas id="chartPedidoCarteira"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="viewTabPrazoEntrega" class="h-full w-full hidden flex flex-col overflow-hidden">
+            <div id="prazoEntregaCard" class="flex-1 min-h-0 border border-slate-300 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/60 flex flex-col overflow-hidden shadow-2xl">
+                <div class="px-3 py-2 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex flex-wrap justify-between items-center gap-2 flex-shrink-0">
+                    <div class="min-w-0">
+                        <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">Valores por prazo de entrega</h2>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Vl. a faturar por cliente e mês do prazo • qtde_a_faturar &gt; 0</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="btnResetSortPrazoEntrega" onclick="resetPrazoEntregaSort()" class="rs-sort-reset" title="Voltar à ordenação padrão" disabled>
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i><span>Ordem padrão</span>
+                        </button>
+                        <span id="prazoEntregaPeriodosBadge" class="text-[10px] bg-slate-200 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full font-mono">0 períodos</span>
+                        <span id="prazoEntregaTotalBadge" class="text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded-full font-mono">R$ 0,00</span>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-auto relative min-h-0">
+                    <table id="tablePrazoEntrega" class="w-max min-w-full text-left text-[11px] border-separate border-spacing-0">
+                        <thead id="tableHeadPrazoEntrega" class="sticky top-0 z-20 bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold"></thead>
+                        <tbody id="tableBodyPrazoEntrega"></tbody>
+                        <tfoot id="tableFootPrazoEntrega" class="sticky bottom-0 z-20 bg-slate-200 dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold"></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div id="pbiView" class="h-full w-full hidden border border-slate-300 dark:border-slate-800 rounded-xl overflow-hidden">
             <div id="pbiContainer" class="w-full h-full"></div>
         </div>
@@ -1190,8 +1271,8 @@
         <button id="navBtnClassificacao" onclick="switchMainTab('Classificacao')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Classificação de vendas</button>
         <button id="navBtnPedidos" onclick="switchMainTab('Pedidos')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Pedidos em aberto</button>
         <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Notas Fiscais</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Pedidos em carteira</button>
-        <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Valores por prazo de entrega</button>
+        <button id="navBtnPedidoCarteira" onclick="switchMainTab('PedidoCarteira')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Pedidos em carteira</button>
+        <button id="navBtnPrazoEntrega" onclick="switchMainTab('PrazoEntrega')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Valores por prazo de entrega</button>
     </nav>
 
     <script>
@@ -1208,7 +1289,7 @@
             }
         }
 
-        const APP_VERSION = 'V1.4.0';
+        const APP_VERSION = 'V1.5.0';
         const RS_API_URL = 'https://sintercan.consultoriarf.net/rs';
         const PEDIDO_API_URL = 'https://sintercan.consultoriarf.net/pedido';
         const RS_DB_NAME = 'SINTERCAN_RS_CACHE';
@@ -1219,7 +1300,7 @@
         const ACTIVE_TAB_STORAGE_KEY = 'sintercan_rs_active_tab';
         const MENSAL_CLIENTE_SORT_STORAGE_KEY = 'sintercan_rs_mensal_cliente_sort_v1';
         const MOBILE_FILTER_STORAGE_KEY = 'sintercan_rs_mobile_filters_open';
-        const VALID_TABS = ['RS', 'Grafico', 'Mensal', 'MensalCliente', 'Classificacao', 'Pedidos'];
+        const VALID_TABS = ['RS', 'Grafico', 'Mensal', 'MensalCliente', 'Classificacao', 'Pedidos', 'PedidoCarteira', 'PrazoEntrega'];
 
         let fullData = [];
         let filteredData = [];
@@ -1244,6 +1325,11 @@
         let pedidoSortAsc = true;
         let pedidoColumnSelections = {};
         let rsSortCustom = false;
+        let pedidoCarteiraSortColumn = 'total';
+        let pedidoCarteiraSortAsc = false;
+        let prazoEntregaSortColumn = 'cliente';
+        let prazoEntregaSortAsc = true;
+        let myChartPedidoCarteira = null;
         let pedidoClienteEventsBound = false;
         let clienteDropdownEventsBound = false;
         let anoMesGlobalEventsBound = false;
@@ -1708,13 +1794,17 @@
         }
 
 
+        function isPedidoBasedTab(tab = activeTab) {
+            return ['Pedidos', 'PedidoCarteira', 'PrazoEntrega'].includes(tab);
+        }
+
         function refreshCurrentData(manual = false) {
-            if (activeTab === 'Pedidos') return refreshPedidoData(manual);
+            if (isPedidoBasedTab()) return refreshPedidoData(manual);
             return refreshRsData(manual);
         }
 
         function ensureActiveDatasetLoaded() {
-            if (activeTab === 'Pedidos') {
+            if (isPedidoBasedTab()) {
                 document.getElementById('advancedFilterPanel')?.classList.add('hidden');
                 document.getElementById('pedidoFilterPanel')?.classList.remove('hidden');
                 if (pedidoDataReady) {
@@ -1746,7 +1836,7 @@
             pedidoLastSourceMode = source === 'cache' ? 'cache' : 'api';
             setupPedidoFilters();
             applyPedidoFilters();
-            if (activeTab === 'Pedidos') updateDataStatus(pedidoLastSourceMode, savedAt);
+            if (isPedidoBasedTab()) updateDataStatus(pedidoLastSourceMode, savedAt);
         }
 
         async function refreshPedidoData(manual = false) {
@@ -1762,7 +1852,7 @@
                     'Buscando os pedidos em aberto diretamente da API /pedido.',
                     false
                 );
-            } else if (activeTab === 'Pedidos') {
+            } else if (isPedidoBasedTab()) {
                 updateDataStatus('updating', pedidoCacheSavedAt);
             }
 
@@ -1787,18 +1877,18 @@
                     console.warn('Não foi possível atualizar o cache local de pedidos:', cacheErr);
                 }
 
-                if (activeTab === 'Pedidos') updateDataStatus('api', savedAt);
+                if (isPedidoBasedTab()) updateDataStatus('api', savedAt);
                 if (manual) showDataToast('Pedidos atualizados pela API e cache local renovado.', 'success');
-                if (activeTab === 'Pedidos' || manual) setLoadingOverlay(false);
+                if (isPedidoBasedTab() || manual) setLoadingOverlay(false);
             } catch (err) {
                 console.error('Erro ao carregar /pedido:', err);
 
                 if (pedidoDataReady) {
-                    if (activeTab === 'Pedidos') updateDataStatus('cache', pedidoCacheSavedAt, 'A API /pedido não respondeu; mantendo o cache local.');
-                    if (activeTab === 'Pedidos' || manual) setLoadingOverlay(false);
+                    if (isPedidoBasedTab()) updateDataStatus('cache', pedidoCacheSavedAt, 'A API /pedido não respondeu; mantendo o cache local.');
+                    if (isPedidoBasedTab() || manual) setLoadingOverlay(false);
                     showDataToast('API /pedido indisponível. Mantendo os pedidos do cache local.', 'warning');
                 } else {
-                    if (activeTab === 'Pedidos') updateDataStatus('error', null, err.message);
+                    if (isPedidoBasedTab()) updateDataStatus('error', null, err.message);
                     setLoadingOverlay(true,
                         'Não foi possível carregar os pedidos',
                         'A API /pedido não respondeu e não existe cache local de pedidos neste computador.',
@@ -1993,7 +2083,9 @@
             const criteria = getPedidoFilterCriteria();
             filteredPedidoData = pedidoData.filter(item => pedidoMatchesAllFilters(item, criteria));
             sortPedidoData();
-            renderPedidoView();
+            if (activeTab === 'Pedidos') renderPedidoView();
+            else if (activeTab === 'PedidoCarteira') renderPedidoCarteiraView();
+            else if (activeTab === 'PrazoEntrega') renderPrazoEntregaView();
         }
 
         function sortPedidos(column) {
@@ -2250,6 +2342,130 @@
             </tr>`;
         }
 
+        function getPedidoCarteiraData() {
+            const map = new Map();
+            filteredPedidoData.forEach(item => {
+                const cliente = String(item.cliente || 'SEM CLIENTE').trim() || 'SEM CLIENTE';
+                const valor = parseFloat(item.vl_a_faturar || 0) || 0;
+                map.set(cliente, (map.get(cliente) || 0) + valor);
+            });
+            const rows = [...map.entries()].map(([cliente,total]) => ({cliente,total}));
+            rows.sort((a,b) => {
+                if (pedidoCarteiraSortColumn === 'cliente') {
+                    const cmp = a.cliente.localeCompare(b.cliente, 'pt-BR', {sensitivity:'base'});
+                    return pedidoCarteiraSortAsc ? cmp : -cmp;
+                }
+                return pedidoCarteiraSortAsc ? a.total-b.total : b.total-a.total;
+            });
+            return rows;
+        }
+
+        function sortPedidoCarteira(column) {
+            if (pedidoCarteiraSortColumn === column) pedidoCarteiraSortAsc = !pedidoCarteiraSortAsc;
+            else {
+                pedidoCarteiraSortColumn = column;
+                pedidoCarteiraSortAsc = column === 'cliente';
+            }
+            renderPedidoCarteiraView();
+        }
+
+        function resetPedidoCarteiraSort() {
+            pedidoCarteiraSortColumn = 'total';
+            pedidoCarteiraSortAsc = false;
+            renderPedidoCarteiraView();
+        }
+
+        function renderPedidoCarteiraView() {
+            if (!pedidoDataReady) return;
+            const rows = getPedidoCarteiraData();
+            const grandTotal = rows.reduce((s,r)=>s+r.total,0);
+            const tbody = document.getElementById('tableBodyPedidoCarteira');
+            const tfoot = document.getElementById('tableFootPedidoCarteira');
+            if (!tbody || !tfoot) return;
+
+            document.getElementById('pedidoCarteiraClientesBadge').textContent = `${rows.length.toLocaleString('pt-BR')} clientes`;
+            document.getElementById('pedidoCarteiraTotalBadge').textContent = formatCurrency(grandTotal);
+            document.getElementById('btnResetSortCarteira').disabled = pedidoCarteiraSortColumn === 'total' && pedidoCarteiraSortAsc === false;
+            ['cliente','total'].forEach(k => {
+                const el = document.getElementById(`carteiraSort_${k}`);
+                if (el) el.textContent = pedidoCarteiraSortColumn === k ? (pedidoCarteiraSortAsc ? '▲' : '▼') : '';
+            });
+
+            if (!rows.length) tbody.innerHTML = `<tr><td colspan="2" class="p-6 text-center text-slate-500">Nenhum registro encontrado.</td></tr>`;
+            else tbody.innerHTML = rows.map((r,i)=>`<tr class="${i%2?'bg-white dark:bg-slate-950/30':'bg-slate-50/70 dark:bg-slate-900/30'} hover:bg-amber-50 dark:hover:bg-slate-800/60 transition"><td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 font-medium">${escapeHtml(r.cliente)}</td><td class="px-2 py-1.5 border-b border-slate-200 dark:border-slate-800 text-right font-mono text-emerald-700 dark:text-emerald-300 whitespace-nowrap">${formatCurrency(r.total)}</td></tr>`).join('');
+            tfoot.innerHTML = `<tr><td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700">Total</td><td class="px-2 py-2 border-t border-slate-300 dark:border-slate-700 text-right font-mono">${formatCurrency(grandTotal)}</td></tr>`;
+
+            const chartRows = [...rows].sort((a,b)=>b.total-a.total);
+            const top15 = chartRows.slice(0,15);
+            const rest = chartRows.slice(15);
+            const labels = top15.map(r=>r.cliente);
+            const values = top15.map(r=>r.total);
+            if (rest.length) { labels.push('Outros'); values.push(rest.reduce((s,r)=>s+r.total,0)); }
+            const canvas = document.getElementById('chartPedidoCarteira');
+            if (!canvas) return;
+            if (myChartPedidoCarteira) myChartPedidoCarteira.destroy();
+            const isDark = document.documentElement.classList.contains('dark');
+            const mobile = window.innerWidth < 640;
+            myChartPedidoCarteira = new Chart(canvas.getContext('2d'), {
+                type:'doughnut',
+                data:{labels,datasets:[{data:values,backgroundColor:chartColors.slice(0,labels.length),borderColor:isDark?'#0f172a':'#fff',borderWidth:2,hoverOffset:7}]},
+                options:{responsive:true,maintainAspectRatio:false,cutout:mobile?'50%':'55%',plugins:{datalabels:{display:false},legend:{position:mobile?'bottom':'right',labels:{color:isDark?'#cbd5e1':'#475569',font:{size:mobile?9:10},boxWidth:11,padding:mobile?7:9}},tooltip:{callbacks:{label(ctx){const v=ctx.raw||0; const pct=grandTotal?((v/grandTotal)*100).toFixed(2):'0.00'; return ` ${ctx.label}: ${formatCurrency(v)} (${pct}%)`;}}}}}
+            });
+        }
+
+        function getPrazoEntregaMatrix() {
+            const periods = new Map();
+            const clients = new Map();
+            filteredPedidoData.forEach(item => {
+                const d = parseDate(item.prazo);
+                if (!d) return;
+                const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                if (!periods.has(key)) periods.set(key,{key, label:`${monthNames[d.getMonth()]}/${d.getFullYear()}`, fullLabel:`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`});
+                const cliente = String(item.cliente || 'SEM CLIENTE').trim() || 'SEM CLIENTE';
+                if (!clients.has(cliente)) clients.set(cliente,{cliente,months:{},total:0});
+                const row=clients.get(cliente); const val=parseFloat(item.vl_a_faturar||0)||0;
+                row.months[key]=(row.months[key]||0)+val; row.total+=val;
+            });
+            const periodInfo=[...periods.values()].sort((a,b)=>a.key.localeCompare(b.key));
+            const rows=[...clients.values()];
+            rows.sort((a,b)=>{
+                if (prazoEntregaSortColumn==='cliente') {
+                    const cmp=a.cliente.localeCompare(b.cliente,'pt-BR',{sensitivity:'base'}); return prazoEntregaSortAsc?cmp:-cmp;
+                }
+                const av=prazoEntregaSortColumn==='total'?a.total:(a.months[prazoEntregaSortColumn]||0);
+                const bv=prazoEntregaSortColumn==='total'?b.total:(b.months[prazoEntregaSortColumn]||0);
+                if (av===bv) return a.cliente.localeCompare(b.cliente,'pt-BR',{sensitivity:'base'});
+                return prazoEntregaSortAsc?av-bv:bv-av;
+            });
+            return {periodInfo,rows};
+        }
+
+        function sortPrazoEntrega(column) {
+            if (prazoEntregaSortColumn===column) prazoEntregaSortAsc=!prazoEntregaSortAsc;
+            else { prazoEntregaSortColumn=column; prazoEntregaSortAsc=column==='cliente'; }
+            renderPrazoEntregaView();
+        }
+        function resetPrazoEntregaSort() { prazoEntregaSortColumn='cliente'; prazoEntregaSortAsc=true; renderPrazoEntregaView(); }
+
+        function renderPrazoEntregaView() {
+            if (!pedidoDataReady) return;
+            const {periodInfo,rows}=getPrazoEntregaMatrix();
+            const head=document.getElementById('tableHeadPrazoEntrega');
+            const body=document.getElementById('tableBodyPrazoEntrega');
+            const foot=document.getElementById('tableFootPrazoEntrega');
+            if (!head||!body||!foot) return;
+            const grandTotal=rows.reduce((s,r)=>s+r.total,0);
+            document.getElementById('prazoEntregaPeriodosBadge').textContent=`${periodInfo.length} períodos`;
+            document.getElementById('prazoEntregaTotalBadge').textContent=formatCurrency(grandTotal);
+            document.getElementById('btnResetSortPrazoEntrega').disabled=prazoEntregaSortColumn==='cliente'&&prazoEntregaSortAsc;
+            const arrow=k=>prazoEntregaSortColumn===k?`<span class="pedido-summary-arrow">${prazoEntregaSortAsc?'▲':'▼'}</span>`:'';
+            head.innerHTML=`<tr><th onclick="sortPrazoEntrega('cliente')" class="pedido-summary-head sticky left-0 z-30 min-w-[240px] px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 bg-slate-200 dark:bg-slate-900">Cliente ${arrow('cliente')}</th>${periodInfo.map(p=>`<th onclick="sortPrazoEntrega('${p.key}')" class="pedido-summary-head min-w-[125px] px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">${p.label} ${arrow(p.key)}</th>`).join('')}<th onclick="sortPrazoEntrega('total')" class="pedido-summary-head sticky right-0 z-30 min-w-[145px] px-2 py-2 border-b border-slate-300 dark:border-slate-800 text-right bg-amber-100 dark:bg-amber-950/50">Total ${arrow('total')}</th></tr>`;
+            if (!rows.length) body.innerHTML=`<tr><td colspan="${periodInfo.length+2}" class="p-6 text-center text-slate-500">Nenhum registro encontrado.</td></tr>`;
+            else body.innerHTML=rows.map((r,i)=>`<tr class="${i%2?'bg-white dark:bg-slate-950/30':'bg-slate-50/70 dark:bg-slate-900/30'} hover:bg-amber-50 dark:hover:bg-slate-800/60 transition"><td class="sticky left-0 z-10 px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 font-medium bg-inherit whitespace-nowrap">${escapeHtml(r.cliente)}</td>${periodInfo.map(p=>`<td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono whitespace-nowrap">${r.months[p.key]?formatCurrency(r.months[p.key]):''}</td>`).join('')}<td class="sticky right-0 z-10 px-2 py-1.5 border-b border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-amber-50 dark:bg-amber-950/30 whitespace-nowrap">${formatCurrency(r.total)}</td></tr>`).join('');
+            const totalsByPeriod={}; periodInfo.forEach(p=>totalsByPeriod[p.key]=rows.reduce((s,r)=>s+(r.months[p.key]||0),0));
+            foot.innerHTML=`<tr><td class="sticky left-0 z-30 px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-900">Total</td>${periodInfo.map(p=>`<td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700 text-right font-mono whitespace-nowrap">${formatCurrency(totalsByPeriod[p.key])}</td>`).join('')}<td class="sticky right-0 z-30 px-2 py-2 border-t border-slate-300 dark:border-slate-700 text-right font-mono bg-amber-100 dark:bg-amber-950/50 whitespace-nowrap">${formatCurrency(grandTotal)}</td></tr>`;
+        }
+
         function formatCurrency(val) {
             const num = parseFloat(val) || 0;
             return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -2403,6 +2619,8 @@
             const tabMensalCliente = document.getElementById('viewTabMensalCliente');
             const tabClassificacao = document.getElementById('viewTabClassificacao');
             const tabPedidos = document.getElementById('viewTabPedidos');
+            const tabPedidoCarteira = document.getElementById('viewTabPedidoCarteira');
+            const tabPrazoEntrega = document.getElementById('viewTabPrazoEntrega');
 
             const btnRS = document.getElementById('navBtnRS');
             const btnGrafico = document.getElementById('navBtnGrafico');
@@ -2410,17 +2628,19 @@
             const btnMensalCliente = document.getElementById('navBtnMensalCliente');
             const btnClassificacao = document.getElementById('navBtnClassificacao');
             const btnPedidos = document.getElementById('navBtnPedidos');
+            const btnPedidoCarteira = document.getElementById('navBtnPedidoCarteira');
+            const btnPrazoEntrega = document.getElementById('navBtnPrazoEntrega');
 
             const headerSubtitle = document.getElementById('headerSubtitle');
 
             const inactiveClass = "px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
             const activeClass = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
 
-            [btnRS, btnGrafico, btnMensal, btnMensalCliente, btnClassificacao, btnPedidos].forEach(btn => {
+            [btnRS, btnGrafico, btnMensal, btnMensalCliente, btnClassificacao, btnPedidos, btnPedidoCarteira, btnPrazoEntrega].forEach(btn => {
                 if (btn) btn.className = inactiveClass;
             });
 
-            [tabRS, tabGrafico, tabMensal, tabMensalCliente, tabClassificacao, tabPedidos].forEach(tab => {
+            [tabRS, tabGrafico, tabMensal, tabMensalCliente, tabClassificacao, tabPedidos, tabPedidoCarteira, tabPrazoEntrega].forEach(tab => {
                 if (tab) tab.classList.add('hidden');
             });
 
@@ -2453,9 +2673,19 @@
                 btnPedidos.className = activeClass;
                 headerSubtitle.textContent = "Pedidos em Aberto";
                 if (pedidoDataReady) renderPedidoView();
+            } else if (tabName === 'PedidoCarteira') {
+                tabPedidoCarteira.classList.remove('hidden');
+                btnPedidoCarteira.className = activeClass;
+                headerSubtitle.textContent = "Pedidos em Carteira";
+                if (pedidoDataReady) renderPedidoCarteiraView();
+            } else if (tabName === 'PrazoEntrega') {
+                tabPrazoEntrega.classList.remove('hidden');
+                btnPrazoEntrega.className = activeClass;
+                headerSubtitle.textContent = "Valores por Prazo de Entrega";
+                if (pedidoDataReady) renderPrazoEntregaView();
             }
 
-            if (tabName === 'Pedidos') {
+            if (isPedidoBasedTab(tabName)) {
                 document.getElementById('advancedFilterPanel')?.classList.add('hidden');
                 document.getElementById('pedidoFilterPanel')?.classList.remove('hidden');
             } else {
@@ -2466,7 +2696,7 @@
             ensureActiveDatasetLoaded();
 
             if (window.innerWidth < 640) {
-                const activeBtn = { RS: btnRS, Grafico: btnGrafico, Mensal: btnMensal, MensalCliente: btnMensalCliente, Classificacao: btnClassificacao, Pedidos: btnPedidos }[tabName];
+                const activeBtn = { RS: btnRS, Grafico: btnGrafico, Mensal: btnMensal, MensalCliente: btnMensalCliente, Classificacao: btnClassificacao, Pedidos: btnPedidos, PedidoCarteira: btnPedidoCarteira, PrazoEntrega: btnPrazoEntrega }[tabName];
                 requestAnimationFrame(() => activeBtn?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }));
             }
         }
@@ -3580,6 +3810,18 @@
                 renderMensalView();
             } else if (activeTab === 'MensalCliente') {
                 renderMensalClienteView();
+            } else if (activeTab === 'PedidoCarteira') {
+                sheetName = "Pedidos_em_Carteira";
+                exportData = getPedidoCarteiraData().map(r => ({"Cliente": r.cliente, "Vl. a faturar": r.total}));
+            } else if (activeTab === 'PrazoEntrega') {
+                sheetName = "Valores_por_Prazo";
+                const matrixPrazo = getPrazoEntregaMatrix();
+                exportData = matrixPrazo.rows.map(r => {
+                    const obj = {"Cliente": r.cliente};
+                    matrixPrazo.periodInfo.forEach(p => obj[p.fullLabel] = r.months[p.key] || 0);
+                    obj["Total"] = r.total;
+                    return obj;
+                });
             } else if (activeTab === 'Classificacao') {
                 renderClassificacaoView();
             }
@@ -3631,7 +3873,7 @@
         }
 
         function exportToExcel() {
-            const activeExportData = activeTab === 'Pedidos' ? filteredPedidoData : filteredData;
+            const activeExportData = isPedidoBasedTab() ? filteredPedidoData : filteredData;
             if (!activeExportData || activeExportData.length === 0) {
                 alert("Sem dados para exportar.");
                 return;
@@ -3700,7 +3942,7 @@
                     "Vl. Total": monthlyAgg[k].total,
                     "Qtde. Itens": monthlyAgg[k].countOfItems
                 }));
-            } else if (activeTab === 'Pedidos') {
+            } else if (isPedidoBasedTab()) {
                 sheetName = "Pedidos_em_Aberto";
                 exportData = filteredPedidoData.map(item => ({
                     "Prazo Status": item.prazo_status || '',
@@ -3775,6 +4017,8 @@
             const tabMensalCliente = document.getElementById('viewTabMensalCliente');
             const tabClassificacao = document.getElementById('viewTabClassificacao');
             const tabPedidos = document.getElementById('viewTabPedidos');
+            const tabPedidoCarteira = document.getElementById('viewTabPedidoCarteira');
+            const tabPrazoEntrega = document.getElementById('viewTabPrazoEntrega');
             const pbiView = document.getElementById('pbiView');
             const filterSection = document.getElementById('filterSection');
             const btnExport = document.getElementById('btnExport');
@@ -3788,6 +4032,8 @@
                 tabMensalCliente.classList.add('hidden');
                 tabClassificacao.classList.add('hidden');
                 tabPedidos.classList.add('hidden');
+                tabPedidoCarteira.classList.add('hidden');
+                tabPrazoEntrega.classList.add('hidden');
                 filterSection.classList.add('hidden');
                 btnExport.classList.add('hidden');
                 pbiView.classList.remove('hidden');
@@ -3840,6 +4086,8 @@
                 if (activeTab === 'Grafico') renderGraficoView();
                 if (activeTab === 'Mensal') renderMensalView();
                 if (activeTab === 'Pedidos' && pedidoDataReady) renderPedidoView();
+                if (activeTab === 'PedidoCarteira' && pedidoDataReady) renderPedidoCarteiraView();
+                if (activeTab === 'PrazoEntrega' && pedidoDataReady) renderPrazoEntregaView();
             }, 160);
         });
     </script>
