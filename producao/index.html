@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://consultoriarf.net/sintercan/producao/">
     <meta property="og:type" content="website">
     
-    <title>Programação Semanal de Produção Sintercan V6.13</title>
+    <title>Programação Semanal de Produção Sintercan V6.14</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,7 +68,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.13</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.14</span></p>
                 </div>
             </div>
 
@@ -235,7 +235,7 @@
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
             <div class="flex items-center gap-2">
                 <i data-lucide="code-2" class="w-4 h-4 text-amber-500"></i>
-                <span>© 2026 Sistema de Gestão de Produção V6.13</span>
+                <span>© 2026 Sistema de Gestão de Produção V6.14</span>
             </div>
         </div>
     </footer>
@@ -1618,6 +1618,28 @@
             ) || null;
         }
         
+        function getCurrentOSQuantityLabel(item) {
+            const planned = readProductionNumber(item?.qtde_planejada_os);
+            if (!(planned > 0)) return '';
+
+            const quantities = getDestinationQuantities(item);
+            const pendingParts = [
+                quantities.budget,
+                quantities.otherOS,
+                quantities.stock,
+                quantities.otherOrigins
+            ].filter(value => value !== null && value !== undefined && Number.isFinite(value));
+
+            if (!pendingParts.length) {
+                return '0/' + destinationQuantityLabel(planned);
+            }
+
+            const pending = pendingParts.reduce((sum, value) => sum + Math.max(0, value), 0);
+            const delivered = Math.max(0, Math.min(planned, planned - pending));
+
+            return destinationQuantityLabel(delivered) + '/' + destinationQuantityLabel(planned);
+        }
+
         function getActiveOSRelations(item) {
             const incoming = [];
             const outgoing = [];
@@ -1822,7 +1844,8 @@
                 <div class="rounded-2xl border-2 border-amber-400 bg-white dark:bg-slate-900 p-3 text-center min-w-0">
                     <div class="text-[9px] font-black uppercase tracking-wide text-amber-600 dark:text-amber-400">Atual</div>
                     <div class="text-lg font-black">OS ${item.n_os ?? '-'}</div>
-                    <div class="text-xs font-black text-slate-500 dark:text-slate-400">${getProductionLabel(item)}</div>
+                    <div class="mt-0.5 text-xs font-black text-slate-500 dark:text-slate-400">${getProductionLabel(item)}</div>
+                    ${getCurrentOSQuantityLabel(item) ? `<div class="mt-1 text-[11px] sm:text-xs font-black text-blue-600 dark:text-blue-400">${getCurrentOSQuantityLabel(item)}</div>` : ''}
                 </div>
         
                 <div class="text-center text-slate-400">
