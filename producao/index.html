@@ -207,6 +207,8 @@
 
         <p id="hierarchyApiNotice" role="status" class="hidden text-xs text-amber-700 dark:text-amber-300 px-1">A API ainda não enviou o cálculo da hierarquia. Os percentuais exibidos são os atuais; a consulta de OS concluídas depende da nova query.</p>
 
+        <p id="destinationApiNotice" role="status" class="hidden text-xs text-amber-700 dark:text-amber-300 px-1">A API ainda usa o cálculo antigo de estoque. As quantidades para outra OS já aparecem quando disponíveis; o estoque fica em “—” até a atualização da query, para não apresentar uma destinação incorreta.</p>
+
         <!-- LEGENDAS -->
         <div class="flex items-center gap-4 text-xs font-medium px-1 text-slate-500 dark:text-slate-400">
             <span>Legendas:</span>
@@ -312,6 +314,15 @@
                     <p id="mHierarchyWarning" class="text-amber-700 dark:text-amber-300"></p>
                 </div>
 
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+                    <p>Qtd. pendente para serviço / outra OS: <strong id="mQtdOutrasOS" class="text-violet-600 dark:text-violet-400"></strong></p>
+                    <p id="mOtherOriginsRow" class="hidden">Qtd. pendente de outras origens: <strong id="mQtdOutrasOrigens"></strong></p>
+                    <p class="font-semibold">OS atendidas — vínculos e entregas</p>
+                    <p id="mOSAtendidas" class="break-words"></p>
+                    <p class="text-slate-500 dark:text-slate-400">Serviço/OS indica o destino da quantidade, não o tipo do item. Estoque é a quantidade planejada sem vínculo; não é a quantidade já produzida para estoque.</p>
+                    <p id="mDestinationNotice" class="text-amber-700 dark:text-amber-300"></p>
+                </div>
+
                 <!-- BLOCO QUANTIDADES RESTANTES -->
                 <div class="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80">
                     <div>
@@ -319,7 +330,7 @@
                         <span id="mQtdOrcamento" class="font-bold text-blue-600 dark:text-blue-400 text-sm">0</span>
                     </div>
                     <div>
-                        <span class="text-slate-500 dark:text-slate-400 block font-semibold">Qtd. Restante Estoque</span>
+                        <span class="text-slate-500 dark:text-slate-400 block font-semibold">Qtd. planejada para estoque</span>
                         <span id="mQtdEstoque" class="font-bold text-emerald-600 dark:text-emerald-400 text-sm">0</span>
                     </div>
                 </div>
@@ -576,6 +587,21 @@
             }
         });
 
+        function getDestinationQuantities(item) {
+            const number = value => readProductionNumber(value);
+            const corrected = number(item.versao_destinacao) >= 2;
+            return {
+                budget: number(item.qtde_restante_orcamento),
+                otherOS: number(item.qtde_restante_outras_os),
+                stock: corrected ? number(item.qtde_restante_estoque) : null,
+                otherOrigins: corrected ? number(item.qtde_restante_outras_origens) : null
+            };
+        }
+
+        function destinationQuantityLabel(value) {
+            return value === null ? '—' : new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 4 }).format(value);
+        }
+
         function isOSCompleted(item) {
             return ['1', 'true', 't', 'sim'].includes(String(item.concluido ?? '').trim().toLowerCase());
         }
@@ -698,6 +724,8 @@
                 
                 const data = await response.json();
                 const baseList = Array.isArray(data) ? data : [data];
+                document.getElementById('destinationApiNotice').classList.toggle('hidden',
+                    baseList.length === 0 || baseList.every(item => readProductionNumber(item.versao_destinacao) >= 2));
                 document.getElementById('hierarchyApiNotice').classList.toggle('hidden',
                     baseList.length === 0 || baseList.every(item => hasHierarchyData(item) && item.concluido !== undefined));
                 
@@ -1082,6 +1110,7 @@
         }
 
         function renderItemCard(item) {
+            const quantities = getDestinationQuantities(item);
             const completed = isOSCompleted(item);
             const isAtrasada = !completed && item.atrasada === 'sim';
             const val = parseValue(item.preco_geral_a_vista);
@@ -1115,12 +1144,13 @@
                     </div>
 
                     <div class="grid grid-cols-1 gap-0.5 text-[10px] bg-white dark:bg-slate-900/90 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800/80 text-slate-500 dark:text-slate-400">
-                        <div class="flex items-center justify-between truncate border-b border-slate-200 dark:border-slate-800/80 pb-1 mb-0.5">
+                        <div class="flex flex-col items-start gap-1 border-b border-slate-200 dark:border-slate-800/80 pb-1 mb-0.5">
                             <span class="text-slate-400 dark:text-slate-500 flex items-center gap-1"><i data-lucide="boxes" class="w-3 h-3 text-amber-500 dark:text-amber-400"></i> Quantidades:</span>
-                            <span class="font-bold text-slate-700 dark:text-slate-200">
-                                <span class="text-blue-600 dark:text-blue-400" title="Qtd. Restante Orçamento">Orç: ${item.qtde_restante_orcamento ?? 0}</span> 
-                                <span class="text-slate-400 dark:text-slate-600">|</span> 
-                                <span class="text-emerald-600 dark:text-emerald-400" title="Qtd. Restante Estoque">Est: ${item.qtde_restante_estoque ?? 0}</span>
+                            <span class="font-bold text-slate-700 dark:text-slate-200 flex flex-wrap gap-x-2 gap-y-1">
+                                <span class="text-blue-600 dark:text-blue-400" title="Quantidade pendente para orçamento">Orç: ${destinationQuantityLabel(quantities.budget)}</span>
+                                <span class="text-violet-600 dark:text-violet-400" title="Quantidade pendente para atender outra ordem de serviço (origem M14)">Serviço/OS: ${destinationQuantityLabel(quantities.otherOS)}</span>
+                                <span class="text-emerald-600 dark:text-emerald-400" title="Quantidade planejada sem vínculo de destinação; não representa estoque físico produzido">Est: ${destinationQuantityLabel(quantities.stock)}</span>
+                                ${quantities.otherOrigins > 0 ? `<span title="Quantidade pendente com outra origem cadastrada">Outras origens: ${destinationQuantityLabel(quantities.otherOrigins)}</span>` : ''}
                             </span>
                         </div>
                         <div class="flex items-center justify-between truncate">
@@ -1168,8 +1198,14 @@
             
             document.getElementById('mNumOrcamento').textContent = item.orcamento || 'Não possui';
 
-            document.getElementById('mQtdOrcamento').textContent = item.qtde_restante_orcamento ?? 0;
-            document.getElementById('mQtdEstoque').textContent = item.qtde_restante_estoque ?? 0;
+            const quantities = getDestinationQuantities(item);
+            document.getElementById('mQtdOrcamento').textContent = destinationQuantityLabel(quantities.budget);
+            document.getElementById('mQtdEstoque').textContent = destinationQuantityLabel(quantities.stock);
+            document.getElementById('mQtdOutrasOS').textContent = destinationQuantityLabel(quantities.otherOS);
+            document.getElementById('mQtdOutrasOrigens').textContent = destinationQuantityLabel(quantities.otherOrigins);
+            document.getElementById('mOtherOriginsRow').classList.toggle('hidden', !(quantities.otherOrigins > 0));
+            document.getElementById('mOSAtendidas').textContent = item.os_atendidas || 'Nenhum vínculo informado pela API.';
+            document.getElementById('mDestinationNotice').textContent = quantities.stock === null ? 'Estoque não confirmado: atualize a query da API para descontar todas as destinações.' : '';
 
             document.getElementById('mCompras').textContent = item.status_compras || '-';
             document.getElementById('mTerceiros').textContent = item.status_terceiros || '-';
