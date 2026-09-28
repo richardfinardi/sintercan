@@ -209,6 +209,8 @@
 
         <p id="destinationApiNotice" role="status" class="hidden text-xs text-amber-700 dark:text-amber-300 px-1">A API ainda usa o cálculo antigo de estoque. As quantidades para outra OS já aparecem quando disponíveis; o estoque fica em “—” até a atualização da query, para não apresentar uma destinação incorreta.</p>
 
+        <p id="allocationApiNotice" role="status" class="hidden text-xs text-amber-700 dark:text-amber-300 px-1">As entregas por destino ainda não estão no cálculo recebido da API. Atualize a query para ativar o crédito das peças entregues à OS atendida.</p>
+
         <!-- LEGENDAS -->
         <div class="flex items-center gap-4 text-xs font-medium px-1 text-slate-500 dark:text-slate-400">
             <span>Legendas:</span>
@@ -305,12 +307,17 @@
                     <span id="mSituacao" class="font-bold"></span>
                 </div>
                 <div id="mHierarchyDetails" class="hidden space-y-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                    <h4 class="font-bold text-blue-600 dark:text-blue-400">Produção da OS e descendentes</h4>
+                    <h4 class="font-bold text-blue-600 dark:text-blue-400">Avanço da OS e dependências</h4>
                     <p>Percentual próprio: <strong id="mOwnProduction"></strong></p>
-                    <p>Horas concluídas / previstas do conjunto: <strong id="mHierarchyHours"></strong></p>
+                    <p><span id="mHierarchyHoursLabel">Horas previstas atendidas / total previsto</span>: <strong id="mHierarchyHours"></strong></p>
+                    <p id="mDeliveryCreditRow" class="hidden">Crédito adicional por entregas: <strong id="mDeliveryCredit"></strong></p>
                     <p>Filhas, netas e demais níveis: <strong id="mDescendantCount"></strong></p>
                     <p id="mDescendants" class="break-words"></p>
-                    <p class="text-slate-500 dark:text-slate-400">O percentual de produção inclui esta OS e todas as descendentes, ponderado pelas horas previstas. Cada OS entra uma vez, inclusive as concluídas.</p>
+                    <p id="mHierarchyExplanation" class="text-slate-500 dark:text-slate-400"></p>
+                    <div id="mAllocationDetails" class="hidden space-y-2 border-t border-slate-200 dark:border-slate-800 pt-2">
+                        <h5 class="font-bold">Atendimento das filhas a esta OS</h5>
+                        <div id="mAllocationRows" class="space-y-2"></div>
+                    </div>
                     <p id="mHierarchyWarning" class="text-amber-700 dark:text-amber-300"></p>
                 </div>
 
@@ -587,6 +594,164 @@
             }
         });
 
+        // Computes destination-specific progress over the complete API response.
+        // Must run before calendar filters and before splitting a budget into cards.
+        function computeAllocationProgress(rows) {
+            const number = value => {
+                if (value === null || value === undefined || String(value).trim() === '') return null;
+                const n = Number(String(value).trim().replace(',', '.'));
+                return Number.isFinite(n) ? n : null;
+            };
+            const completed = row => ['1', 'true', 't', 'sim'].includes(String(row.concluido ?? '').toLowerCase());
+            const keyOf = (company, code) => company == null || code == null ? null : JSON.stringify([String(company), String(code)]);
+            const rounded = n => Math.round((n + Number.EPSILON) * 100) / 100;
+            const nodes = new Map(), memo = new Map(), visiting = new Set();
+            const parseErrors = new Map();
+            const fail = (key, message) => {
+                if (!parseErrors.has(key)) parseErrors.set(key, new Set());
+                parseErrors.get(key).add(message);
+            };
+            for (const row of rows) {
+                if (!(number(row.versao_calculo_producao) >= 3)) continue;
+                const key = keyOf(row.cod_empresa, row.codigo_os);
+                if (key === null) continue;
+                if (nodes.has(key)) {
+                    const previous = nodes.get(key).row;
+                    if (JSON.stringify([previous.qtde_planejada_os,previous.horas_previstas_proprias,previous.horas_finalizadas_proprias,previous.concluido,previous.dependencias_os]) !==
+                        JSON.stringify([row.qtde_planejada_os,row.horas_previstas_proprias,row.horas_finalizadas_proprias,row.concluido,row.dependencias_os])) {
+                        fail(key, 'A API enviou dados diferentes para a mesma OS.');
+                    }
+                    continue;
+                }
+                let dependencies = row.dependencias_os;
+                if (typeof dependencies === 'string') {
+                    try { dependencies = JSON.parse(dependencies); } catch (_) { dependencies = null; }
+                }
+                if (!Array.isArray(dependencies)) {
+                    fail(key, 'A API não enviou a lista de dependências em um formato válido.');
+                    dependencies = [];
+                }
+                nodes.set(key, { row, dependencies, groups: new Map(), missing: new Map() });
+            }
+            const allocatedByChild = new Map();
+            for (const [key, node] of nodes) {
+                const seen = new Map();
+                node.dependencies.forEach((edge, index) => {
+                    if (!edge || typeof edge !== 'object') { fail(key, 'Vínculo de OS inválido.'); return; }
+                    const linkKey = JSON.stringify([key, edge.guid_vinculo ?? ('linha-' + index)]);
+                    const signature = JSON.stringify([edge.codigo_os_filha, edge.qtde, edge.qtde_entregue, edge.qtd_produtoras]);
+                    if (seen.has(linkKey)) {
+                        if (seen.get(linkKey) !== signature) fail(key, 'O mesmo vínculo possui quantidades conflitantes.');
+                        return;
+                    }
+                    seen.set(linkKey, signature);
+                    const requested = number(edge.qtde), delivered = number(edge.qtde_entregue) ?? 0;
+                    if (requested === null || requested < 0 || delivered < 0) {
+                        fail(key, 'Há vínculo sem quantidade válida.'); return;
+                    }
+                    if (requested === 0) return;
+                    const childKey = keyOf(node.row.cod_empresa, edge.codigo_os_filha);
+                    if (number(edge.qtd_produtoras) !== 1 || !nodes.has(childKey)) {
+                        node.missing.set(linkKey, {requested, delivered: Math.min(requested, delivered)});
+                        return;
+                    }
+                    if (!node.groups.has(childKey)) node.groups.set(childKey, {requested: 0, delivered: 0});
+                    const group = node.groups.get(childKey);
+                    group.requested += requested;
+                    // An overdelivery in one record cannot fulfill another record.
+                    group.delivered += Math.min(requested, delivered);
+                    allocatedByChild.set(childKey, (allocatedByChild.get(childKey) || 0) + requested);
+                });
+            }
+            const emptyResult = () => ({hours:0, earned:0, stageEarned:0, ratio:null,
+                members:new Set(), missing:new Map(), noHours:new Set(), errors:new Set(), details:[]});
+            const mergeDiagnostics = (result, child) => {
+                for (const x of child.members) result.members.add(x);
+                for (const [k,v] of child.missing) result.missing.set(k,v);
+                for (const x of child.noHours) result.noHours.add(x);
+                for (const x of child.errors) result.errors.add(x);
+            };
+            function calculate(key, depth = 0) {
+                if (memo.has(key)) return memo.get(key);
+                if (visiting.has(key) || depth > 512) {
+                    const result=emptyResult(); result.members.add(key);
+                    result.errors.add(visiting.has(key) ? 'Há uma ligação circular entre OS.' : 'A hierarquia excedeu o limite de processamento.');
+                    return result;
+                }
+                visiting.add(key);
+                const node=nodes.get(key), result=emptyResult();
+                result.members.add(key);
+                for (const message of parseErrors.get(key) || []) result.errors.add(message);
+                let ownHours=number(node.row.horas_previstas_proprias);
+                let ownEarned=number(node.row.horas_finalizadas_proprias);
+                if (ownHours === null || ownHours < 0 || ownEarned === null || ownEarned < 0) {
+                    result.errors.add('Há OS sem informação válida de horas previstas.');
+                    ownHours=0; ownEarned=0;
+                }
+                if (ownHours === 0) result.noHours.add(key);
+                result.hours=ownHours;
+                result.earned=completed(node.row) ? ownHours : Math.min(ownHours,ownEarned);
+                result.stageEarned=result.earned;
+                let allSatisfied=completed(node.row);
+                for (const [linkKey, link] of node.missing) {
+                    result.missing.set(linkKey,link);
+                    if (link.delivered < link.requested) allSatisfied=false;
+                }
+                for (const [childKey, edge] of node.groups) {
+                    const child=calculate(childKey,depth+1), childRow=nodes.get(childKey).row;
+                    mergeDiagnostics(result,child);
+                    const childQty=number(childRow.qtde_planejada_os);
+                    if (!(childQty > 0) || (allocatedByChild.get(childKey) || 0) > childQty + 1e-8) {
+                        result.errors.add('Há OS filha sem quantidade planejada válida ou com vínculos acima da quantidade planejada.');
+                        allSatisfied=false;
+                        continue;
+                    }
+                    const fraction=edge.requested/childQty;
+                    const deliveryFraction=Math.min(1,edge.delivered/edge.requested);
+                    const progress=Math.max(deliveryFraction,child.ratio ?? 0);
+                    const weight=child.hours*fraction;
+                    result.hours += weight;
+                    result.earned += weight*progress;
+                    result.stageEarned += child.stageEarned*fraction;
+                    if (progress < 1) allSatisfied=false;
+                    result.details.push({
+                        os: String(childRow.n_os ?? childRow.codigo_os), requested:edge.requested,
+                        delivered:edge.delivered, share:fraction, weight,
+                        deliveryPercent:deliveryFraction*100, productionPercent:child.ratio === null ? null : child.ratio*100,
+                        appliedPercent:progress*100, earned:weight*progress
+                    });
+                }
+                result.ratio = result.errors.size ? null : result.hours > 0
+                    ? Math.max(0,Math.min(1,result.earned/result.hours)) : allSatisfied ? 1 : null;
+                visiting.delete(key);
+                memo.set(key,result);
+                return result;
+            }
+            return rows.map(row => {
+                if (!(number(row.versao_calculo_producao) >= 3)) return row;
+                const key=keyOf(row.cod_empresa,row.codigo_os);
+                if (!nodes.has(key)) return {...row, percentual_producao_acumulado:null,
+                    erro_calculo_destino:'A API não enviou a identificação da OS.'};
+                const result=calculate(key);
+                const descendants=[...result.members].filter(k=>k!==key);
+                const missingOpen=[...result.missing.values()].filter(x=>x.delivered<x.requested).length;
+                return {...row,
+                    status_producao:result.ratio === null ? (result.errors.size ? 'Não calculável' : 'Sem horas previstas') : rounded(result.ratio*100) + '%',
+                    percentual_producao_acumulado:result.ratio === null ? null : rounded(result.ratio*100),
+                    horas_previstas_arvore:rounded(result.hours),
+                    horas_concluidas_arvore:result.errors.size ? null : rounded(result.earned),
+                    horas_creditadas_por_entrega:result.errors.size ? null : rounded(Math.max(0,result.earned-result.stageEarned)),
+                    qtd_os_descendentes:descendants.length,
+                    os_descendentes:descendants.map(k=>String(nodes.get(k)?.row.n_os ?? '')).filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true})).join(', '),
+                    qtd_os_sem_horas_arvore:result.noHours.size,
+                    qtd_vinculos_sem_os_produtora:result.missing.size,
+                    qtd_vinculos_sem_os_produtora_pendentes:missingOpen,
+                    erro_calculo_destino:[...result.errors].join(' '),
+                    detalhes_avanco_destino:result.details
+                };
+            });
+        }
+
         function getDestinationQuantities(item) {
             const number = value => readProductionNumber(value);
             const corrected = number(item.versao_destinacao) >= 2;
@@ -622,6 +787,7 @@
         }
 
         function getProductionLabel(item) {
+            if (item.erro_calculo_destino) return 'Não calculável';
             return hasHierarchyData(item)
                 ? productionPercentLabel(item.percentual_producao_acumulado)
                 : (item.status_producao || '0%');
@@ -629,6 +795,17 @@
 
         function getHierarchyWarning(item) {
             if (!hasHierarchyData(item)) return '';
+            if (readProductionNumber(item.versao_calculo_producao) >= 3) {
+                const parts = [];
+                if (item.erro_calculo_destino) parts.push(item.erro_calculo_destino);
+                const missing = readProductionNumber(item.qtd_vinculos_sem_os_produtora) || 0;
+                const pending = readProductionNumber(item.qtd_vinculos_sem_os_produtora_pendentes) || 0;
+                const noHours = readProductionNumber(item.qtd_os_sem_horas_arvore) || 0;
+                if (missing) parts.push(missing + ' vínculo(s) sem OS produtora identificada, sendo ' + pending + ' com entrega pendente. Essas horas não entram no percentual.');
+                if (noHours) parts.push(noHours + ' OS sem horas previstas não adicionam peso ao cálculo.');
+                if (parts.length && !item.erro_calculo_destino) parts.push('O percentual considera a parte identificada com horas previstas.');
+                return parts.join(' ');
+            }
             const missing = readProductionNumber(item.qtd_vinculos_sem_os_produtora) || 0;
             const noHours = readProductionNumber(item.qtd_os_sem_horas_arvore) || 0;
             const parts = [];
@@ -723,7 +900,9 @@
                 if (!response.ok) throw new Error(`Status HTTP: ${response.status}`);
                 
                 const data = await response.json();
-                const baseList = Array.isArray(data) ? data : [data];
+                const baseList = computeAllocationProgress(Array.isArray(data) ? data : [data]);
+                document.getElementById('allocationApiNotice').classList.toggle('hidden',
+                    baseList.length === 0 || baseList.every(item => readProductionNumber(item.versao_calculo_producao) >= 3));
                 document.getElementById('destinationApiNotice').classList.toggle('hidden',
                     baseList.length === 0 || baseList.every(item => readProductionNumber(item.versao_destinacao) >= 2));
                 document.getElementById('hierarchyApiNotice').classList.toggle('hidden',
@@ -1222,6 +1401,29 @@
                     return number === null ? '-' : new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(number);
                 };
                 document.getElementById('mHierarchyHours').textContent = formatHours(item.horas_concluidas_arvore) + ' / ' + formatHours(item.horas_previstas_arvore) + ' h';
+                const byDestination = readProductionNumber(item.versao_calculo_producao) >= 3;
+                document.getElementById('mHierarchyHoursLabel').textContent = byDestination ? 'Equivalente atendido / peso previsto do conjunto' : 'Horas previstas atendidas / total previsto';
+                document.getElementById('mHierarchyExplanation').textContent = byDestination
+                    ? 'Cada filha pesa pelas horas previstas do seu conjunto, proporcionais à quantidade destinada a esta OS. Vale o maior avanço entre produção e entrega desse vínculo. Entrega completa atende o ramo em 100%. São horas equivalentes, não horas reais apontadas.'
+                    : 'O percentual inclui esta OS e as descendentes, ponderado pelas horas previstas. As entregas por destino ainda não participam desta versão da API.';
+                document.getElementById('mDeliveryCreditRow').classList.toggle('hidden', !byDestination);
+                document.getElementById('mDeliveryCredit').textContent = formatHours(item.horas_creditadas_por_entrega) + ' h equivalentes';
+                document.getElementById('mAllocationDetails').classList.toggle('hidden', !byDestination);
+                const allocationRows = document.getElementById('mAllocationRows');
+                allocationRows.innerHTML = '';
+                if (byDestination) {
+                    const details = item.detalhes_avanco_destino || [];
+                    if (!details.length) allocationRows.textContent = 'Nenhuma filha com vínculo calculável informado.';
+                    details.forEach(detail => {
+                        const row = document.createElement('p');
+                        row.className = 'rounded-lg border border-slate-200 dark:border-slate-800 p-2';
+                        row.textContent = 'OS ' + detail.os + ': entregue ' + formatHours(detail.delivered) + ' de ' + formatHours(detail.requested)
+                            + '; produção do conjunto: ' + (detail.productionPercent === null ? 'sem horas' : productionPercentLabel(detail.productionPercent))
+                            + '; atendimento aplicado: ' + productionPercentLabel(detail.appliedPercent)
+                            + '; peso neste conjunto: ' + formatHours(detail.weight) + ' h.';
+                        allocationRows.appendChild(row);
+                    });
+                }
                 document.getElementById('mHierarchyWarning').textContent = getHierarchyWarning(item);
             }
             document.getElementById('mAtrasada').textContent = !isOSCompleted(item) && item.atrasada === 'sim' ? 'SIM' : 'NÃO';
