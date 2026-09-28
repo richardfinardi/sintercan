@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://consultoriarf.net/sintercan/producao/">
     <meta property="og:type" content="website">
     
-    <title>Programação Semanal de Produção Sintercan V6.12</title>
+    <title>Programação Semanal de Produção Sintercan V6.13</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,7 +68,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.12</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.13</span></p>
                 </div>
             </div>
 
@@ -235,7 +235,7 @@
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
             <div class="flex items-center gap-2">
                 <i data-lucide="code-2" class="w-4 h-4 text-amber-500"></i>
-                <span>© 2026 Sistema de Gestão de Produção V6.12</span>
+                <span>© 2026 Sistema de Gestão de Produção V6.13</span>
             </div>
         </div>
     </footer>
@@ -1696,15 +1696,29 @@
                     outgoing.push({ kind: 'budget', label: 'ORÇAMENTO', progress: '', qty: budgetQtyLabel });
                 }
             }
+
+            const destinationQuantities = getDestinationQuantities(item);
+            const stockQty = destinationQuantities.stock;
+            if (stockQty !== null && stockQty > 0) {
+                outgoing.push({
+                    kind: 'stock',
+                    label: 'ESTOQUE',
+                    progress: '',
+                    qty: 'QTD ' + destinationQuantityLabel(stockQty)
+                });
+            }
         
             return { incoming, outgoing };
         }
         
         function relationNodeHTML(node) {
             const isBudget = node.kind === 'budget';
+            const isStock = node.kind === 'stock';
             const classes = isBudget
                 ? 'border-amber-400/50 bg-amber-500/10 text-amber-800 dark:text-amber-300'
-                : 'border-blue-400/40 bg-blue-500/10 text-blue-800 dark:text-blue-300';
+                : isStock
+                    ? 'border-emerald-400/50 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
+                    : 'border-blue-400/40 bg-blue-500/10 text-blue-800 dark:text-blue-300';
             const detail = [node.progress, node.qty].filter(Boolean).join(' · ');
 
             if (!isBudget && node.clickable && node.code !== null && node.code !== undefined) {
