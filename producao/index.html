@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://consultoriarf.net/sintercan/producao/">
     <meta property="og:type" content="website">
     
-    <title>Programação Semanal de Produção Sintercan V6.14</title>
+    <title>Programação Semanal de Produção Sintercan V6.15</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,7 +68,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.14</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.15</span></p>
                 </div>
             </div>
 
@@ -235,7 +235,7 @@
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
             <div class="flex items-center gap-2">
                 <i data-lucide="code-2" class="w-4 h-4 text-amber-500"></i>
-                <span>© 2026 Sistema de Gestão de Produção V6.14</span>
+                <span>© 2026 Sistema de Gestão de Produção V6.15</span>
             </div>
         </div>
     </footer>
@@ -1590,6 +1590,32 @@
             return codes;
         }
         
+        function getBudgetQuantityProgress(item) {
+            const pending = readProductionNumber(item?.qtde_restante_orcamento);
+            const text = String(item?.orcamento ?? '');
+            let requested = 0;
+            let found = false;
+
+            const regex = /(?:ORÇ|ORC)\s*:\s*[^,]+?\(([\d.,]+)\)/gi;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                const qty = readProductionNumber(match[1]);
+                if (qty !== null && qty >= 0) {
+                    requested += qty;
+                    found = true;
+                }
+            }
+
+            if (!found || !(requested > 0)) {
+                return pending === null ? '—' : destinationQuantityLabel(pending);
+            }
+
+            const remaining = pending === null ? requested : Math.max(0, Math.min(requested, pending));
+            const delivered = Math.max(0, requested - remaining);
+
+            return destinationQuantityLabel(delivered) + '/' + destinationQuantityLabel(requested);
+        }
+
         function getProductionPercentValue(item) {
             if (item?.erro_calculo_destino) return null;
             const raw = hasHierarchyData(item) ? item.percentual_producao_acumulado : item?.status_producao;
@@ -1700,7 +1726,7 @@
             const budgetQty = readProductionNumber(item?.qtde_restante_orcamento);
             if (budgetQty !== null && budgetQty > 0) {
                 const codes = getBudgetCodes(item);
-                const budgetQtyLabel = 'QTD ' + destinationQuantityLabel(budgetQty);
+                const budgetQtyLabel = 'QTD ' + getBudgetQuantityProgress(item);
                 if (codes.length) {
                     codes.forEach(code => {
                         const key = 'ORC|' + code;
@@ -1985,7 +2011,7 @@
             document.getElementById('mEntrega').textContent = formatDateOnly(
                 item.entrega_normalizada || item.prev_entrega_orcamento || item.prev_entrega_os
             );
-            document.getElementById('mQtdOrcamento').textContent = destinationQuantityLabel(quantities.budget);
+            document.getElementById('mQtdOrcamento').textContent = getBudgetQuantityProgress(item);
             document.getElementById('mCompras').textContent = item.status_compras || '-';
             document.getElementById('mTerceiros').textContent = item.status_terceiros || '-';
         
