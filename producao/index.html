@@ -1536,9 +1536,22 @@
         function getItemType(item) {
             const normalize = value => String(value ?? '')
                 .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+
+            // GARANTIA tem prioridade sobre o tipo da OS.
+            // Toda garantia pode ser serviço, mas visualmente deve aparecer como GARANTIA.
+            const warranty = normalize(item?.classificacao_mo);
+            if (warranty === 'GARANTIA' || warranty === '1') {
+                return {
+                    key: 'GARANTIA',
+                    label: 'GARANTIA',
+                    icon: 'shield-check',
+                    badge: 'bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/30',
+                    rail: 'bg-pink-500'
+                };
+            }
         
             const preferredKeys = [
-                'tipo', 'tipo_item', 'tipo_os', 'tipo_produto_servico',
+                'tp_os', 'tipo', 'tipo_item', 'tipo_os', 'tipo_produto_servico',
                 'produto_servico', 'natureza', 'tipo_registro'
             ];
         
@@ -1566,19 +1579,21 @@
                     key: 'SERVICO',
                     label: 'SERVIÇO',
                     icon: 'wrench',
-                    badge: 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/25',
-                    rail: 'bg-sky-500'
+                    badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
+                    rail: 'bg-emerald-500'
                 };
             }
+
             if (value === 'PRODUTO') {
                 return {
                     key: 'PRODUTO',
                     label: 'PRODUTO',
                     icon: 'box',
-                    badge: 'bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-500/25',
-                    rail: 'bg-violet-500'
+                    badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30',
+                    rail: 'bg-amber-500'
                 };
             }
+
             return {
                 key: 'ITEM',
                 label: 'ITEM',
