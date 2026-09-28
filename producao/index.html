@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://consultoriarf.net/sintercan/producao/">
     <meta property="og:type" content="website">
     
-    <title>Programação Semanal de Produção Sintercan V6.15</title>
+    <title>Programação Semanal de Produção Sintercan V6.16</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -774,7 +774,13 @@
             return {
                 budget: number(item.qtde_restante_orcamento),
                 otherOS: number(item.qtde_restante_outras_os),
+                // Campo legado: hoje ele indica a quantidade destinada ao estoque,
+                // mas não informa sozinho quanto já foi entregue.
                 stock: corrected ? number(item.qtde_restante_estoque) : null,
+                stockRequested: number(item.qtde_solicitada_estoque),
+                stockDelivered: number(item.qtde_entregue_estoque),
+                totalRequested: number(item.qtde_solicitada_total_destino),
+                totalDelivered: number(item.qtde_entregue_total_destino),
                 otherOrigins: corrected ? number(item.qtde_restante_outras_origens) : null
             };
         }
@@ -1649,12 +1655,21 @@
             if (!(planned > 0)) return '';
 
             const quantities = getDestinationQuantities(item);
-            // Estoque já representa quantidade destinada/entregue ao estoque.
-            // Portanto não entra como pendência da OS; só destinos ainda pendentes
-            // reduzem a quantidade entregue da quantidade planejada.
+
+            // Preferência: totais reais enviados pela API.
+            if (quantities.totalRequested !== null && quantities.totalRequested > 0 &&
+                quantities.totalDelivered !== null) {
+                const requested = Math.max(0, quantities.totalRequested);
+                const delivered = Math.max(0, Math.min(requested, quantities.totalDelivered));
+                return destinationQuantityLabel(delivered) + '/' + destinationQuantityLabel(requested);
+            }
+
+            // Fallback conservador para APIs antigas:
+            // estoque NÃO pode ser considerado entregue só porque existe quantidade destinada.
             const pendingParts = [
                 quantities.budget,
                 quantities.otherOS,
+                quantities.stock,
                 quantities.otherOrigins
             ].filter(value => value !== null && value !== undefined && Number.isFinite(value));
 
@@ -1748,13 +1763,20 @@
             }
 
             const destinationQuantities = getDestinationQuantities(item);
-            const stockQty = destinationQuantities.stock;
-            if (stockQty !== null && stockQty > 0) {
+            const stockLegacy = destinationQuantities.stock;
+            const stockRequested = destinationQuantities.stockRequested ?? stockLegacy;
+            const stockDelivered = destinationQuantities.stockDelivered;
+
+            if (stockRequested !== null && stockRequested > 0) {
+                const stockQtyLabel = stockDelivered !== null
+                    ? destinationQuantityLabel(Math.max(0, Math.min(stockRequested, stockDelivered))) + '/' + destinationQuantityLabel(stockRequested)
+                    : 'QTD ' + destinationQuantityLabel(stockRequested);
+
                 outgoing.push({
                     kind: 'stock',
                     label: 'ESTOQUE',
                     progress: '',
-                    qty: 'QTD ' + destinationQuantityLabel(stockQty) + '/' + destinationQuantityLabel(stockQty)
+                    qty: stockQtyLabel
                 });
             }
         
