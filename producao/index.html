@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://consultoriarf.net/sintercan/producao/">
     <meta property="og:type" content="website">
     
-    <title>Programação Semanal de Produção Sintercan V6.18</title>
+    <title>Programação Semanal de Produção Sintercan V6.19</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,7 +68,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.18</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.19</span></p>
                 </div>
             </div>
 
@@ -173,6 +173,24 @@
                 </select>
             </div>
 
+            <!-- Filtro por Prioridade -->
+            <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
+                <i data-lucide="gauge" class="w-4 h-4 text-slate-400"></i>
+                <select id="priorityFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[150px]">
+                    <option value="" class="bg-white dark:bg-slate-900">Prioridade (Todas)</option>
+                    <option value="0" class="bg-white dark:bg-slate-900">P0 · Máxima</option>
+                    <option value="1" class="bg-white dark:bg-slate-900">P1 · Muito alta</option>
+                    <option value="2" class="bg-white dark:bg-slate-900">P2 · Alta</option>
+                    <option value="3" class="bg-white dark:bg-slate-900">P3 · Alta</option>
+                    <option value="4" class="bg-white dark:bg-slate-900">P4 · Acima normal</option>
+                    <option value="5" class="bg-white dark:bg-slate-900">P5 · Neutra</option>
+                    <option value="6" class="bg-white dark:bg-slate-900">P6 · Baixa</option>
+                    <option value="7" class="bg-white dark:bg-slate-900">P7 · Baixa</option>
+                    <option value="8" class="bg-white dark:bg-slate-900">P8 · Muito baixa</option>
+                    <option value="9" class="bg-white dark:bg-slate-900">P9 · Mínima</option>
+                </select>
+            </div>
+
             <!-- Filtro por Cliente -->
             <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
@@ -247,7 +265,7 @@
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
             <div class="flex items-center gap-2">
                 <i data-lucide="code-2" class="w-4 h-4 text-amber-500"></i>
-                <span>© 2026 Sistema de Gestão de Produção V6.18</span>
+                <span>© 2026 Sistema de Gestão de Produção V6.19</span>
             </div>
         </div>
     </footer>
@@ -1276,6 +1294,7 @@
             document.getElementById('searchInput').value = '';
             document.getElementById('completionFilter').value = 'open';
             document.getElementById('classificationFilter').value = '';
+            document.getElementById('priorityFilter').value = '';
             document.getElementById('clientFilter').value = '';
             document.getElementById('comprasFilter').value = '';
             document.getElementById('terceirosFilter').value = '';
@@ -1429,6 +1448,7 @@
             clearTimeout(searchTimeout);
             const search = normalizeSearchText(document.getElementById('searchInput').value);
             const selectedClassification = document.getElementById('classificationFilter')?.value || '';
+            const selectedPriority = document.getElementById('priorityFilter')?.value || '';
             const selectedClient = document.getElementById('clientFilter').value;
             const selectedCompras = document.getElementById('comprasFilter').value;
             const selectedTerceiros = document.getElementById('terceirosFilter').value;
@@ -1455,6 +1475,7 @@
                 }
 
                 if (selectedClassification && getItemType(item).key !== selectedClassification) return false;
+                if (selectedPriority !== '' && getPriorityValue(item) !== Number(selectedPriority)) return false;
                 if (selectedClient && item.cliente !== selectedClient) return false;
                 if (selectedCompras && item.status_compras !== selectedCompras) return false;
                 if (selectedTerceiros && item.status_terceiros !== selectedTerceiros) return false;
