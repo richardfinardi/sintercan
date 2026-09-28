@@ -139,8 +139,11 @@
             <!-- Busca Geral Universal -->
             <div class="flex items-center gap-2 flex-1 min-w-[200px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
-                <input type="text" id="searchInput" oninput="renderCalendar()" placeholder="Pesquisar qualquer coisa (OS, Pedido, SC, Título, Cliente...)" 
+                <input type="text" id="searchInput" oninput="debouncedRenderCalendar()" placeholder="Pesquisa avançada: TERMO1, TERMO2 | %TERMO1%TERMO2% | -EXCLUIR" autocomplete="off" spellcheck="false" aria-label="Pesquisar ordens de serviço" 
                        class="w-full text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none placeholder-slate-400 dark:placeholder-slate-500">
+                <button id="btnSearchHelp" type="button" onclick="openSearchHelpModal()" class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 hover:bg-blue-500/10" title="Como usar a pesquisa avançada" aria-label="Abrir guia da pesquisa avançada">
+                    <i data-lucide="circle-help" class="w-5 h-5"></i>
+                </button>
             </div>
 
             <!-- Filtro por Cliente -->
@@ -215,6 +218,49 @@
             </div>
         </div>
     </footer>
+
+    <div id="searchHelpModal" class="hidden fixed inset-0 z-[160] bg-slate-950/65 backdrop-blur-sm p-4 items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="searchHelpTitle" onclick="handleSearchHelpBackdrop(event)">
+        <div class="rs-search-help-card max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-[30px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="rs-search-help-header sticky top-0 z-10 flex items-center justify-between gap-3 px-7 py-6 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0"><i data-lucide="circle-help" class="w-6 h-6"></i></div>
+                    <h2 id="searchHelpTitle" class="text-xl font-extrabold text-slate-900 dark:text-white">Guia de Pesquisa Rápida &amp; Operadores</h2>
+                </div>
+                <button type="button" onclick="closeSearchHelpModal()" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Fechar"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="rs-search-help-body p-7 flex flex-col gap-5">
+                <section class="rs-search-help-section rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-950/40 p-5">
+                    <h3 class="text-sm font-extrabold uppercase text-blue-700 dark:text-blue-400">1. Buscar vários termos ao mesmo tempo (OU)</h3>
+                    <p class="mt-2 text-slate-600 dark:text-slate-300">Use <strong>vírgula (,)</strong>, <strong>ponto e vírgula (;)</strong> ou <strong>barra vertical (|)</strong>. O registro aparece se possuir qualquer um dos grupos informados.</p>
+                    <div class="rs-search-example mt-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 font-mono font-bold text-slate-800 dark:text-slate-100">CLIENTE A, CLIENTE B</div>
+                    <p class="mt-2 text-xs italic text-slate-400">Exemplo: retorna registros do CLIENTE A ou do CLIENTE B.</p>
+                </section>
+
+                <section class="rs-search-help-section rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-950/40 p-5">
+                    <h3 class="text-sm font-extrabold uppercase text-blue-700 dark:text-blue-400">2. Combinar termos obrigatórios (E)</h3>
+                    <p class="mt-2 text-slate-600 dark:text-slate-300">Use <strong>espaço</strong> ou o sinal de porcentagem <strong>%</strong>. Todos os termos precisam existir no mesmo registro.</p>
+                    <div class="rs-search-example mt-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 font-mono font-bold text-slate-800 dark:text-slate-100">%TERMO1%TERMO2%</div>
+                    <p class="mt-2 text-xs italic text-slate-400">Exemplo: retorna somente registros que contenham TERMO1 e TERMO2.</p>
+                </section>
+
+                <section class="rs-search-help-section rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-950/40 p-5">
+                    <h3 class="text-sm font-extrabold uppercase text-blue-700 dark:text-blue-400">3. Ocultar / excluir termos (NÃO CONTÉM)</h3>
+                    <p class="mt-2 text-slate-600 dark:text-slate-300">Use o sinal de menos <strong>-</strong> antes da palavra que deseja excluir.</p>
+                    <div class="rs-search-example mt-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 font-mono font-bold text-slate-800 dark:text-slate-100">CLIENTE A, CLIENTE B -CANCELADO</div>
+                    <p class="mt-2 text-xs italic text-slate-400">Exemplo: mantém os grupos pesquisados, mas remove qualquer registro que contenha CANCELADO.</p>
+                </section>
+
+                <div class="rounded-2xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 px-5 py-4 text-sm text-slate-700 dark:text-slate-200">
+                    <strong>💡 Dica:</strong> a pesquisa ignora acentos e diferença entre maiúsculas e minúsculas e procura em <strong>todos os campos</strong> exibidos no registro.
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="button" onclick="closeSearchHelpModal()" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-600/20">Entendi</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL DE DETALHES DA OS -->
     <div id="osModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
@@ -389,6 +435,121 @@
             '5': 'h', '6': 'F', '7': 'g', '8': 'H', '9': 'I'
         };
 
+        let globalSearchCache = new WeakMap();
+        let searchTimeout = null;
+
+        function debouncedRenderCalendar() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(renderCalendar, 200);
+        }
+
+        function normalizeSearchText(value) {
+            return String(value ?? '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function getItemSearchText(item) {
+            if (!item || typeof item !== 'object') return '';
+            const cached = globalSearchCache.get(item);
+            if (cached !== undefined) return cached;
+
+            const extra = [
+                ...['abertura_os', 'prev_entrega_os', 'prev_entrega_orcamento', 'ultimo_apontamento', 'entrega_normalizada']
+                    .map(key => item[key] ? formatDateOnly(item[key]) : ''),
+                formatBRL(item.preco_geral_a_vista)
+            ];
+            const text = normalizeSearchText([...Object.values(item), ...extra].join(' '));
+            globalSearchCache.set(item, text);
+            return text;
+        }
+
+        let compiledSearchCache = { raw: null, parsed: { groups: [], excludes: [] } };
+
+        function parseAdvancedSearchQuery(query) {
+            const raw = normalizeSearchText(query);
+            if (compiledSearchCache.raw === raw) return compiledSearchCache.parsed;
+
+            if (!raw) {
+                compiledSearchCache = { raw, parsed: { groups: [], excludes: [] } };
+                return compiledSearchCache.parsed;
+            }
+
+            const excludes = [];
+            const groups = [];
+            const rawGroups = raw.split(/[,;|]+/).map(v => v.trim()).filter(Boolean);
+
+            rawGroups.forEach(groupText => {
+                const includeTerms = [];
+                const tokens = groupText.split(/[\s%]+/).map(v => v.trim()).filter(Boolean);
+
+                tokens.forEach(token => {
+                    if (token.startsWith('-') && token.length > 1) {
+                        const excluded = token.slice(1).trim();
+                        if (excluded) excludes.push(excluded);
+                    } else if (token !== '-') {
+                        includeTerms.push(token);
+                    }
+                });
+
+                if (includeTerms.length) groups.push(includeTerms);
+            });
+
+            compiledSearchCache = {
+                raw,
+                parsed: {
+                    groups,
+                    excludes: [...new Set(excludes)]
+                }
+            };
+            return compiledSearchCache.parsed;
+        }
+
+        function matchesGlobalSearch(item, query) {
+            const parsed = parseAdvancedSearchQuery(query);
+            if (!parsed.groups.length && !parsed.excludes.length) return true;
+
+            const haystack = getItemSearchText(item);
+
+            if (parsed.excludes.some(term => haystack.includes(term))) {
+                return false;
+            }
+
+            if (!parsed.groups.length) return true;
+            return parsed.groups.some(group => group.every(term => haystack.includes(term)));
+        }
+
+        function openSearchHelpModal() {
+            const modal = document.getElementById('searchHelpModal');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.dataset.searchModalOpen = '1';
+            requestAnimationFrame(() => modal.querySelector('button')?.focus());
+        }
+
+        function closeSearchHelpModal() {
+            const modal = document.getElementById('searchHelpModal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            delete document.body.dataset.searchModalOpen;
+            document.getElementById('searchInput')?.focus();
+        }
+
+        function handleSearchHelpBackdrop(event) {
+            if (event.target?.id === 'searchHelpModal') closeSearchHelpModal();
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !document.getElementById('searchHelpModal').classList.contains('hidden')) {
+                closeSearchHelpModal();
+            }
+        });
+
         function calculateCustomClientPassword(cnpj) {
             const clean = String(cnpj || '').replace(/\D/g, '');
             if (clean.length < 8) return '';
@@ -413,6 +574,7 @@
             if (!hasAccessValores) return;
 
             valuesVisible = !valuesVisible;
+            globalSearchCache = new WeakMap();
             const lbl = document.getElementById('lblToggleValues');
             const icon = document.getElementById('eyeIcon');
 
@@ -535,6 +697,7 @@
                 });
 
                 rawData = expandedData;
+                globalSearchCache = new WeakMap();
                 
                 populateDropdowns();
                 renderCalendar();
@@ -711,7 +874,8 @@
             const capitalizedMonth = monthStr.charAt(0).toUpperCase() + monthStr.slice(1);
             document.getElementById('currentMonthYearLabel').textContent = `${capitalizedMonth} De ${currentDate.getFullYear()}`;
 
-            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            clearTimeout(searchTimeout);
+            const search = normalizeSearchText(document.getElementById('searchInput').value);
             const selectedClient = document.getElementById('clientFilter').value;
             const selectedCompras = document.getElementById('comprasFilter').value;
             const selectedTerceiros = document.getElementById('terceirosFilter').value;
@@ -739,14 +903,7 @@
                 if (selectedCompras && item.status_compras !== selectedCompras) return false;
                 if (selectedTerceiros && item.status_terceiros !== selectedTerceiros) return false;
 
-                if (search) {
-                    const allValuesText = Object.values(item)
-                        .filter(v => v !== null && v !== undefined)
-                        .join(' ')
-                        .toLowerCase();
-                    
-                    if (!allValuesText.includes(search)) return false;
-                }
+                if (search && !matchesGlobalSearch(item, search)) return false;
 
                 return true;
             });
