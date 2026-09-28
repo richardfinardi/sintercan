@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://consultoriarf.net/sintercan/producao/">
     <meta property="og:type" content="website">
     
-    <title>Programação Semanal de Produção Sintercan V6.16</title>
+    <title>Programação Semanal de Produção Sintercan V6.17</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,7 +68,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.15</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.17</span></p>
                 </div>
             </div>
 
@@ -247,7 +247,7 @@
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
             <div class="flex items-center gap-2">
                 <i data-lucide="code-2" class="w-4 h-4 text-amber-500"></i>
-                <span>© 2026 Sistema de Gestão de Produção V6.15</span>
+                <span>© 2026 Sistema de Gestão de Produção V6.17</span>
             </div>
         </div>
     </footer>
@@ -2004,6 +2004,166 @@
             lucide.createIcons();
         }
 
+
+        function getPriorityValue(item) {
+            const raw = readProductionNumber(item?.prioridade);
+            if (raw === null) return 5;
+            return Math.max(0, Math.min(9, Math.round(raw)));
+        }
+
+        function getPriorityMeta(priority) {
+            const p = Math.max(0, Math.min(9, Number(priority) || 0));
+            const colors = [
+                '#dc2626', '#ef4444',
+                '#f97316', '#fb923c',
+                '#f59e0b',
+                '#94a3b8',
+                '#60a5fa', '#3b82f6',
+                '#2563eb', '#1d4ed8'
+            ];
+            const labels = [
+                'MÁXIMA', 'MUITO ALTA',
+                'ALTA', 'ALTA',
+                'ACIMA NORMAL',
+                'NEUTRA',
+                'BAIXA', 'BAIXA',
+                'MUITO BAIXA', 'MÍNIMA'
+            ];
+            return { color: colors[p], label: labels[p] };
+        }
+
+        function priorityThermometerHTML(item) {
+            const priority = getPriorityValue(item);
+            const meta = getPriorityMeta(priority);
+            const company = encodeURIComponent(String(item?.cod_empresa ?? ''));
+            const code = encodeURIComponent(String(item?.codigo_os ?? ''));
+
+            const segments = Array.from({ length: 10 }, (_, value) => {
+                const segment = getPriorityMeta(value);
+                const active = value === priority;
+                return `
+                    <button type="button"
+                        data-priority-company="${company}"
+                        data-priority-code="${code}"
+                        data-priority-value="${value}"
+                        onclick="alterarPrioridade(event, this)"
+                        class="h-3 rounded-sm transition-all hover:scale-y-125 focus:outline-none"
+                        style="background:${segment.color};opacity:${active ? '1' : '0.22'};${active ? 'box-shadow:0 0 0 2px rgba(15,23,42,.28);transform:scaleY(1.22);' : ''}"
+                        title="Prioridade ${value} — ${segment.label}">
+                    </button>
+                `;
+            }).join('');
+
+            return `
+                <div class="mt-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70 px-2.5 py-2"
+                     onclick="event.stopPropagation()">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <i data-lucide="gauge" class="w-3.5 h-3.5 text-slate-400"></i>
+                            <span class="text-[9px] font-black uppercase tracking-wide text-slate-400">Prioridade</span>
+                        </div>
+                        <span class="text-[9px] font-black px-2 py-0.5 rounded-md text-white"
+                              style="background:${meta.color}">
+                            ${priority} · ${meta.label}
+                        </span>
+                    </div>
+                    <div class="mt-1.5 grid grid-cols-10 gap-1">
+                        ${segments}
+                    </div>
+                    <div class="mt-1 flex justify-between text-[8px] font-bold text-slate-400">
+                        <span>0 · MAIS ALTA</span>
+                        <span>9 · MAIS BAIXA</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function persistPriorityToBrowserCache(codEmpresa, codigoOs, prioridade) {
+            try {
+                const cacheRecord = await readProductionCache();
+                if (!cacheRecord || !Array.isArray(cacheRecord.data)) return;
+
+                let changed = false;
+                cacheRecord.data.forEach(row => {
+                    if (
+                        String(row?.cod_empresa ?? '') === String(codEmpresa) &&
+                        String(row?.codigo_os ?? '') === String(codigoOs)
+                    ) {
+                        row.prioridade = prioridade;
+                        changed = true;
+                    }
+                });
+
+                if (changed) {
+                    await writeProductionCache(
+                        cacheRecord.data,
+                        cacheRecord.savedAt || new Date().toISOString()
+                    );
+                }
+            } catch (err) {
+                console.warn('Não foi possível atualizar a prioridade no cache local:', err);
+            }
+        }
+
+        async function alterarPrioridade(event, button) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const codEmpresa = decodeURIComponent(button.dataset.priorityCompany || '');
+            const codigoOs = decodeURIComponent(button.dataset.priorityCode || '');
+            const novaPrioridade = Number(button.dataset.priorityValue);
+
+            if (!codigoOs || !Number.isInteger(novaPrioridade) || novaPrioridade < 0 || novaPrioridade > 9) {
+                return;
+            }
+
+            const affected = rawData.filter(row =>
+                String(row?.cod_empresa ?? '') === String(codEmpresa) &&
+                String(row?.codigo_os ?? '') === String(codigoOs)
+            );
+
+            const anteriores = affected.map(row => row.prioridade);
+            affected.forEach(row => { row.prioridade = novaPrioridade; });
+
+            globalSearchCache = new WeakMap();
+            renderCalendar();
+
+            try {
+                const response = await fetch(
+                    `${API_URL}/${encodeURIComponent(codigoOs)}/alterar-prioridade`,
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'ngrok-skip-browser-warning': '69420'
+                        },
+                        body: JSON.stringify({
+                            cod_empresa: Number(codEmpresa),
+                            prioridade: novaPrioridade
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    let detail = 'Falha ao alterar prioridade.';
+                    try {
+                        const body = await response.json();
+                        detail = body.detail || detail;
+                    } catch (_) {}
+                    throw new Error(detail);
+                }
+
+                await persistPriorityToBrowserCache(codEmpresa, codigoOs, novaPrioridade);
+            } catch (err) {
+                affected.forEach((row, index) => {
+                    row.prioridade = anteriores[index];
+                });
+                globalSearchCache = new WeakMap();
+                renderCalendar();
+                alert('Erro ao alterar prioridade: ' + err.message);
+            }
+        }
+
         function renderItemCard(item) {
             const completed = isOSCompleted(item);
             const isAtrasada = !completed && item.atrasada === 'sim';
@@ -2048,6 +2208,8 @@
                             <div class="text-[11px] text-slate-900 dark:text-slate-100 line-clamp-2 leading-snug font-bold" title="${fullTitle}">${fullTitle}</div>
                             <div class="mt-1 text-[10px] text-slate-500 dark:text-slate-400 truncate font-semibold">${item.cliente || 'Sem cliente'}</div>
                         </div>
+
+                        ${priorityThermometerHTML(item)}
         
                         <div class="mt-3 flex items-end justify-between gap-3">
                             <div>
