@@ -1649,10 +1649,12 @@
             if (!(planned > 0)) return '';
 
             const quantities = getDestinationQuantities(item);
+            // Estoque já representa quantidade destinada/entregue ao estoque.
+            // Portanto não entra como pendência da OS; só destinos ainda pendentes
+            // reduzem a quantidade entregue da quantidade planejada.
             const pendingParts = [
                 quantities.budget,
                 quantities.otherOS,
-                quantities.stock,
                 quantities.otherOrigins
             ].filter(value => value !== null && value !== undefined && Number.isFinite(value));
 
@@ -1752,7 +1754,7 @@
                     kind: 'stock',
                     label: 'ESTOQUE',
                     progress: '',
-                    qty: 'QTD ' + destinationQuantityLabel(stockQty)
+                    qty: 'QTD ' + destinationQuantityLabel(stockQty) + '/' + destinationQuantityLabel(stockQty)
                 });
             }
         
