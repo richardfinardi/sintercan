@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://consultoriarf.net/sintercan/producao/">
     <meta property="og:type" content="website">
     
-    <title>Programação Semanal de Produção Sintercan V6.7</title>
+    <title>Programação Semanal de Produção Sintercan V6.8</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,7 +68,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.7</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.8</span></p>
                 </div>
             </div>
 
@@ -230,7 +230,7 @@
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
             <div class="flex items-center gap-2">
                 <i data-lucide="code-2" class="w-4 h-4 text-amber-500"></i>
-                <span>© 2026 Sistema de Gestão de Produção V6.5</span>
+                <span>© 2026 Sistema de Gestão de Produção V6.8</span>
             </div>
         </div>
     </footer>
@@ -278,126 +278,120 @@
         </div>
     </div>
 
-    <!-- MODAL DE DETALHES DA OS -->
-    <div id="osModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
-            <div class="bg-slate-100 dark:bg-slate-950 px-6 py-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-800">
-                <div>
-                    <span id="mOS" class="text-xs font-bold bg-amber-500 text-slate-950 px-2 py-0.5 rounded uppercase"></span>
-                    <h3 id="mTitulo" class="font-bold text-sm mt-1 text-slate-900 dark:text-white"></h3>
+    <!-- MODAL DE DETALHES DA OS - VISÃO OPERACIONAL COMPACTA -->
+    <div id="osModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 z-50">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[92vh] flex flex-col">
+            <div class="bg-slate-100 dark:bg-slate-950 px-4 sm:px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span id="mOS" class="text-xs font-black bg-amber-500 text-slate-950 px-2.5 py-1 rounded-lg uppercase"></span>
+                            <span id="mTypeBadge" class="text-[10px] font-black px-2.5 py-1 rounded-lg border"></span>
+                            <span id="mStatusBadge" class="text-[10px] font-black px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25"></span>
+                            <span id="mPrazoBadge" class="hidden text-[10px] font-black px-2.5 py-1 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/25">ATRASADA</span>
+                        </div>
+                        <h3 id="mTitulo" class="font-black text-base sm:text-lg mt-2 text-slate-900 dark:text-white leading-snug"></h3>
+                        <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                            <span id="mCliente" class="font-bold text-slate-700 dark:text-slate-300"></span>
+                            <span id="mPedidoWrap">Pedido <strong id="mPedido" class="text-slate-700 dark:text-slate-300"></strong></span>
+                        </div>
+                    </div>
+                    <button onclick="closeModal()" class="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800" aria-label="Fechar">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
                 </div>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-800 dark:hover:text-white p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             
-            <div class="p-5 space-y-3 text-xs overflow-y-auto custom-scroll flex-1">
-                <div class="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                    <div><span class="text-slate-500 dark:text-slate-400 block font-semibold">Nº Pedido</span><span id="mPedido" class="font-bold text-slate-800 dark:text-slate-200"></span></div>
-                    <div><span class="text-slate-500 dark:text-slate-400 block font-semibold">Cliente</span><span id="mCliente" class="font-bold text-slate-800 dark:text-slate-200"></span></div>
-                    <div><span class="text-slate-500 dark:text-slate-400 block font-semibold">CNPJ Cliente</span><span id="mCnpj" class="font-bold text-amber-600 dark:text-amber-400 font-mono"></span></div>
-                    <div><span class="text-slate-500 dark:text-slate-400 block font-semibold">Preço Geral / Valor</span><span id="mPreco" class="font-bold text-emerald-600 dark:text-emerald-400"></span></div>
-                    <div><span class="text-slate-500 dark:text-slate-400 block font-semibold">Possui Orçamento</span><span id="mPossuiOrcamento" class="font-bold text-slate-800 dark:text-slate-200"></span></div>
-                    <div class="border-t border-slate-200 dark:border-slate-800/80 pt-1.5 mt-0.5">
-                        <span class="text-slate-500 dark:text-slate-400 block font-semibold">Nº do Orçamento</span>
-                        <span id="mNumOrcamento" class="font-bold text-amber-600 dark:text-amber-400"></span>
+            <div class="p-4 sm:p-5 overflow-y-auto custom-scroll flex-1 space-y-4">
+                <section>
+                    <div class="flex items-end justify-between gap-4 mb-2">
+                        <span class="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Andamento</span>
+                        <span id="mProducao" class="text-3xl sm:text-4xl leading-none font-black text-slate-900 dark:text-white"></span>
                     </div>
-                </div>
-
-                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                    <span class="text-slate-500 dark:text-slate-400 block font-semibold">Situação da OS</span>
-                    <span id="mSituacao" class="font-bold"></span>
-                </div>
-                <div id="mHierarchyDetails" class="hidden space-y-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                    <h4 class="font-bold text-blue-600 dark:text-blue-400">Avanço da OS e dependências</h4>
-                    <p>Percentual próprio: <strong id="mOwnProduction"></strong></p>
-                    <p><span id="mHierarchyHoursLabel">Horas previstas atendidas / total previsto</span>: <strong id="mHierarchyHours"></strong></p>
-                    <p id="mDeliveryCreditRow" class="hidden">Crédito adicional por entregas: <strong id="mDeliveryCredit"></strong></p>
-                    <p>Filhas, netas e demais níveis: <strong id="mDescendantCount"></strong></p>
-                    <p id="mDescendants" class="break-words"></p>
-                    <p id="mHierarchyExplanation" class="text-slate-500 dark:text-slate-400"></p>
-                    <div id="mAllocationDetails" class="hidden space-y-2 border-t border-slate-200 dark:border-slate-800 pt-2">
-                        <h5 class="font-bold">Atendimento das filhas a esta OS</h5>
-                        <div id="mAllocationRows" class="space-y-2"></div>
+                    <div class="h-3 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                        <div id="mProgressBar" class="h-full bg-blue-500 rounded-full transition-all" style="width:0%"></div>
                     </div>
-                    <p id="mHierarchyWarning" class="text-amber-700 dark:text-amber-300"></p>
-                </div>
+                </section>
 
-                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
-                    <p>Qtd. pendente para serviço / outra OS: <strong id="mQtdOutrasOS" class="text-violet-600 dark:text-violet-400"></strong></p>
-                    <p id="mOtherOriginsRow" class="hidden">Qtd. pendente de outras origens: <strong id="mQtdOutrasOrigens"></strong></p>
-                    <p class="font-semibold">OS atendidas — vínculos e entregas</p>
-                    <p id="mOSAtendidas" class="break-words"></p>
-                    <p class="text-slate-500 dark:text-slate-400">Serviço/OS indica o destino da quantidade, não o tipo do item. Estoque é a quantidade planejada sem vínculo; não é a quantidade já produzida para estoque.</p>
-                    <p id="mDestinationNotice" class="text-amber-700 dark:text-amber-300"></p>
-                </div>
-
-                <!-- BLOCO QUANTIDADES RESTANTES -->
-                <div class="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80">
-                    <div>
-                        <span class="text-slate-500 dark:text-slate-400 block font-semibold">Qtd. Restante Orçamento</span>
-                        <span id="mQtdOrcamento" class="font-bold text-blue-600 dark:text-blue-400 text-sm">0</span>
+                <section class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div class="rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 min-w-0">
+                        <div class="text-[9px] font-black uppercase tracking-wide text-slate-400">Orçamento</div>
+                        <div id="mOrcamento" class="mt-1 text-sm font-black text-amber-600 dark:text-amber-400 truncate"></div>
                     </div>
-                    <div>
-                        <span class="text-slate-500 dark:text-slate-400 block font-semibold">Qtd. planejada para estoque</span>
-                        <span id="mQtdEstoque" class="font-bold text-emerald-600 dark:text-emerald-400 text-sm">0</span>
+                    <div class="rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 min-w-0">
+                        <div class="text-[9px] font-black uppercase tracking-wide text-slate-400">Valor</div>
+                        <div id="mPreco" class="mt-1 text-sm font-black text-emerald-600 dark:text-emerald-400 truncate"></div>
                     </div>
-                </div>
-
-                <div class="space-y-1.5">
-                    <h4 class="font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px]">Status da Operação</h4>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200 dark:border-slate-800"><span class="text-slate-500 dark:text-slate-400 block">Compras</span><span id="mCompras" class="font-semibold text-slate-800 dark:text-slate-200"></span></div>
-                        <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200 dark:border-slate-800"><span class="text-slate-500 dark:text-slate-400 block">Terceiros</span><span id="mTerceiros" class="font-semibold text-slate-800 dark:text-slate-200"></span></div>
-                        <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200 dark:border-slate-800"><span class="text-slate-500 dark:text-slate-400 block">Produção</span><span id="mProducao" class="font-semibold text-blue-600 dark:text-blue-400"></span></div>
-                        <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200 dark:border-slate-800"><span class="text-slate-500 dark:text-slate-400 block">Atrasada</span><span id="mAtrasada" class="font-bold"></span></div>
+                    <div class="rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 min-w-0">
+                        <div class="text-[9px] font-black uppercase tracking-wide text-slate-400">Entrega</div>
+                        <div id="mEntrega" class="mt-1 text-sm font-black truncate"></div>
                     </div>
-                </div>
+                    <div class="rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 min-w-0">
+                        <div class="text-[9px] font-black uppercase tracking-wide text-slate-400">Qtd. p/ orçamento</div>
+                        <div id="mQtdOrcamento" class="mt-1 text-sm font-black text-blue-600 dark:text-blue-400"></div>
+                    </div>
+                </section>
 
-                <div class="space-y-1.5 text-[11px] pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <div><span class="text-slate-500 dark:text-slate-400">Abertura OS:</span> <span id="mAbertura" class="font-medium text-slate-700 dark:text-slate-300"></span></div>
-                    <div><span class="text-slate-500 dark:text-slate-400">Prev. Entrega OS (TOS.DT_PREVISTA):</span> <span id="mPrevEntregaOS" class="font-bold text-amber-600 dark:text-amber-400"></span></div>
-                    <div><span class="text-slate-500 dark:text-slate-400">Prazo Entrega Original:</span> <span id="mPrazoOriginal" class="font-bold text-blue-600 dark:text-blue-400"></span></div>
-                    <div><span class="text-slate-500 dark:text-slate-400">Último Apontamento:</span> <span id="mApontamento" class="font-medium text-slate-700 dark:text-slate-300"></span></div>
-                    <div><span class="text-slate-500 dark:text-slate-400">Entrega Normalizada:</span> <span id="mEntregaNorm" class="font-bold text-amber-600 dark:text-amber-400"></span></div>
-                </div>
+                <section class="grid grid-cols-2 gap-2">
+                    <div class="rounded-xl border border-amber-500/25 bg-amber-500/5 p-3">
+                        <div class="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                            <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i> Compras
+                        </div>
+                        <div id="mCompras" class="mt-1 text-sm font-black"></div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3">
+                        <div class="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            <i data-lucide="truck" class="w-3.5 h-3.5"></i> Terceiros
+                        </div>
+                        <div id="mTerceiros" class="mt-1 text-sm font-black"></div>
+                    </div>
+                </section>
+
+                <section class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3 sm:p-4">
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="git-branch" class="w-4 h-4 text-blue-500"></i>
+                            <h4 class="text-xs font-black uppercase tracking-wide">Vínculos ativos</h4>
+                        </div>
+                        <span class="text-[9px] font-bold text-slate-400">entregou tudo = some</span>
+                    </div>
+                    <div id="mRelationMap"></div>
+                </section>
 
                 <!-- PAINEL EDICAO PRAZO (ESCONDIDO POR PADRÃO) -->
-                <div id="boxEditPrazo" class="hidden mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2">
+                <div id="boxEditPrazo" class="hidden p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2">
                     <h5 class="font-bold text-amber-600 dark:text-amber-400 text-xs flex items-center gap-1">
-                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Alterar Data Prevista (TOS.DT_PREVISTA)
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Alterar Data de Entrega
                     </h5>
                     <div>
-                        <label class="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Nova Data de Entrega:</label>
-                        <input type="date" id="inputNovaData" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-white text-xs focus:outline-none focus:border-amber-400">
+                        <label class="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Nova data</label>
+                        <input type="date" id="inputNovaData" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-2 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-amber-400">
                     </div>
                     <div>
-                        <label class="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Justificativa da Alteração (Obrigatório):</label>
-                        <textarea id="txtJustificativa" rows="2" placeholder="Motivo do adiamento ou antecipação..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-800 dark:text-white text-xs focus:outline-none focus:border-amber-400 placeholder-slate-400 dark:placeholder-slate-600"></textarea>
+                        <label class="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Justificativa</label>
+                        <textarea id="txtJustificativa" rows="2" placeholder="Motivo da alteração..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-amber-400 placeholder-slate-400 dark:placeholder-slate-600"></textarea>
                     </div>
                     <div class="flex justify-end gap-2 pt-1">
-                        <button onclick="toggleEditPrazo(false)" class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs hover:bg-slate-300 dark:hover:bg-slate-700">Cancelar</button>
-                        <button id="btnSalvarData" onclick="salvarNovaData()" class="px-3 py-1 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs hover:bg-amber-400 flex items-center gap-1">
+                        <button onclick="toggleEditPrazo(false)" class="px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs hover:bg-slate-300 dark:hover:bg-slate-700">Cancelar</button>
+                        <button id="btnSalvarData" onclick="salvarNovaData()" class="px-3 py-2 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs hover:bg-amber-400 flex items-center gap-1">
                             <i data-lucide="check" class="w-3.5 h-3.5"></i> Salvar
                         </button>
                     </div>
                 </div>
-
             </div>
 
-            <div class="bg-slate-100 dark:bg-slate-950 px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex flex-wrap justify-between items-center gap-2">
+            <div class="bg-slate-100 dark:bg-slate-950 px-4 sm:px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex flex-wrap justify-between items-center gap-2">
                 <div class="flex items-center gap-2 flex-wrap">
-                    <button id="btnOpenEditPrazo" onclick="toggleEditPrazo(true)" class="px-3 py-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl font-semibold text-xs hover:bg-amber-500/20 flex items-center gap-1.5 transition">
+                    <button id="btnOpenEditPrazo" onclick="toggleEditPrazo(true)" class="px-3 py-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl font-semibold text-xs hover:bg-amber-500/20 flex items-center gap-1.5 transition">
                         <i data-lucide="calendar-plus" class="w-4 h-4"></i>
-                        <span>Alterar Data de Entrega</span>
+                        <span>Alterar entrega</span>
                     </button>
-
-                    <!-- BOTÃO GERAR CÓDIGO DO CLIENTE -->
-                    <button onclick="gerarCodigoClienteAcesso()" class="px-3 py-1.5 bg-amber-500 text-slate-950 rounded-xl font-bold text-xs transition shadow-sm flex items-center gap-1.5 hover:bg-amber-400">
+                    <button onclick="gerarCodigoClienteAcesso()" class="px-3 py-2 bg-amber-500 text-slate-950 rounded-xl font-bold text-xs transition shadow-sm flex items-center gap-1.5 hover:bg-amber-400">
                         <i data-lucide="key" class="w-4 h-4"></i>
-                        <span>Gerar Acesso Cliente</span>
+                        <span>Acesso cliente</span>
                     </button>
                 </div>
-
-                <button onclick="closeModal()" class="px-4 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-white rounded-xl font-semibold hover:bg-slate-300 dark:hover:bg-slate-700">Fechar</button>
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-white rounded-xl font-semibold hover:bg-slate-300 dark:hover:bg-slate-700">Fechar</button>
             </div>
         </div>
     </div>
@@ -1288,75 +1282,301 @@
             lucide.createIcons();
         }
 
+        function getItemType(item) {
+            const normalize = value => String(value ?? '')
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+        
+            const preferredKeys = [
+                'tipo', 'tipo_item', 'tipo_os', 'tipo_produto_servico',
+                'produto_servico', 'natureza', 'tipo_registro'
+            ];
+        
+            let value = '';
+            for (const key of preferredKeys) {
+                const candidate = normalize(item?.[key]);
+                if (candidate === 'PRODUTO' || candidate === 'SERVICO') {
+                    value = candidate;
+                    break;
+                }
+            }
+        
+            if (!value && item && typeof item === 'object') {
+                for (const candidate of Object.values(item)) {
+                    const normalized = normalize(candidate);
+                    if (normalized === 'PRODUTO' || normalized === 'SERVICO') {
+                        value = normalized;
+                        break;
+                    }
+                }
+            }
+        
+            if (value === 'SERVICO') {
+                return {
+                    key: 'SERVICO',
+                    label: 'SERVIÇO',
+                    icon: 'wrench',
+                    badge: 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/25',
+                    rail: 'bg-sky-500'
+                };
+            }
+            if (value === 'PRODUTO') {
+                return {
+                    key: 'PRODUTO',
+                    label: 'PRODUTO',
+                    icon: 'box',
+                    badge: 'bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-500/25',
+                    rail: 'bg-violet-500'
+                };
+            }
+            return {
+                key: 'ITEM',
+                label: 'ITEM',
+                icon: 'package',
+                badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/25',
+                rail: 'bg-slate-400'
+            };
+        }
+        
+        function itemHasBudget(item) {
+            const flag = String(item?.possui_orcamento ?? '').trim().toLowerCase();
+            return flag === 'sim' || flag === 's' || flag === '1' || String(item?.orcamento ?? '').trim() !== '';
+        }
+        
+        function getBudgetCodes(item) {
+            const text = String(item?.orcamento ?? '');
+            const codes = [];
+            const regex = /(?:ORÇ|ORC)\s*:\s*([^\s,;-]+)/gi;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                if (match[1] && !codes.includes(match[1])) codes.push(match[1]);
+            }
+            return codes;
+        }
+        
+        function getProductionPercentValue(item) {
+            if (item?.erro_calculo_destino) return null;
+            const raw = hasHierarchyData(item) ? item.percentual_producao_acumulado : item?.status_producao;
+            if (raw === null || raw === undefined || String(raw).trim() === '') return null;
+            const n = Number(String(raw).replace('%', '').replace(',', '.').trim());
+            return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : null;
+        }
+        
+        function parseOSDependencies(value) {
+            if (Array.isArray(value)) return value;
+            if (typeof value !== 'string' || !value.trim()) return [];
+            try {
+                const parsed = JSON.parse(value);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (_) {
+                return [];
+            }
+        }
+        
+        function findOSByCode(company, code) {
+            const targetCompany = String(company ?? '');
+            const targetCode = String(code ?? '');
+            return rawData.find(row =>
+                String(row?.cod_empresa ?? '') === targetCompany &&
+                String(row?.codigo_os ?? '') === targetCode
+            ) || null;
+        }
+        
+        function getActiveOSRelations(item) {
+            const incoming = [];
+            const outgoing = [];
+            const seenIncoming = new Set();
+            const seenOutgoing = new Set();
+            const company = String(item?.cod_empresa ?? '');
+            const currentCode = String(item?.codigo_os ?? '');
+        
+            parseOSDependencies(item?.dependencias_os).forEach(edge => {
+                const requested = readProductionNumber(edge?.qtde) || 0;
+                const delivered = readProductionNumber(edge?.qtde_entregue) || 0;
+                if (!(requested > 0) || delivered >= requested) return;
+        
+                const child = findOSByCode(item?.cod_empresa, edge?.codigo_os_filha);
+                const osLabel = String(child?.n_os ?? edge?.codigo_os_filha ?? '?');
+                const key = String(edge?.guid_vinculo ?? '') + '|' + osLabel;
+                if (seenIncoming.has(key)) return;
+                seenIncoming.add(key);
+        
+                incoming.push({
+                    kind: 'os',
+                    label: 'OS ' + osLabel,
+                    progress: child ? getProductionLabel(child) : '',
+                    qty: delivered + '/' + requested
+                });
+            });
+        
+            rawData.forEach(parent => {
+                if (!parent || String(parent.cod_empresa ?? '') !== company) return;
+                if (String(parent.codigo_os ?? '') === currentCode) return;
+        
+                const edges = parseOSDependencies(parent.dependencias_os);
+                edges.forEach(edge => {
+                    if (String(edge?.codigo_os_filha ?? '') !== currentCode) return;
+                    const requested = readProductionNumber(edge?.qtde) || 0;
+                    const delivered = readProductionNumber(edge?.qtde_entregue) || 0;
+                    if (!(requested > 0) || delivered >= requested) return;
+        
+                    const parentLabel = String(parent.n_os ?? parent.codigo_os ?? '?');
+                    const key = 'OS|' + parentLabel;
+                    if (seenOutgoing.has(key)) return;
+                    seenOutgoing.add(key);
+                    outgoing.push({
+                        kind: 'os',
+                        label: 'OS ' + parentLabel,
+                        progress: getProductionLabel(parent),
+                        qty: delivered + '/' + requested
+                    });
+                });
+            });
+        
+            const budgetQty = readProductionNumber(item?.qtde_restante_orcamento);
+            if (budgetQty !== null && budgetQty > 0) {
+                const codes = getBudgetCodes(item);
+                if (codes.length) {
+                    codes.forEach(code => {
+                        const key = 'ORC|' + code;
+                        if (!seenOutgoing.has(key)) {
+                            seenOutgoing.add(key);
+                            outgoing.push({ kind: 'budget', label: 'ORÇ ' + code, progress: '', qty: '' });
+                        }
+                    });
+                } else if (itemHasBudget(item)) {
+                    outgoing.push({ kind: 'budget', label: 'ORÇAMENTO', progress: '', qty: '' });
+                }
+            }
+        
+            return { incoming, outgoing };
+        }
+        
+        function relationNodeHTML(node) {
+            const isBudget = node.kind === 'budget';
+            const classes = isBudget
+                ? 'border-amber-400/50 bg-amber-500/10 text-amber-800 dark:text-amber-300'
+                : 'border-blue-400/40 bg-blue-500/10 text-blue-800 dark:text-blue-300';
+            const detail = [node.progress, node.qty].filter(Boolean).join(' · ');
+            return `<div class="rounded-xl border ${classes} px-2.5 py-2 text-center min-w-0">
+                <div class="text-xs font-black truncate">${node.label}</div>
+                ${detail ? `<div class="mt-0.5 text-[9px] font-bold opacity-75 truncate">${detail}</div>` : ''}
+            </div>`;
+        }
+        
+        function relationListHTML(nodes) {
+            if (!nodes.length) return '<div class="text-[10px] text-slate-400 text-center py-2">—</div>';
+            const visible = nodes.slice(0, 4);
+            const extra = nodes.length - visible.length;
+            return visible.map(relationNodeHTML).join('') +
+                (extra > 0 ? `<div class="text-center text-[10px] font-black text-slate-500 dark:text-slate-400 py-1">+ ${extra}</div>` : '');
+        }
+        
+        function renderOSRelationMap(item) {
+            const box = document.getElementById('mRelationMap');
+            if (!box) return;
+        
+            const relations = getActiveOSRelations(item);
+            if (!relations.incoming.length && !relations.outgoing.length) {
+                box.innerHTML = `<div class="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 py-5 text-center">
+                    <div class="text-sm font-black text-slate-600 dark:text-slate-300">Sem vínculos ativos</div>
+                    <div class="text-[10px] text-slate-400 mt-1">Tudo que já foi entregue saiu do mapa.</div>
+                </div>`;
+                return;
+            }
+        
+            box.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-5 gap-2 items-center">
+                <div class="space-y-1.5 min-w-0">
+                    <div class="text-[9px] font-black text-center uppercase tracking-wide text-slate-400">Recebe de</div>
+                    ${relationListHTML(relations.incoming)}
+                </div>
+        
+                <div class="text-center text-slate-400">
+                    <span class="md:hidden text-xl">↓</span>
+                    <span class="hidden md:inline text-2xl">→</span>
+                </div>
+        
+                <div class="rounded-2xl border-2 border-amber-400 bg-white dark:bg-slate-900 p-3 text-center min-w-0">
+                    <div class="text-[9px] font-black uppercase tracking-wide text-amber-600 dark:text-amber-400">Atual</div>
+                    <div class="text-lg font-black">OS ${item.n_os ?? '-'}</div>
+                    <div class="text-xs font-black text-slate-500 dark:text-slate-400">${getProductionLabel(item)}</div>
+                </div>
+        
+                <div class="text-center text-slate-400">
+                    <span class="md:hidden text-xl">↓</span>
+                    <span class="hidden md:inline text-2xl">→</span>
+                </div>
+        
+                <div class="space-y-1.5 min-w-0">
+                    <div class="text-[9px] font-black text-center uppercase tracking-wide text-slate-400">Entrega para</div>
+                    ${relationListHTML(relations.outgoing)}
+                </div>
+            </div>`;
+        }
+
         function renderItemCard(item) {
-            const quantities = getDestinationQuantities(item);
             const completed = isOSCompleted(item);
             const isAtrasada = !completed && item.atrasada === 'sim';
             const val = parseValue(item.preco_geral_a_vista);
-            
-            let valColor = 'bg-emerald-600 text-white';
-            if (isAtrasada) valColor = 'bg-red-600 text-white font-bold';
-            else if (val === 0) valColor = 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30';
-
-            const payload = JSON.stringify(item).replace(/'/g, "&apos;");
+            const type = getItemType(item);
+            const progressValue = getProductionPercentValue(item);
+            const progressLabel = getProductionLabel(item);
             const fullTitle = getFullTitle(item);
-
+            const hasBudget = itemHasBudget(item);
+            const deliveryDate = item.entrega_normalizada || item.prev_entrega_orcamento || item.prev_entrega_os;
+            const payload = JSON.stringify(item).replace(/'/g, "&apos;");
+        
+            const budgetBadge = hasBudget
+                ? `<span class="inline-flex items-center gap-1 bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25 text-[9px] px-2 py-1 rounded-md font-black uppercase">
+                      <i data-lucide="file-check-2" class="w-3 h-3"></i> ORÇ
+                   </span>`
+                : '';
+        
+            const delayBadge = isAtrasada
+                ? `<span class="inline-flex items-center gap-1 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/25 text-[9px] px-2 py-1 rounded-md font-black uppercase">
+                      <i data-lucide="triangle-alert" class="w-3 h-3"></i> ATRASADA
+                   </span>`
+                : '';
+        
             return `
-                <div onclick='openModal(${payload})' class="border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/80 dark:bg-slate-950/80 hover:border-amber-500 dark:hover:border-amber-500/50 hover:shadow-lg transition cursor-pointer flex flex-col gap-1.5 text-xs">
-                    
-                    <div class="flex items-center justify-between font-mono">
-                        <span class="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[90px]">${item.n_pedido || 'SEM PEDIDO'}</span>
-                        <span class="bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-bold border border-slate-200 dark:border-slate-800">OS ${item.n_os}</span>
-                        <span class="px-1.5 py-0.5 rounded text-[10px] ${valColor}">${formatBRL(val)}</span>
-                    </div>
-
-                    ${item.status ? `
-                        <div class="flex items-center gap-1">
-                            <span class="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider">
-                                ${item.status}
-                            </span>
+                <div onclick='openModal(${payload})' class="relative overflow-hidden border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-950 hover:border-amber-500 dark:hover:border-amber-500/60 hover:shadow-lg transition cursor-pointer text-xs">
+                    <span class="absolute inset-y-0 left-0 w-1.5 ${type.rail}"></span>
+        
+                    <div class="pl-4 pr-3 py-3">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex flex-wrap items-center gap-1.5 min-w-0">
+                                <span class="inline-flex items-center gap-1 border text-[9px] px-2 py-1 rounded-md font-black uppercase ${type.badge}">
+                                    <i data-lucide="${type.icon}" class="w-3 h-3"></i> ${type.label}
+                                </span>
+                                ${budgetBadge}
+                                ${delayBadge}
+                            </div>
+                            <span class="shrink-0 bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1 rounded-md font-black border border-slate-200 dark:border-slate-800">OS ${item.n_os}</span>
                         </div>
-                    ` : ''}
-
-                    <div class="text-[11px] text-slate-800 dark:text-slate-300 line-clamp-2 leading-snug font-medium" title="${fullTitle}">
-                        ${fullTitle}
-                    </div>
-
-                    <div class="grid grid-cols-1 gap-0.5 text-[10px] bg-white dark:bg-slate-900/90 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800/80 text-slate-500 dark:text-slate-400">
-                        <div class="flex flex-col items-start gap-1 border-b border-slate-200 dark:border-slate-800/80 pb-1 mb-0.5">
-                            <span class="text-slate-400 dark:text-slate-500 flex items-center gap-1"><i data-lucide="boxes" class="w-3 h-3 text-amber-500 dark:text-amber-400"></i> Quantidades:</span>
-                            <span class="font-bold text-slate-700 dark:text-slate-200 flex flex-wrap gap-x-2 gap-y-1">
-                                <span class="text-blue-600 dark:text-blue-400" title="Quantidade pendente para orçamento">ORÇAMENTO: ${destinationQuantityLabel(quantities.budget)}</span>
-                                <span class="text-violet-600 dark:text-violet-400" title="Quantidade pendente para atender outra ordem de serviço (origem M14)">OS: ${destinationQuantityLabel(quantities.otherOS)}</span>
-                                <span class="text-emerald-600 dark:text-emerald-400" title="Quantidade planejada sem vínculo de destinação; não representa estoque físico produzido">ESTOQUE: ${destinationQuantityLabel(quantities.stock)}</span>
-                                ${quantities.otherOrigins > 0 ? `<span title="Quantidade pendente com outra origem cadastrada">Outras origens: ${destinationQuantityLabel(quantities.otherOrigins)}</span>` : ''}
-                            </span>
+        
+                        <div class="mt-2.5 min-h-[38px]">
+                            <div class="text-[11px] text-slate-900 dark:text-slate-100 line-clamp-2 leading-snug font-bold" title="${fullTitle}">${fullTitle}</div>
+                            <div class="mt-1 text-[10px] text-slate-500 dark:text-slate-400 truncate font-semibold">${item.cliente || 'Sem cliente'}</div>
                         </div>
-                        <div class="flex items-center justify-between truncate">
-                            <span class="text-slate-400 dark:text-slate-500 flex items-center gap-1"><i data-lucide="shopping-cart" class="w-3 h-3 text-slate-400"></i> Compras:</span>
-                            <span class="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[120px]">${item.status_compras || '-'}</span>
+        
+                        <div class="mt-3 flex items-end justify-between gap-3">
+                            <div>
+                                <div class="text-[9px] font-black uppercase tracking-wide text-slate-400">Andamento</div>
+                                <div class="text-2xl leading-none font-black ${progressValue === null ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}">${progressLabel}</div>
+                            </div>
+                            <div class="text-right min-w-0">
+                                <div class="text-[9px] text-slate-400">${completed ? 'Concluída' : 'Entrega'}</div>
+                                <div class="${isAtrasada ? 'text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-300'} font-black">${completed ? '✓' : formatDateOnly(deliveryDate)}</div>
+                            </div>
                         </div>
-                        <div class="flex items-center justify-between truncate">
-                            <span class="text-slate-400 dark:text-slate-500 flex items-center gap-1"><i data-lucide="truck" class="w-3 h-3 text-slate-400"></i> Terceiros:</span>
-                            <span class="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[120px]">${item.status_terceiros || '-'}</span>
+        
+                        <div class="mt-2 h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                            <div class="h-full ${progressValue !== null && progressValue >= 100 ? 'bg-emerald-500' : 'bg-blue-500'} rounded-full" style="width:${progressValue === null ? 0 : progressValue}%"></div>
                         </div>
-                        <div class="flex items-center justify-between truncate">
-                            <span class="text-slate-400 dark:text-slate-500 flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3 text-slate-400"></i> Produção:</span>
-                            <span class="font-bold text-blue-600 dark:text-blue-400">${getProductionLabel(item)}</span>
+        
+                        <div class="mt-2.5 pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+                            <span class="truncate text-[9px] font-semibold text-slate-500 dark:text-slate-400">${item.status || ''}</span>
+                            <span class="shrink-0 text-[10px] font-black ${isAtrasada ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}">${formatBRL(val)}</span>
                         </div>
-                    </div>
-
-                    ${hasHierarchyData(item) ? `
-                        <div class="text-[10px] text-slate-500 dark:text-slate-400">OS + ${readProductionNumber(item.qtd_os_descendentes) || 0} descendente(s). Própria: ${productionPercentLabel(item.percentual_producao_proprio)}.</div>
-                        ${getHierarchyWarning(item) ? '<div class="text-[10px] text-amber-700 dark:text-amber-300">Cálculo com pendências na hierarquia. Veja os detalhes.</div>' : ''}
-                    ` : ''}
-
-                    <div class="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 pt-1 border-t border-slate-200 dark:border-slate-900">
-                        <div class="flex items-center gap-1.5 truncate max-w-[150px]">
-                            <span class="truncate font-medium text-slate-600 dark:text-slate-400" title="${item.cliente || 'Sem cliente'}">${item.cliente || 'Sem cliente'}</span>
-                            ${item.prev_entrega_orcamento ? `<span class="text-[9px] bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-1 py-0.2 rounded border border-slate-200 dark:border-slate-800/80" title="Prazo Orig. Orçamento">Orig: ${formatDateOnly(item.prev_entrega_orcamento)}</span>` : ''}
-                        </div>
-                        <span class="${isAtrasada ? 'text-red-500 dark:text-red-400 font-bold' : 'text-slate-500 dark:text-slate-400'}">${completed ? 'Concluída' : (isAtrasada ? 'Atrasado' : 'No prazo')}</span>
                     </div>
                 </div>
             `;
@@ -1364,81 +1584,44 @@
 
         function openModal(item) {
             currentOSItem = item;
-            
-            const safeText = (val) => (!val || val === 'NaT' || val === 'None' || val === 'null' || String(val).trim() === '') ? '-' : val;
-
-            document.getElementById('mOS').textContent = `OS #${item.n_os}`;
-            document.getElementById('mTitulo').textContent = getFullTitle(item);
-            document.getElementById('mPedido').textContent = item.n_pedido || 'Não informado';
-            document.getElementById('mCliente').textContent = item.cliente || 'Não informado';
-            document.getElementById('mCnpj').textContent = safeText(item.cnpj);
-            document.getElementById('mPreco').textContent = formatBRL(item.preco_geral_a_vista);
-            document.getElementById('mPossuiOrcamento').textContent = item.possui_orcamento || '-';
-            
-            document.getElementById('mNumOrcamento').textContent = item.orcamento || 'Não possui';
-
+        
+            const type = getItemType(item);
+            const progressValue = getProductionPercentValue(item);
+            const progressLabel = getProductionLabel(item);
+            const budgetCodes = getBudgetCodes(item);
             const quantities = getDestinationQuantities(item);
+            const isAtrasada = !isOSCompleted(item) && item.atrasada === 'sim';
+        
+            document.getElementById('mOS').textContent = `OS ${item.n_os ?? '-'}`;
+            document.getElementById('mTitulo').textContent = getFullTitle(item);
+            document.getElementById('mCliente').textContent = item.cliente || 'Cliente não informado';
+            document.getElementById('mPedido').textContent = item.n_pedido || '-';
+        
+            const typeBadge = document.getElementById('mTypeBadge');
+            typeBadge.className = `text-[10px] font-black px-2.5 py-1 rounded-lg border inline-flex items-center gap-1 ${type.badge}`;
+            typeBadge.innerHTML = `<i data-lucide="${type.icon}" class="w-3 h-3"></i>${type.label}`;
+        
+            document.getElementById('mStatusBadge').textContent = item.status || (isOSCompleted(item) ? 'CONCLUÍDA' : 'EM ABERTO');
+            document.getElementById('mPrazoBadge').classList.toggle('hidden', !isAtrasada);
+        
+            document.getElementById('mProducao').textContent = progressLabel;
+            document.getElementById('mProgressBar').style.width = `${progressValue === null ? 0 : progressValue}%`;
+            document.getElementById('mProgressBar').className =
+                `h-full rounded-full transition-all ${progressValue !== null && progressValue >= 100 ? 'bg-emerald-500' : 'bg-blue-500'}`;
+        
+            document.getElementById('mOrcamento').textContent =
+                budgetCodes.length ? budgetCodes.join(', ') : (itemHasBudget(item) ? 'SIM' : '—');
+            document.getElementById('mPreco').textContent = formatBRL(item.preco_geral_a_vista);
+            document.getElementById('mEntrega').textContent = formatDateOnly(
+                item.entrega_normalizada || item.prev_entrega_orcamento || item.prev_entrega_os
+            );
             document.getElementById('mQtdOrcamento').textContent = destinationQuantityLabel(quantities.budget);
-            document.getElementById('mQtdEstoque').textContent = destinationQuantityLabel(quantities.stock);
-            document.getElementById('mQtdOutrasOS').textContent = destinationQuantityLabel(quantities.otherOS);
-            document.getElementById('mQtdOutrasOrigens').textContent = destinationQuantityLabel(quantities.otherOrigins);
-            document.getElementById('mOtherOriginsRow').classList.toggle('hidden', !(quantities.otherOrigins > 0));
-            document.getElementById('mOSAtendidas').textContent = item.os_atendidas || 'Nenhum vínculo informado pela API.';
-            document.getElementById('mDestinationNotice').textContent = quantities.stock === null ? 'Estoque não confirmado: atualize a query da API para descontar todas as destinações.' : '';
-
             document.getElementById('mCompras').textContent = item.status_compras || '-';
             document.getElementById('mTerceiros').textContent = item.status_terceiros || '-';
-            document.getElementById('mProducao').textContent = getProductionLabel(item);
-            document.getElementById('mSituacao').textContent = item.concluido === undefined ? 'Em aberto (API anterior)' : (isOSCompleted(item) ? 'Concluída' : 'Em aberto');
-            const hierarchyDetails = document.getElementById('mHierarchyDetails');
-            hierarchyDetails.classList.toggle('hidden', !hasHierarchyData(item));
-            if (hasHierarchyData(item)) {
-                document.getElementById('mOwnProduction').textContent = productionPercentLabel(item.percentual_producao_proprio);
-                document.getElementById('mDescendantCount').textContent = item.qtd_os_descendentes ?? 0;
-                document.getElementById('mDescendants').textContent = item.os_descendentes || 'Nenhuma';
-                const formatHours = value => {
-                    const number = readProductionNumber(value);
-                    return number === null ? '-' : new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(number);
-                };
-                document.getElementById('mHierarchyHours').textContent = formatHours(item.horas_concluidas_arvore) + ' / ' + formatHours(item.horas_previstas_arvore) + ' h';
-                const byDestination = readProductionNumber(item.versao_calculo_producao) >= 3;
-                document.getElementById('mHierarchyHoursLabel').textContent = byDestination ? 'Equivalente atendido / peso previsto do conjunto' : 'Horas previstas atendidas / total previsto';
-                document.getElementById('mHierarchyExplanation').textContent = byDestination
-                    ? 'Cada filha pesa pelas horas previstas do seu conjunto, proporcionais à quantidade destinada a esta OS. Vale o maior avanço entre produção e entrega desse vínculo. Entrega completa atende o ramo em 100%. São horas equivalentes, não horas reais apontadas.'
-                    : 'O percentual inclui esta OS e as descendentes, ponderado pelas horas previstas. As entregas por destino ainda não participam desta versão da API.';
-                document.getElementById('mDeliveryCreditRow').classList.toggle('hidden', !byDestination);
-                document.getElementById('mDeliveryCredit').textContent = formatHours(item.horas_creditadas_por_entrega) + ' h equivalentes';
-                document.getElementById('mAllocationDetails').classList.toggle('hidden', !byDestination);
-                const allocationRows = document.getElementById('mAllocationRows');
-                allocationRows.innerHTML = '';
-                if (byDestination) {
-                    const details = item.detalhes_avanco_destino || [];
-                    if (!details.length) allocationRows.textContent = 'Nenhuma filha com vínculo calculável informado.';
-                    details.forEach(detail => {
-                        const row = document.createElement('p');
-                        row.className = 'rounded-lg border border-slate-200 dark:border-slate-800 p-2';
-                        row.textContent = 'OS ' + detail.os + ': entregue ' + formatHours(detail.delivered) + ' de ' + formatHours(detail.requested)
-                            + '; produção do conjunto: ' + (detail.productionPercent === null ? 'sem horas' : productionPercentLabel(detail.productionPercent))
-                            + '; atendimento aplicado: ' + productionPercentLabel(detail.appliedPercent)
-                            + '; peso neste conjunto: ' + formatHours(detail.weight) + ' h.';
-                        allocationRows.appendChild(row);
-                    });
-                }
-                document.getElementById('mHierarchyWarning').textContent = getHierarchyWarning(item);
-            }
-            document.getElementById('mAtrasada').textContent = !isOSCompleted(item) && item.atrasada === 'sim' ? 'SIM' : 'NÃO';
-            
-            const temOrcamento = item.possui_orcamento && item.possui_orcamento.toLowerCase() === 'sim';
-            const prazoOriginalStr = temOrcamento ? item.prev_entrega_orcamento : item.prev_entrega_os;
-
-            document.getElementById('mAbertura').textContent = formatDateOnly(item.abertura_os);
-            document.getElementById('mPrevEntregaOS').textContent = formatDateOnly(item.prev_entrega_os);
-            document.getElementById('mPrazoOriginal').textContent = formatDateOnly(prazoOriginalStr);
-            document.getElementById('mApontamento').textContent = formatDateOnly(item.ultimo_apontamento);
-            document.getElementById('mEntregaNorm').textContent = formatDateOnly(item.entrega_normalizada);
-
+        
+            renderOSRelationMap(item);
             toggleEditPrazo(false);
-
+        
             const modal = document.getElementById('osModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
