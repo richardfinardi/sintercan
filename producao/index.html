@@ -161,6 +161,18 @@
                 </select>
             </div>
 
+            <!-- Filtro por Classificação da OS -->
+            <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
+                <i data-lucide="tags" class="w-4 h-4 text-slate-400"></i>
+                <select id="classificationFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[150px]">
+                    <option value="" class="bg-white dark:bg-slate-900">Classificação (Todas)</option>
+                    <option value="GARANTIA" class="bg-white dark:bg-slate-900">Garantia</option>
+                    <option value="MANUTENCAO" class="bg-white dark:bg-slate-900">Manutenção</option>
+                    <option value="CONJUNTO" class="bg-white dark:bg-slate-900">Conjunto</option>
+                    <option value="PRODUTO" class="bg-white dark:bg-slate-900">Produto</option>
+                </select>
+            </div>
+
             <!-- Filtro por Cliente -->
             <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
@@ -520,7 +532,8 @@
             const extra = [
                 ...['abertura_os', 'prev_entrega_os', 'prev_entrega_orcamento', 'ultimo_apontamento', 'entrega_normalizada']
                     .map(key => item[key] ? formatDateOnly(item[key]) : ''),
-                formatBRL(item.preco_geral_a_vista)
+                formatBRL(item.preco_geral_a_vista),
+                getItemType(item).label
             ];
             const text = normalizeSearchText([...Object.values(item), ...extra].join(' '));
             globalSearchCache.set(item, text);
@@ -1255,6 +1268,7 @@
         function clearAllFilters() {
             document.getElementById('searchInput').value = '';
             document.getElementById('completionFilter').value = 'open';
+            document.getElementById('classificationFilter').value = '';
             document.getElementById('clientFilter').value = '';
             document.getElementById('comprasFilter').value = '';
             document.getElementById('terceirosFilter').value = '';
@@ -1407,6 +1421,7 @@
 
             clearTimeout(searchTimeout);
             const search = normalizeSearchText(document.getElementById('searchInput').value);
+            const selectedClassification = document.getElementById('classificationFilter')?.value || '';
             const selectedClient = document.getElementById('clientFilter').value;
             const selectedCompras = document.getElementById('comprasFilter').value;
             const selectedTerceiros = document.getElementById('terceirosFilter').value;
@@ -1432,6 +1447,7 @@
                     if (!hasBudgetToDeliver) return false;
                 }
 
+                if (selectedClassification && getItemType(item).key !== selectedClassification) return false;
                 if (selectedClient && item.cliente !== selectedClient) return false;
                 if (selectedCompras && item.status_compras !== selectedCompras) return false;
                 if (selectedTerceiros && item.status_terceiros !== selectedTerceiros) return false;
@@ -1537,8 +1553,7 @@
             const normalize = value => String(value ?? '')
                 .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
 
-            // GARANTIA tem prioridade sobre o tipo da OS.
-            // Toda garantia pode ser serviço, mas visualmente deve aparecer como GARANTIA.
+            // 1. GARANTIA é soberana sobre qualquer outro tipo.
             const warranty = normalize(item?.classificacao_mo);
             if (warranty === 'GARANTIA' || warranty === '1') {
                 return {
@@ -1549,12 +1564,12 @@
                     rail: 'bg-pink-500'
                 };
             }
-        
+
             const preferredKeys = [
                 'tp_os', 'tipo', 'tipo_item', 'tipo_os', 'tipo_produto_servico',
                 'produto_servico', 'natureza', 'tipo_registro'
             ];
-        
+
             let value = '';
             for (const key of preferredKeys) {
                 const candidate = normalize(item?.[key]);
@@ -1563,7 +1578,7 @@
                     break;
                 }
             }
-        
+
             if (!value && item && typeof item === 'object') {
                 for (const candidate of Object.values(item)) {
                     const normalized = normalize(candidate);
@@ -1573,18 +1588,40 @@
                     }
                 }
             }
-        
+
+            // 2. Serviço vira MANUTENÇÃO.
             if (value === 'SERVICO') {
                 return {
-                    key: 'SERVICO',
-                    label: 'SERVIÇO',
+                    key: 'MANUTENCAO',
+                    label: 'MANUTENÇÃO',
                     icon: 'wrench',
                     badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
                     rail: 'bg-emerald-500'
                 };
             }
 
+            // 3. Produto com OS filhas vira CONJUNTO.
             if (value === 'PRODUTO') {
+                const dependencies = parseOSDependencies(item?.dependencias_os);
+                const hasChildren =
+                    dependencies.some(edge =>
+                        edge &&
+                        edge.codigo_os_filha !== null &&
+                        edge.codigo_os_filha !== undefined &&
+                        String(edge.codigo_os_filha).trim() !== ''
+                    ) ||
+                    (readProductionNumber(item?.qtd_os_descendentes) || 0) > 0;
+
+                if (hasChildren) {
+                    return {
+                        key: 'CONJUNTO',
+                        label: 'CONJUNTO',
+                        icon: 'boxes',
+                        badge: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30',
+                        rail: 'bg-blue-500'
+                    };
+                }
+
                 return {
                     key: 'PRODUTO',
                     label: 'PRODUTO',
@@ -1602,7 +1639,7 @@
                 rail: 'bg-slate-400'
             };
         }
-        
+
         function itemHasBudget(item) {
             const flag = String(item?.possui_orcamento ?? '').trim().toLowerCase();
             return flag === 'sim' || flag === 's' || flag === '1' || String(item?.orcamento ?? '').trim() !== '';
