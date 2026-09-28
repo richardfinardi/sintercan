@@ -771,14 +771,22 @@
         function getDestinationQuantities(item) {
             const number = value => readProductionNumber(value);
             const corrected = number(item.versao_destinacao) >= 2;
+            const stockRequested = number(
+                item.qtde_solicitada_estoque ??
+                item.qtde_destinada_estoque ??
+                item.qtde_restante_estoque
+            );
+            const stockDelivered = number(
+                item.qtde_entregue_estoque ??
+                item.qtde_produzida_estoque
+            );
             return {
                 budget: number(item.qtde_restante_orcamento),
                 otherOS: number(item.qtde_restante_outras_os),
-                // Campo legado: hoje ele indica a quantidade destinada ao estoque,
-                // mas não informa sozinho quanto já foi entregue.
-                stock: corrected ? number(item.qtde_restante_estoque) : null,
-                stockRequested: number(item.qtde_solicitada_estoque),
-                stockDelivered: number(item.qtde_entregue_estoque),
+                // Compatibilidade com a API antiga e com os novos nomes explícitos.
+                stock: corrected ? stockRequested : null,
+                stockRequested,
+                stockDelivered,
                 totalRequested: number(item.qtde_solicitada_total_destino),
                 totalDelivered: number(item.qtde_entregue_total_destino),
                 otherOrigins: corrected ? number(item.qtde_restante_outras_origens) : null
@@ -1664,12 +1672,17 @@
                 return destinationQuantityLabel(delivered) + '/' + destinationQuantityLabel(requested);
             }
 
-            // Fallback conservador para APIs antigas:
-            // estoque NÃO pode ser considerado entregue só porque existe quantidade destinada.
+            // Fallback: calcula a pendência do estoque pela diferença entre
+            // quantidade destinada e quantidade efetivamente produzida para estoque.
+            // Se a API ainda não trouxer a quantidade produzida, considera 0 entregue.
+            const stockPending = quantities.stockRequested === null
+                ? null
+                : Math.max(0, quantities.stockRequested - Math.max(0, quantities.stockDelivered ?? 0));
+
             const pendingParts = [
                 quantities.budget,
                 quantities.otherOS,
-                quantities.stock,
+                stockPending,
                 quantities.otherOrigins
             ].filter(value => value !== null && value !== undefined && Number.isFinite(value));
 
