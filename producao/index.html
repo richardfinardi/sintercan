@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://consultoriarf.net/sintercan/producao/">
     <meta property="og:type" content="website">
     
-    <title>Programação Semanal de Produção Sintercan V6.11</title>
+    <title>Programação Semanal de Produção Sintercan V6.12</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,7 +68,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.11</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.12</span></p>
                 </div>
             </div>
 
@@ -101,7 +101,12 @@
                     <span id="lblToggleValues">Ocultar Valores</span>
                 </button>
 
-                <button id="btnRefresh" onclick="fetchData()" class="flex items-center gap-2 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold text-xs transition-all shadow">
+                <div id="productionDataStatus" class="hidden items-center gap-1.5 px-2.5 py-2 rounded-xl border text-[10px] font-black whitespace-nowrap" title="Origem dos dados">
+                    <span id="productionDataStatusDot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span id="productionDataStatusText">CARREGANDO</span>
+                </div>
+
+                <button id="btnRefresh" onclick="fetchData(true)" class="flex items-center gap-2 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold text-xs transition-all shadow">
                     <i data-lucide="refresh-cw" class="w-4 h-4" id="refreshIcon"></i>
                     Atualizar Dados
                 </button>
@@ -230,7 +235,7 @@
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
             <div class="flex items-center gap-2">
                 <i data-lucide="code-2" class="w-4 h-4 text-amber-500"></i>
-                <span>© 2026 Sistema de Gestão de Produção V6.11</span>
+                <span>© 2026 Sistema de Gestão de Produção V6.12</span>
             </div>
         </div>
     </footer>
@@ -462,9 +467,21 @@
         }
 
         const API_URL = 'https://sintercan.consultoriarf.net/PRODUCAO';
+        const PRODUCTION_DB_NAME = 'SINTERCAN_PRODUCAO_CACHE';
+        const PRODUCTION_DB_VERSION = 1;
+        const PRODUCTION_STORE_NAME = 'datasets';
+        const PRODUCTION_CACHE_KEY = 'producao_data_v1';
+        const PRODUCTION_AUTO_REFRESH_MS = 5 * 60 * 1000;
+
         let rawData = [];
         let currentOSItem = null;
         let osNavigationHistory = [];
+        let productionDataReady = false;
+        let productionLoadStarted = false;
+        let isRefreshingProductionData = false;
+        let productionCacheSavedAt = null;
+        let productionLastApiSyncAtMs = 0;
+        let productionAutoRefreshTimer = null;
         
         let currentDate = new Date();
 
@@ -845,7 +862,8 @@
                 btnToggle.classList.add('flex');
             }
             lucide.createIcons();
-            fetchData();
+            loadProductionData();
+            startProductionAutoRefresh();
         });
 
         function toggleValuesVisibility() {
@@ -885,112 +903,326 @@
             return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseValue(val));
         }
 
-        async function fetchData() {
+        function formatProductionCacheDate(value) {
+            if (!value) return '';
+            const d = new Date(value);
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        function updateProductionDataStatus(mode, savedAt = null, extra = '') {
+            const badge = document.getElementById('productionDataStatus');
+            const dot = document.getElementById('productionDataStatusDot');
+            const text = document.getElementById('productionDataStatusText');
+            if (!badge || !dot || !text) return;
+
+            badge.classList.remove('hidden');
+            badge.classList.add('flex');
+
+            const dateText = formatProductionCacheDate(savedAt);
+            let classes = '';
+            let dotClass = '';
+            let label = '';
+            let title = '';
+
+            if (mode === 'api') {
+                classes = 'bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-300';
+                dotClass = 'bg-emerald-500';
+                label = dateText ? 'API • ' + dateText : 'API';
+                title = 'Dados atualizados pela API e gravados no cache local.';
+            } else if (mode === 'cache') {
+                classes = 'bg-sky-500/10 border-sky-500/25 text-sky-700 dark:text-sky-300';
+                dotClass = 'bg-sky-500';
+                label = dateText ? 'CACHE • ' + dateText : 'CACHE LOCAL';
+                title = 'Dados carregados instantaneamente do cache local.' + (extra ? ' ' + extra : '');
+            } else if (mode === 'updating') {
+                classes = 'bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-300';
+                dotClass = 'bg-amber-500 animate-pulse';
+                label = 'SINCRONIZANDO';
+                title = 'Atualizando a API em segundo plano. Os dados atuais continuam na tela.';
+            } else if (mode === 'error') {
+                classes = 'bg-red-500/10 border-red-500/25 text-red-700 dark:text-red-300';
+                dotClass = 'bg-red-500';
+                label = 'SEM DADOS';
+                title = extra || 'Não foi possível carregar dados.';
+            } else {
+                classes = 'bg-slate-500/10 border-slate-500/25 text-slate-600 dark:text-slate-300';
+                dotClass = 'bg-amber-500 animate-pulse';
+                label = 'CARREGANDO';
+                title = 'Verificando cache local.';
+            }
+
+            badge.className = 'flex items-center gap-1.5 px-2.5 py-2 rounded-xl border text-[10px] font-black whitespace-nowrap ' + classes;
+            dot.className = 'w-2 h-2 rounded-full ' + dotClass;
+            text.textContent = label;
+            badge.title = title;
+        }
+
+        function openProductionCacheDb() {
+            return new Promise((resolve, reject) => {
+                if (!('indexedDB' in window)) {
+                    reject(new Error('IndexedDB não disponível'));
+                    return;
+                }
+
+                const request = indexedDB.open(PRODUCTION_DB_NAME, PRODUCTION_DB_VERSION);
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains(PRODUCTION_STORE_NAME)) {
+                        db.createObjectStore(PRODUCTION_STORE_NAME, { keyPath: 'key' });
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error || new Error('Falha ao abrir cache de produção'));
+            });
+        }
+
+        async function readProductionCache() {
+            let db;
+            try {
+                db = await openProductionCacheDb();
+                return await new Promise((resolve, reject) => {
+                    const tx = db.transaction(PRODUCTION_STORE_NAME, 'readonly');
+                    const request = tx.objectStore(PRODUCTION_STORE_NAME).get(PRODUCTION_CACHE_KEY);
+                    request.onsuccess = () => resolve(request.result || null);
+                    request.onerror = () => reject(request.error || new Error('Falha ao ler cache de produção'));
+                });
+            } finally {
+                if (db) db.close();
+            }
+        }
+
+        async function writeProductionCache(data, savedAt) {
+            let db;
+            try {
+                db = await openProductionCacheDb();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(PRODUCTION_STORE_NAME, 'readwrite');
+                    tx.objectStore(PRODUCTION_STORE_NAME).put({
+                        key: PRODUCTION_CACHE_KEY,
+                        savedAt,
+                        data
+                    });
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error || new Error('Falha ao salvar cache de produção'));
+                    tx.onabort = () => reject(tx.error || new Error('Gravação do cache interrompida'));
+                });
+            } finally {
+                if (db) db.close();
+            }
+        }
+
+        function applyProductionDataset(data, source = 'api', savedAt = null) {
+            const baseList = computeAllocationProgress(Array.isArray(data) ? data : [data]);
+
+            document.getElementById('allocationApiNotice').classList.toggle('hidden',
+                baseList.length === 0 || baseList.every(item => readProductionNumber(item.versao_calculo_producao) >= 3));
+            document.getElementById('destinationApiNotice').classList.toggle('hidden',
+                baseList.length === 0 || baseList.every(item => readProductionNumber(item.versao_destinacao) >= 2));
+            document.getElementById('hierarchyApiNotice').classList.toggle('hidden',
+                baseList.length === 0 || baseList.every(item => hasHierarchyData(item) && item.concluido !== undefined));
+
+            const expandedData = [];
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            baseList.forEach(item => {
+                const regex = /(ORÇ:[^,]+?(\d{2}\/\d{2}\/\d{2,4})\s*\(([\d\.]+)\))/gi;
+                const matches = [...(item.orcamento || '').matchAll(regex)];
+
+                if (matches.length > 1) {
+                    const totalQtdOrcamento = matches.reduce((acc, m) => acc + parseValue(m[3]), 0) || parseValue(item.qtde_restante_orcamento) || 1;
+                    const totalPrecoOS = parseValue(item.preco_geral_a_vista);
+                    const groupedByDate = {};
+
+                    matches.forEach(match => {
+                        const subOrcTexto = match[1].trim();
+                        const dataStr = match[2];
+                        const qtd = parseValue(match[3]);
+
+                        const parts = dataStr.split('/');
+                        let year = parts[2];
+                        if (year.length === 2) year = '20' + year;
+                        const dtOrc = new Date(year, parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+                        const isoDate = `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}T00:00:00`;
+
+                        let dataFinalExibicao = isoDate;
+                        if (dtOrc < today) {
+                            dataFinalExibicao = item.entrega_normalizada || today.toISOString();
+                        }
+
+                        const key = String(dataFinalExibicao);
+                        if (!groupedByDate[key]) {
+                            groupedByDate[key] = {
+                                subOrcTexts: [],
+                                isoDate,
+                                dataFinalExibicao,
+                                totalQtd: 0
+                            };
+                        }
+
+                        groupedByDate[key].subOrcTexts.push(subOrcTexto);
+                        groupedByDate[key].totalQtd += qtd;
+                    });
+
+                    Object.values(groupedByDate).forEach(group => {
+                        const precoProporcional = totalPrecoOS * (group.totalQtd / totalQtdOrcamento);
+                        expandedData.push({
+                            ...item,
+                            orcamento: group.subOrcTexts.join(', '),
+                            prev_entrega_orcamento: group.isoDate,
+                            entrega_normalizada: group.dataFinalExibicao,
+                            qtde_restante_orcamento: group.totalQtd,
+                            preco_geral_a_vista: precoProporcional
+                        });
+                    });
+                } else {
+                    let dataFinalExibicao = item.entrega_normalizada;
+                    if (item.prev_entrega_orcamento) {
+                        const dtOrc = new Date(item.prev_entrega_orcamento);
+                        if (dtOrc < today) {
+                            dataFinalExibicao = item.entrega_normalizada || today.toISOString();
+                        }
+                    }
+
+                    expandedData.push({
+                        ...item,
+                        entrega_normalizada: dataFinalExibicao
+                    });
+                }
+            });
+
+            rawData = expandedData;
+            globalSearchCache = new WeakMap();
+            productionDataReady = true;
+            productionCacheSavedAt = savedAt || productionCacheSavedAt;
+
+            populateDropdowns();
+            renderCalendar();
+            updateProductionDataStatus(source === 'cache' ? 'cache' : 'api', savedAt);
+        }
+
+        async function fetchData(manual = true, quiet = false) {
+            if (isRefreshingProductionData) return;
+            isRefreshingProductionData = true;
+            productionLoadStarted = true;
+
             const icon = document.getElementById('refreshIcon');
+            const button = document.getElementById('btnRefresh');
             if (icon) icon.classList.add('animate-spin');
+            if (button) button.disabled = true;
+
+            if (productionDataReady) {
+                updateProductionDataStatus('updating', productionCacheSavedAt);
+            } else {
+                updateProductionDataStatus('loading');
+            }
 
             try {
                 const response = await fetch(`${API_URL}?_t=${Date.now()}`, {
                     method: 'GET',
-                    headers: { 'ngrok-skip-browser-warning': '69420' },
+                    headers: {
+                        'ngrok-skip-browser-warning': '69420',
+                        'Cache-Control': 'no-cache'
+                    },
                     cache: 'no-store'
                 });
 
                 if (!response.ok) throw new Error(`Status HTTP: ${response.status}`);
-                
+
                 const data = await response.json();
-                const baseList = computeAllocationProgress(Array.isArray(data) ? data : [data]);
-                document.getElementById('allocationApiNotice').classList.toggle('hidden',
-                    baseList.length === 0 || baseList.every(item => readProductionNumber(item.versao_calculo_producao) >= 3));
-                document.getElementById('destinationApiNotice').classList.toggle('hidden',
-                    baseList.length === 0 || baseList.every(item => readProductionNumber(item.versao_destinacao) >= 2));
-                document.getElementById('hierarchyApiNotice').classList.toggle('hidden',
-                    baseList.length === 0 || baseList.every(item => hasHierarchyData(item) && item.concluido !== undefined));
-                
-                const expandedData = [];
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                const normalized = Array.isArray(data) ? data : [data];
+                const savedAt = new Date().toISOString();
 
-                baseList.forEach(item => {
-                    const regex = /(ORÇ:[^,]+?(\d{2}\/\d{2}\/\d{2,4})\s*\(([\d\.]+)\))/gi;
-                    const matches = [...(item.orcamento || '').matchAll(regex)];
+                productionLastApiSyncAtMs = Date.now();
+                applyProductionDataset(normalized, 'api', savedAt);
 
-                    if (matches.length > 1) {
-                        const totalQtdOrcamento = matches.reduce((acc, m) => acc + parseValue(m[3]), 0) || parseValue(item.qtde_restante_orcamento) || 1;
-                        const totalPrecoOS = parseValue(item.preco_geral_a_vista);
-
-                        const groupedByDate = {};
-
-                        matches.forEach(match => {
-                            const subOrcTexto = match[1].trim();
-                            const dataStr = match[2];
-                            const qtd = parseValue(match[3]);
-
-                            const parts = dataStr.split('/');
-                            let year = parts[2];
-                            if (year.length === 2) year = '20' + year;
-                            const dtOrc = new Date(year, parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
-                            const isoDate = `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}T00:00:00`;
-
-                            let dataFinalExibicao = isoDate;
-                            if (dtOrc < today) {
-                                dataFinalExibicao = item.entrega_normalizada || today.toISOString();
-                            }
-
-                            const key = `${dataFinalExibicao}`;
-
-                            if (!groupedByDate[key]) {
-                                groupedByDate[key] = {
-                                    subOrcTexts: [],
-                                    isoDate: isoDate,
-                                    dataFinalExibicao: dataFinalExibicao,
-                                    totalQtd: 0
-                                };
-                            }
-
-                            groupedByDate[key].subOrcTexts.push(subOrcTexto);
-                            groupedByDate[key].totalQtd += qtd;
-                        });
-
-                        Object.values(groupedByDate).forEach(group => {
-                            const precoProporcional = totalPrecoOS * (group.totalQtd / totalQtdOrcamento);
-
-                            expandedData.push({
-                                ...item,
-                                orcamento: group.subOrcTexts.join(', '),
-                                prev_entrega_orcamento: group.isoDate,
-                                entrega_normalizada: group.dataFinalExibicao,
-                                qtde_restante_orcamento: group.totalQtd,
-                                preco_geral_a_vista: precoProporcional
-                            });
-                        });
-                    } else {
-                        let dataFinalExibicao = item.entrega_normalizada;
-                        if (item.prev_entrega_orcamento) {
-                            const dtOrc = new Date(item.prev_entrega_orcamento);
-                            if (dtOrc < today) {
-                                dataFinalExibicao = item.entrega_normalizada || today.toISOString();
-                            }
-                        }
-
-                        expandedData.push({
-                            ...item,
-                            entrega_normalizada: dataFinalExibicao
-                        });
-                    }
-                });
-
-                rawData = expandedData;
-                globalSearchCache = new WeakMap();
-                
-                populateDropdowns();
-                renderCalendar();
+                try {
+                    await writeProductionCache(normalized, savedAt);
+                    productionCacheSavedAt = savedAt;
+                    updateProductionDataStatus('api', savedAt);
+                } catch (cacheErr) {
+                    console.warn('Não foi possível salvar o cache local da produção:', cacheErr);
+                }
             } catch (err) {
-                console.error("Erro ao buscar API:", err);
-                alert("Erro de conexão! Verifique se a API local e o Ngrok estão ativos.");
+                console.error('Erro ao buscar API de produção:', err);
+
+                if (productionDataReady) {
+                    updateProductionDataStatus('cache', productionCacheSavedAt, 'API indisponível; mantendo os dados salvos.');
+                    if (manual && !quiet) {
+                        alert('A API não respondeu. Mantendo os dados do cache local.');
+                    }
+                } else {
+                    updateProductionDataStatus('error', null, err.message);
+                    if (!quiet) {
+                        alert('Erro de conexão e nenhum cache local disponível.');
+                    }
+                }
             } finally {
+                isRefreshingProductionData = false;
                 if (icon) icon.classList.remove('animate-spin');
+                if (button) button.disabled = false;
             }
+        }
+
+        async function loadProductionData() {
+            if (productionLoadStarted && (productionDataReady || isRefreshingProductionData)) return;
+            productionLoadStarted = true;
+            updateProductionDataStatus('loading');
+
+            let cacheRecord = null;
+            try {
+                cacheRecord = await readProductionCache();
+            } catch (cacheErr) {
+                console.warn('Cache local de produção indisponível:', cacheErr);
+            }
+
+            if (cacheRecord && Array.isArray(cacheRecord.data) && cacheRecord.data.length > 0) {
+                productionCacheSavedAt = cacheRecord.savedAt || null;
+                productionLastApiSyncAtMs = productionCacheSavedAt
+                    ? (new Date(productionCacheSavedAt).getTime() || 0)
+                    : 0;
+
+                // Cache-first: mostra a tela imediatamente.
+                applyProductionDataset(cacheRecord.data, 'cache', productionCacheSavedAt);
+
+                // Depois sincroniza silenciosamente com a API.
+                fetchData(false, true);
+            } else {
+                await fetchData(false, false);
+            }
+        }
+
+        function startProductionAutoRefresh() {
+            if (productionAutoRefreshTimer) clearInterval(productionAutoRefreshTimer);
+
+            productionAutoRefreshTimer = setInterval(() => {
+                if (document.visibilityState && document.visibilityState !== 'visible') return;
+                if (isRefreshingProductionData) return;
+
+                const elapsed = productionLastApiSyncAtMs
+                    ? Date.now() - productionLastApiSyncAtMs
+                    : Infinity;
+
+                if (elapsed >= PRODUCTION_AUTO_REFRESH_MS) {
+                    fetchData(false, true);
+                }
+            }, 30000);
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState !== 'visible' || isRefreshingProductionData) return;
+
+                const elapsed = productionLastApiSyncAtMs
+                    ? Date.now() - productionLastApiSyncAtMs
+                    : Infinity;
+
+                if (elapsed >= PRODUCTION_AUTO_REFRESH_MS) {
+                    fetchData(false, true);
+                }
+            });
         }
 
         function toggleSortMode() {
