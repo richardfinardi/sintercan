@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://consultoriarf.net/sintercan/producao/">
     <meta property="og:type" content="website">
     
-    <title>Programação Semanal de Produção Sintercan V6.9</title>
+    <title>Programação Semanal de Produção Sintercan V6.10</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,7 +68,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.9</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.10</span></p>
                 </div>
             </div>
 
@@ -230,7 +230,7 @@
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
             <div class="flex items-center gap-2">
                 <i data-lucide="code-2" class="w-4 h-4 text-amber-500"></i>
-                <span>© 2026 Sistema de Gestão de Produção V6.9</span>
+                <span>© 2026 Sistema de Gestão de Produção V6.10</span>
             </div>
         </div>
     </footer>
@@ -285,6 +285,10 @@
                 <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2">
+                            <button id="mBackRelation" type="button" onclick="goBackRelatedOS()" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-[10px] font-black hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Voltar para a OS anterior">
+                                <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                                <span id="mBackRelationLabel">VOLTAR</span>
+                            </button>
                             <span id="mOS" class="text-xs font-black bg-amber-500 text-slate-950 px-2.5 py-1 rounded-lg uppercase"></span>
                             <span id="mTypeBadge" class="text-[10px] font-black px-2.5 py-1 rounded-lg border"></span>
                             <span id="mStatusBadge" class="text-[10px] font-black px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25"></span>
@@ -460,6 +464,7 @@
         const API_URL = 'https://sintercan.consultoriarf.net/PRODUCAO';
         let rawData = [];
         let currentOSItem = null;
+        let osNavigationHistory = [];
         
         let currentDate = new Date();
 
@@ -1492,10 +1497,38 @@
                 (extra > 0 ? `<div class="text-center text-[10px] font-black text-slate-500 dark:text-slate-400 py-1">+ ${extra}</div>` : '');
         }
         
+        function updateOSBackButton() {
+            const button = document.getElementById('mBackRelation');
+            const label = document.getElementById('mBackRelationLabel');
+            if (!button || !label) return;
+
+            const previous = osNavigationHistory[osNavigationHistory.length - 1];
+            if (!previous) {
+                button.classList.add('hidden');
+                button.classList.remove('inline-flex');
+                label.textContent = 'VOLTAR';
+                return;
+            }
+
+            label.textContent = 'VOLTAR OS ' + (previous.n_os ?? '');
+            button.classList.remove('hidden');
+            button.classList.add('inline-flex');
+        }
+
         function openRelatedOS(company, code) {
             const related = findOSByCode(company, code);
             if (!related) return;
-            openModal(related);
+
+            if (currentOSItem) {
+                osNavigationHistory.push(currentOSItem);
+            }
+            openModal(related, true);
+        }
+
+        function goBackRelatedOS() {
+            if (!osNavigationHistory.length) return;
+            const previous = osNavigationHistory.pop();
+            openModal(previous, true);
         }
 
         function renderOSRelationMap(item) {
@@ -1618,7 +1651,8 @@
             `;
         }
 
-        function openModal(item) {
+        function openModal(item, preserveHistory = false) {
+            if (!preserveHistory) osNavigationHistory = [];
             currentOSItem = item;
         
             const type = getItemType(item);
@@ -1657,6 +1691,7 @@
         
             renderOSRelationMap(item);
             toggleEditPrazo(false);
+            updateOSBackButton();
         
             const modal = document.getElementById('osModal');
             modal.classList.remove('hidden');
@@ -1784,6 +1819,8 @@
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             currentOSItem = null;
+            osNavigationHistory = [];
+            updateOSBackButton();
         }
     </script>
 </body>
