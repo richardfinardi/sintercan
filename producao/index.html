@@ -332,6 +332,12 @@
                     <div class="h-3 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                         <div id="mProgressBar" class="h-full bg-blue-500 rounded-full transition-all" style="width:0%"></div>
                     </div>
+                    <div class="mt-2 flex justify-end">
+                        <span class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            Próprio da OS
+                            <strong id="mProducaoProprio" class="text-slate-900 dark:text-white"></strong>
+                        </span>
+                    </div>
                 </section>
 
                 <section class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -2091,6 +2097,9 @@
             document.getElementById('mPrazoBadge').classList.toggle('hidden', !isAtrasada);
         
             document.getElementById('mProducao').textContent = progressLabel;
+            const ownProgress = readProductionNumber(item.percentual_producao_proprio);
+            document.getElementById('mProducaoProprio').textContent =
+                ownProgress === null ? '—' : destinationQuantityLabel(ownProgress) + '%';
             document.getElementById('mProgressBar').style.width = `${progressValue === null ? 0 : progressValue}%`;
             document.getElementById('mProgressBar').className =
                 `h-full rounded-full transition-all ${progressValue !== null && progressValue >= 100 ? 'bg-emerald-500' : 'bg-blue-500'}`;
