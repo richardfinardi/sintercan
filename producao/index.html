@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://consultoriarf.net/sintercan/producao/">
     <meta property="og:type" content="website">
     
-    <title>Programação Semanal de Produção Sintercan V6.19</title>
+    <title>Programação Semanal de Produção Sintercan V6.20</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,7 +68,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.19</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.20</span></p>
                 </div>
             </div>
 
@@ -178,16 +178,6 @@
                 <i data-lucide="gauge" class="w-4 h-4 text-slate-400"></i>
                 <select id="priorityFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[150px]">
                     <option value="" class="bg-white dark:bg-slate-900">Prioridade (Todas)</option>
-                    <option value="0" class="bg-white dark:bg-slate-900">P0 · Máxima</option>
-                    <option value="1" class="bg-white dark:bg-slate-900">P1 · Muito alta</option>
-                    <option value="2" class="bg-white dark:bg-slate-900">P2 · Alta</option>
-                    <option value="3" class="bg-white dark:bg-slate-900">P3 · Alta</option>
-                    <option value="4" class="bg-white dark:bg-slate-900">P4 · Acima normal</option>
-                    <option value="5" class="bg-white dark:bg-slate-900">P5 · Neutra</option>
-                    <option value="6" class="bg-white dark:bg-slate-900">P6 · Baixa</option>
-                    <option value="7" class="bg-white dark:bg-slate-900">P7 · Baixa</option>
-                    <option value="8" class="bg-white dark:bg-slate-900">P8 · Muito baixa</option>
-                    <option value="9" class="bg-white dark:bg-slate-900">P9 · Mínima</option>
                 </select>
             </div>
 
@@ -265,7 +255,7 @@
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
             <div class="flex items-center gap-2">
                 <i data-lucide="code-2" class="w-4 h-4 text-amber-500"></i>
-                <span>© 2026 Sistema de Gestão de Produção V6.19</span>
+                <span>© 2026 Sistema de Gestão de Produção V6.20</span>
             </div>
         </div>
     </footer>
@@ -1332,23 +1322,30 @@
             const clientSelect = document.getElementById('clientFilter');
             const comprasSelect = document.getElementById('comprasFilter');
             const terceirosSelect = document.getElementById('terceirosFilter');
+            const prioritySelect = document.getElementById('priorityFilter');
 
             const currentClient = clientSelect.value;
             const currentCompras = comprasSelect.value;
             const currentTerceiros = terceirosSelect.value;
+            const currentPriority = prioritySelect?.value ?? '';
 
             clientSelect.innerHTML = '<option value="" class="bg-white dark:bg-slate-900">Todos os Clientes</option>';
             comprasSelect.innerHTML = '<option value="" class="bg-white dark:bg-slate-900">Status Compras (Todos)</option>';
             terceirosSelect.innerHTML = '<option value="" class="bg-white dark:bg-slate-900">Status Terceiros (Todos)</option>';
+            if (prioritySelect) {
+                prioritySelect.innerHTML = '<option value="" class="bg-white dark:bg-slate-900">Prioridade (Todas)</option>';
+            }
 
             const clients = new Set();
             const comprasStatus = new Set();
             const terceirosStatus = new Set();
+            const priorities = new Set();
 
             rawData.forEach(item => {
                 if (item.cliente && item.cliente.trim() !== "") clients.add(item.cliente.trim());
                 if (item.status_compras && item.status_compras.trim() !== "") comprasStatus.add(item.status_compras.trim());
                 if (item.status_terceiros && item.status_terceiros.trim() !== "") terceirosStatus.add(item.status_terceiros.trim());
+                priorities.add(getPriorityValue(item));
             });
 
             Array.from(clients).sort().forEach(val => {
@@ -1363,9 +1360,23 @@
                 terceirosSelect.appendChild(new Option(val, val, false, false)).className = 'bg-white dark:bg-slate-900';
             });
 
+            if (prioritySelect) {
+                Array.from(priorities)
+                    .sort((a, b) => a - b)
+                    .forEach(val => {
+                        const meta = getPriorityMeta(val);
+                        const option = new Option(`P${val} · ${meta.label}`, String(val), false, false);
+                        option.className = 'bg-white dark:bg-slate-900';
+                        prioritySelect.appendChild(option);
+                    });
+            }
+
             clientSelect.value = currentClient;
             comprasSelect.value = currentCompras;
             terceirosSelect.value = currentTerceiros;
+            if (prioritySelect && Array.from(prioritySelect.options).some(opt => opt.value === currentPriority)) {
+                prioritySelect.value = currentPriority;
+            }
         }
 
         function changeMonth(delta) {
@@ -1454,13 +1465,24 @@
             const selectedTerceiros = document.getElementById('terceirosFilter').value;
 
             const completionSelection = document.getElementById('completionFilter').value;
+
+            const hasActiveFilter =
+                !!search ||
+                !!selectedClassification ||
+                selectedPriority !== '' ||
+                !!selectedClient ||
+                !!selectedCompras ||
+                !!selectedTerceiros ||
+                completionSelection !== 'open' ||
+                onlyWithBudget;
+
             let filtered = rawData.filter(item => {
                 if (!matchesCompletionFilter(item, completionSelection)) return false;
                 if (!item.entrega_normalizada) return false;
                 const date = new Date(item.entrega_normalizada);
                 if (isNaN(date)) return false;
 
-                if (!search && onlyCurrentMonth) {
+                if (!hasActiveFilter && onlyCurrentMonth) {
                     if (date.getMonth() !== currentDate.getMonth() || date.getFullYear() !== currentDate.getFullYear()) {
                         return false;
                     }
