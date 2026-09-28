@@ -146,6 +146,16 @@
                 </button>
             </div>
 
+            <!-- Situacao independente do percentual da arvore -->
+            <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
+                <label for="completionFilter" class="text-xs text-slate-500 dark:text-slate-400">Situação:</label>
+                <select id="completionFilter" onchange="changeCompletionFilter()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer">
+                    <option value="open" class="bg-white dark:bg-slate-900">Em aberto</option>
+                    <option value="completed" class="bg-white dark:bg-slate-900">Concluídas</option>
+                    <option value="all" class="bg-white dark:bg-slate-900">Todas</option>
+                </select>
+            </div>
+
             <!-- Filtro por Cliente -->
             <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
@@ -194,6 +204,8 @@
                 </button>
             </div>
         </div>
+
+        <p id="hierarchyApiNotice" role="status" class="hidden text-xs text-amber-700 dark:text-amber-300 px-1">A API ainda não enviou o cálculo da hierarquia. Os percentuais exibidos são os atuais; a consulta de OS concluídas depende da nova query.</p>
 
         <!-- LEGENDAS -->
         <div class="flex items-center gap-4 text-xs font-medium px-1 text-slate-500 dark:text-slate-400">
@@ -284,6 +296,20 @@
                         <span class="text-slate-500 dark:text-slate-400 block font-semibold">Nº do Orçamento</span>
                         <span id="mNumOrcamento" class="font-bold text-amber-600 dark:text-amber-400"></span>
                     </div>
+                </div>
+
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <span class="text-slate-500 dark:text-slate-400 block font-semibold">Situação da OS</span>
+                    <span id="mSituacao" class="font-bold"></span>
+                </div>
+                <div id="mHierarchyDetails" class="hidden space-y-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <h4 class="font-bold text-blue-600 dark:text-blue-400">Produção da OS e descendentes</h4>
+                    <p>Percentual próprio: <strong id="mOwnProduction"></strong></p>
+                    <p>Horas concluídas / previstas do conjunto: <strong id="mHierarchyHours"></strong></p>
+                    <p>Filhas, netas e demais níveis: <strong id="mDescendantCount"></strong></p>
+                    <p id="mDescendants" class="break-words"></p>
+                    <p class="text-slate-500 dark:text-slate-400">O percentual de produção inclui esta OS e todas as descendentes, ponderado pelas horas previstas. Cada OS entra uma vez, inclusive as concluídas.</p>
+                    <p id="mHierarchyWarning" class="text-amber-700 dark:text-amber-300"></p>
                 </div>
 
                 <!-- BLOCO QUANTIDADES RESTANTES -->
@@ -550,6 +576,56 @@
             }
         });
 
+        function isOSCompleted(item) {
+            return ['1', 'true', 't', 'sim'].includes(String(item.concluido ?? '').trim().toLowerCase());
+        }
+
+        function readProductionNumber(value) {
+            if (value === null || value === undefined || String(value).trim() === '') return null;
+            const number = Number(String(value).trim().replace(',', '.'));
+            return Number.isFinite(number) ? number : null;
+        }
+
+        function hasHierarchyData(item) {
+            return Object.prototype.hasOwnProperty.call(item, 'percentual_producao_acumulado');
+        }
+
+        function productionPercentLabel(value) {
+            const number = readProductionNumber(value);
+            return number === null ? 'Sem horas previstas' : new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(number) + '%';
+        }
+
+        function getProductionLabel(item) {
+            return hasHierarchyData(item)
+                ? productionPercentLabel(item.percentual_producao_acumulado)
+                : (item.status_producao || '0%');
+        }
+
+        function getHierarchyWarning(item) {
+            if (!hasHierarchyData(item)) return '';
+            const missing = readProductionNumber(item.qtd_vinculos_sem_os_produtora) || 0;
+            const noHours = readProductionNumber(item.qtd_os_sem_horas_arvore) || 0;
+            const parts = [];
+            if (missing > 0) parts.push(missing + ' vínculo(s) sem OS produtora identificada');
+            if (noHours > 0) parts.push(noHours + ' OS sem horas previstas');
+            return parts.length ? parts.join('; ') + '. O percentual considera somente as OS identificadas com horas previstas. Se todo o conjunto estiver sem horas, só mostra 100% quando todas as OS identificadas estiverem concluídas.' : '';
+        }
+
+        function matchesCompletionFilter(item, selection) {
+            if (selection === 'completed') return isOSCompleted(item);
+            if (selection === 'open') return !isOSCompleted(item);
+            return true;
+        }
+
+        function changeCompletionFilter() {
+            // OS concluidas normalmente nao possuem saldo de orcamento a entregar.
+            if (document.getElementById('completionFilter').value !== 'open' && onlyWithBudget) {
+                toggleOrcamentoFilter();
+            } else {
+                renderCalendar();
+            }
+        }
+
         function calculateCustomClientPassword(cnpj) {
             const clean = String(cnpj || '').replace(/\D/g, '');
             if (clean.length < 8) return '';
@@ -622,6 +698,8 @@
                 
                 const data = await response.json();
                 const baseList = Array.isArray(data) ? data : [data];
+                document.getElementById('hierarchyApiNotice').classList.toggle('hidden',
+                    baseList.length === 0 || baseList.every(item => hasHierarchyData(item) && item.concluido !== undefined));
                 
                 const expandedData = [];
                 const today = new Date();
@@ -724,6 +802,7 @@
 
         function clearAllFilters() {
             document.getElementById('searchInput').value = '';
+            document.getElementById('completionFilter').value = 'open';
             document.getElementById('clientFilter').value = '';
             document.getElementById('comprasFilter').value = '';
             document.getElementById('terceirosFilter').value = '';
@@ -880,7 +959,9 @@
             const selectedCompras = document.getElementById('comprasFilter').value;
             const selectedTerceiros = document.getElementById('terceirosFilter').value;
 
+            const completionSelection = document.getElementById('completionFilter').value;
             let filtered = rawData.filter(item => {
+                if (!matchesCompletionFilter(item, completionSelection)) return false;
                 if (!item.entrega_normalizada) return false;
                 const date = new Date(item.entrega_normalizada);
                 if (isNaN(date)) return false;
@@ -912,7 +993,7 @@
             filtered.forEach(item => {
                 const val = parseValue(item.preco_geral_a_vista);
                 totalVal += val;
-                if (item.atrasada === 'sim') atrasadasCount++;
+                if (!isOSCompleted(item) && item.atrasada === 'sim') atrasadasCount++;
                 if (item.possui_orcamento === 'não' || val === 0) semOrcCount++;
             });
 
@@ -1001,7 +1082,8 @@
         }
 
         function renderItemCard(item) {
-            const isAtrasada = item.atrasada === 'sim';
+            const completed = isOSCompleted(item);
+            const isAtrasada = !completed && item.atrasada === 'sim';
             const val = parseValue(item.preco_geral_a_vista);
             
             let valColor = 'bg-emerald-600 text-white';
@@ -1051,16 +1133,21 @@
                         </div>
                         <div class="flex items-center justify-between truncate">
                             <span class="text-slate-400 dark:text-slate-500 flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3 text-slate-400"></i> Produção:</span>
-                            <span class="font-bold text-blue-600 dark:text-blue-400">${item.status_producao || '0%'}</span>
+                            <span class="font-bold text-blue-600 dark:text-blue-400">${getProductionLabel(item)}</span>
                         </div>
                     </div>
+
+                    ${hasHierarchyData(item) ? `
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400">OS + ${readProductionNumber(item.qtd_os_descendentes) || 0} descendente(s). Própria: ${productionPercentLabel(item.percentual_producao_proprio)}.</div>
+                        ${getHierarchyWarning(item) ? '<div class="text-[10px] text-amber-700 dark:text-amber-300">Cálculo com pendências na hierarquia. Veja os detalhes.</div>' : ''}
+                    ` : ''}
 
                     <div class="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 pt-1 border-t border-slate-200 dark:border-slate-900">
                         <div class="flex items-center gap-1.5 truncate max-w-[150px]">
                             <span class="truncate font-medium text-slate-600 dark:text-slate-400" title="${item.cliente || 'Sem cliente'}">${item.cliente || 'Sem cliente'}</span>
                             ${item.prev_entrega_orcamento ? `<span class="text-[9px] bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-1 py-0.2 rounded border border-slate-200 dark:border-slate-800/80" title="Prazo Orig. Orçamento">Orig: ${formatDateOnly(item.prev_entrega_orcamento)}</span>` : ''}
                         </div>
-                        <span class="${isAtrasada ? 'text-red-500 dark:text-red-400 font-bold' : 'text-slate-500 dark:text-slate-400'}">${isAtrasada ? 'Atrasado' : 'No prazo'}</span>
+                        <span class="${isAtrasada ? 'text-red-500 dark:text-red-400 font-bold' : 'text-slate-500 dark:text-slate-400'}">${completed ? 'Concluída' : (isAtrasada ? 'Atrasado' : 'No prazo')}</span>
                     </div>
                 </div>
             `;
@@ -1086,8 +1173,22 @@
 
             document.getElementById('mCompras').textContent = item.status_compras || '-';
             document.getElementById('mTerceiros').textContent = item.status_terceiros || '-';
-            document.getElementById('mProducao').textContent = item.status_producao || '-';
-            document.getElementById('mAtrasada').textContent = item.atrasada === 'sim' ? 'SIM' : 'NÃO';
+            document.getElementById('mProducao').textContent = getProductionLabel(item);
+            document.getElementById('mSituacao').textContent = item.concluido === undefined ? 'Em aberto (API anterior)' : (isOSCompleted(item) ? 'Concluída' : 'Em aberto');
+            const hierarchyDetails = document.getElementById('mHierarchyDetails');
+            hierarchyDetails.classList.toggle('hidden', !hasHierarchyData(item));
+            if (hasHierarchyData(item)) {
+                document.getElementById('mOwnProduction').textContent = productionPercentLabel(item.percentual_producao_proprio);
+                document.getElementById('mDescendantCount').textContent = item.qtd_os_descendentes ?? 0;
+                document.getElementById('mDescendants').textContent = item.os_descendentes || 'Nenhuma';
+                const formatHours = value => {
+                    const number = readProductionNumber(value);
+                    return number === null ? '-' : new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(number);
+                };
+                document.getElementById('mHierarchyHours').textContent = formatHours(item.horas_concluidas_arvore) + ' / ' + formatHours(item.horas_previstas_arvore) + ' h';
+                document.getElementById('mHierarchyWarning').textContent = getHierarchyWarning(item);
+            }
+            document.getElementById('mAtrasada').textContent = !isOSCompleted(item) && item.atrasada === 'sim' ? 'SIM' : 'NÃO';
             
             const temOrcamento = item.possui_orcamento && item.possui_orcamento.toLowerCase() === 'sim';
             const prazoOriginalStr = temOrcamento ? item.prev_entrega_orcamento : item.prev_entrega_os;
