@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://consultoriarf.net/sintercan/producao/">
     <meta property="og:type" content="website">
     
-    <title>Programação Semanal de Produção Sintercan V6.21</title>
+    <title>Programação Semanal de Produção Sintercan V6.22</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,7 +68,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.21</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle Semanal de Produção <span class="text-amber-600 dark:text-amber-400 font-mono">V6.22</span></p>
                 </div>
             </div>
 
@@ -255,7 +255,7 @@
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
             <div class="flex items-center gap-2">
                 <i data-lucide="code-2" class="w-4 h-4 text-amber-500"></i>
-                <span>© 2026 Sistema de Gestão de Produção V6.21</span>
+                <span>© 2026 Sistema de Gestão de Produção V6.22</span>
             </div>
         </div>
     </footer>
@@ -382,16 +382,19 @@
                     </div>
                 </section>
 
-                <section id="mAuxSection" class="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-3 sm:p-4">
-                    <div class="flex items-center justify-between gap-3 mb-3">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="layers-3" class="w-4 h-4 text-blue-500"></i>
-                            <h4 class="text-xs font-black uppercase tracking-wide">Processos do serviço</h4>
+                <section id="mAuxSection" class="rounded-xl border border-blue-500/20 bg-blue-500/5 overflow-hidden">
+                    <button type="button" onclick="toggleAuxProgress()" class="w-full px-3 py-2 flex items-center justify-between gap-3 hover:bg-blue-500/10 transition">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <i data-lucide="layers-3" class="w-3.5 h-3.5 text-blue-500 shrink-0"></i>
+                            <span class="text-[10px] font-black uppercase tracking-wide">Processos do serviço</span>
+                            <span id="mAuxCount" class="text-[9px] font-black text-slate-400"></span>
                         </div>
-                        <span id="mAuxCount" class="text-[9px] font-black text-slate-400"></span>
-                    </div>
-                    <div id="mAuxProgress" class="space-y-2">
-                        <div class="text-xs text-slate-400">Carregando processos...</div>
+                        <i id="mAuxChevron" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform shrink-0"></i>
+                    </button>
+                    <div id="mAuxBody" class="hidden border-t border-blue-500/15 px-3 py-2.5">
+                        <div id="mAuxProgress" class="space-y-2">
+                            <div class="text-xs text-slate-400">Carregando processos...</div>
+                        </div>
                     </div>
                 </section>
 
@@ -2420,6 +2423,17 @@
 
         let auxProgressRequestId = 0;
 
+        function toggleAuxProgress(forceOpen = null) {
+            const body = document.getElementById('mAuxBody');
+            const chevron = document.getElementById('mAuxChevron');
+            if (!body) return;
+            const open = forceOpen === null ? body.classList.contains('hidden') : Boolean(forceOpen);
+            body.classList.toggle('hidden', !open);
+            if (chevron) chevron.classList.toggle('rotate-180', open);
+        }
+
+
+
         function escapeAuxText(value) {
             return String(value ?? '')
                 .replace(/&/g, '&amp;')
@@ -2475,6 +2489,7 @@
         }
 
         async function loadAuxProgress(item) {
+            toggleAuxProgress(false);
             const section = document.getElementById('mAuxSection');
             const container = document.getElementById('mAuxProgress');
             const count = document.getElementById('mAuxCount');
