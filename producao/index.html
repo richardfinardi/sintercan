@@ -181,6 +181,16 @@
                 </select>
             </div>
 
+            <!-- Filtro de OS zeradas (preferência individual persistida) -->
+            <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
+                <i data-lucide="circle-off" class="w-4 h-4 text-slate-400"></i>
+                <select id="zeroFilter" onchange="changeZeroFilter()" aria-label="Filtrar OS zeradas" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[155px]">
+                    <option value="hide" class="bg-white dark:bg-slate-900">Ocultar zerados</option>
+                    <option value="all" class="bg-white dark:bg-slate-900">Exibir zerados</option>
+                    <option value="only" class="bg-white dark:bg-slate-900">Apenas zerados</option>
+                </select>
+            </div>
+
             <!-- Filtro por Cliente -->
             <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
@@ -514,6 +524,8 @@
         const PRODUCTION_STORE_NAME = 'datasets';
         const PRODUCTION_CACHE_KEY = 'producao_data_v1';
         const PRODUCTION_AUTO_REFRESH_MS = 5 * 60 * 1000;
+        const ZERO_FILTER_STORAGE_KEY = 'sintercan_producao_filtro_zerados_' +
+            String(currentUser.usuario || currentUser.nome || 'usuario').trim().toUpperCase();
 
         let rawData = [];
         let currentOSItem = null;
@@ -532,6 +544,90 @@
         let onlyWithBudget = false;
         let sortMode = 'date'; // 'date' ou 'client'
         let valuesVisible = hasAccessValores;
+        let zeroFilterMode = (() => {
+            try {
+                const saved = localStorage.getItem(ZERO_FILTER_STORAGE_KEY);
+                return ['hide', 'all', 'only'].includes(saved) ? saved : 'hide';
+            } catch (_) { return 'hide'; }
+        })();
+        const zeroWritePending = new Set();
+
+        function isOSZeroed(item) {
+            return ['1', 'true', 't', 'sim'].includes(String(item?.u_zerar ?? 0).trim().toLowerCase());
+        }
+
+        function getDisplayedOSValue(item) {
+            return isOSZeroed(item) ? 0 : parseValue(item?.preco_geral_a_vista);
+        }
+
+        function changeZeroFilter() {
+            const selected = document.getElementById('zeroFilter').value;
+            zeroFilterMode = ['hide', 'all', 'only'].includes(selected) ? selected : 'hide';
+            try { localStorage.setItem(ZERO_FILTER_STORAGE_KEY, zeroFilterMode); } catch (_) {}
+            renderCalendar();
+        }
+
+        async function persistOSZeroToBrowserCache(codEmpresa, codigoOs, value) {
+            try {
+                const cacheRecord = await readProductionCache();
+                if (!cacheRecord || !Array.isArray(cacheRecord.data)) return;
+                let changed = false;
+                cacheRecord.data.forEach(row => {
+                    if (String(row?.cod_empresa ?? '') === String(codEmpresa) &&
+                        String(row?.codigo_os ?? '') === String(codigoOs)) {
+                        row.u_zerar = value;
+                        changed = true;
+                    }
+                });
+                if (changed) await writeProductionCache(cacheRecord.data, cacheRecord.savedAt || new Date().toISOString());
+            } catch (error) {
+                console.warn('Não foi possível atualizar U_ZERAR no cache local:', error);
+            }
+        }
+
+        async function alterarZerarOS(event, checkbox) {
+            event.preventDefault();
+            event.stopPropagation();
+            const codEmpresa = decodeURIComponent(checkbox.dataset.zeroCompany || '');
+            const codigoOs = decodeURIComponent(checkbox.dataset.zeroCode || '');
+            const value = checkbox.checked ? 1 : 0;
+            const key = codEmpresa + ':' + codigoOs;
+            if (!codEmpresa || !codigoOs || zeroWritePending.has(key)) return;
+            zeroWritePending.add(key);
+            checkbox.disabled = true;
+            try {
+                const response = await fetch(
+                    API_URL + '/' + encodeURIComponent(codigoOs) + '/alterar-zerar',
+                    {
+                        method: 'PATCH',
+                        headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '69420'},
+                        body: JSON.stringify({cod_empresa: Number(codEmpresa), u_zerar: value})
+                    }
+                );
+                if (!response.ok) {
+                    let detail = 'Não foi possível salvar U_ZERAR no CPS.';
+                    try { detail = (await response.json()).detail || detail; } catch (_) {}
+                    throw new Error(detail);
+                }
+                // Atualiza todas as projeções da mesma OS, inclusive cartões de várias datas.
+                rawData.forEach(row => {
+                    if (String(row?.cod_empresa ?? '') === String(codEmpresa) &&
+                        String(row?.codigo_os ?? '') === String(codigoOs)) row.u_zerar = value;
+                });
+                if (currentOSItem && String(currentOSItem.cod_empresa) === codEmpresa &&
+                    String(currentOSItem.codigo_os) === codigoOs) currentOSItem.u_zerar = value;
+                globalSearchCache = new WeakMap();
+                renderCalendar();
+                // Cache precisa refletir o PATCH sem esperar o snapshot de 5 minutos da API.
+                await persistOSZeroToBrowserCache(codEmpresa, codigoOs, value);
+            } catch (error) {
+                checkbox.checked = !checkbox.checked;
+                alert('Erro ao alterar zeramento da OS: ' + error.message);
+            } finally {
+                zeroWritePending.delete(key);
+                checkbox.disabled = false;
+            }
+        }
 
         const charMap = {
             '0': '0', '1': 'I', '2': 'b', '3': 'c', '4': 'd',
@@ -919,6 +1015,7 @@
                 btnToggle.classList.remove('hidden');
                 btnToggle.classList.add('flex');
             }
+            document.getElementById('zeroFilter').value = zeroFilterMode;
             lucide.createIcons();
             loadProductionData();
             startProductionAutoRefresh();
@@ -1304,6 +1401,9 @@
             document.getElementById('clientFilter').value = '';
             document.getElementById('comprasFilter').value = '';
             document.getElementById('terceirosFilter').value = '';
+            document.getElementById('zeroFilter').value = 'hide';
+            zeroFilterMode = 'hide';
+            try { localStorage.setItem(ZERO_FILTER_STORAGE_KEY, zeroFilterMode); } catch (_) {}
 
             onlyCurrentMonth = true;
             onlyWithBudget = false;
@@ -1490,10 +1590,13 @@
                 !!selectedCompras ||
                 !!selectedTerceiros ||
                 completionSelection !== 'open' ||
-                onlyWithBudget;
+                onlyWithBudget ||
+                zeroFilterMode === 'only';
 
             let filtered = rawData.filter(item => {
                 if (!matchesCompletionFilter(item, completionSelection)) return false;
+                if (zeroFilterMode === 'hide' && isOSZeroed(item)) return false;
+                if (zeroFilterMode === 'only' && !isOSZeroed(item)) return false;
                 if (!item.entrega_normalizada) return false;
                 const date = new Date(item.entrega_normalizada);
                 if (isNaN(date)) return false;
@@ -1525,10 +1628,11 @@
 
             let totalVal = 0, atrasadasCount = 0, semOrcCount = 0;
             filtered.forEach(item => {
-                const val = parseValue(item.preco_geral_a_vista);
+                const val = getDisplayedOSValue(item);
                 totalVal += val;
                 if (!isOSCompleted(item) && item.atrasada === 'sim') atrasadasCount++;
-                if (item.possui_orcamento === 'não' || val === 0) semOrcCount++;
+                // Zeramento financeiro não transforma uma OS orçada em "sem orçamento".
+                if (item.possui_orcamento === 'não' || parseValue(item.preco_geral_a_vista) === 0) semOrcCount++;
             });
 
             document.getElementById('metricTotalOS').textContent = filtered.length;
@@ -1588,7 +1692,7 @@
                     return timeA - timeB;
                 });
 
-                const weekTotal = week.items.reduce((acc, i) => acc + parseValue(i.preco_geral_a_vista), 0);
+                const weekTotal = week.items.reduce((acc, i) => acc + getDisplayedOSValue(i), 0);
                 
                 // NOVO LAYOUT HORIZONTAL DE SEMANAS
                 const rowBlock = document.createElement('div');
@@ -2352,7 +2456,8 @@
         function renderItemCard(item) {
             const completed = isOSCompleted(item);
             const isAtrasada = !completed && item.atrasada === 'sim';
-            const val = parseValue(item.preco_geral_a_vista);
+            const val = getDisplayedOSValue(item);
+            const isZeroed = isOSZeroed(item);
             const type = getItemType(item);
             const progressValue = getProductionPercentValue(item);
             const progressLabel = getProductionLabel(item);
@@ -2374,7 +2479,7 @@
                 : '';
         
             return `
-                <div onclick='openModal(${payload})' class="relative overflow-hidden border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-950 hover:border-amber-500 dark:hover:border-amber-500/60 hover:shadow-lg transition cursor-pointer text-xs">
+                <div onclick='openModal(${payload})' class="relative overflow-hidden border ${isZeroed ? 'border-slate-400/70 dark:border-slate-600' : 'border-slate-200 dark:border-slate-800'} rounded-xl bg-white dark:bg-slate-950 hover:border-amber-500 dark:hover:border-amber-500/60 hover:shadow-lg transition cursor-pointer text-xs">
                     <span class="absolute inset-y-0 left-0 w-1.5 ${type.rail}"></span>
         
                     <div class="pl-4 pr-3 py-3">
@@ -2385,8 +2490,17 @@
                                 </span>
                                 ${budgetBadge}
                                 ${delayBadge}
+                                ${isZeroed ? '<span class="rounded-md bg-slate-700 text-white px-1.5 py-1 text-[9px] font-black">ZERADA</span>' : ''}
                             </div>
                             <div class="shrink-0 flex items-center gap-1.5">
+                                <label onclick="event.stopPropagation()" title="Zerar valor apenas na aplicação. O CPS grava somente o campo U_ZERAR." class="inline-flex items-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 px-1.5 py-1 text-[9px] font-black cursor-pointer select-none hover:border-blue-400">
+                                    <input type="checkbox" aria-label="Zerar valor da OS ${escapeAuxText(item.n_os)}" ${isZeroed ? 'checked' : ''}
+                                        data-zero-company="${encodeURIComponent(String(item.cod_empresa ?? ''))}"
+                                        data-zero-code="${encodeURIComponent(String(item.codigo_os ?? ''))}"
+                                        onchange="alterarZerarOS(event, this)"
+                                        class="w-3.5 h-3.5 accent-blue-600 cursor-pointer">
+                                    <span>Zerar</span>
+                                </label>
                                 ${priorityBadgeHTML(item)}
                                 <span class="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1 rounded-md font-black border border-slate-200 dark:border-slate-800">OS ${item.n_os}</span>
                             </div>
@@ -2666,7 +2780,7 @@
         
             document.getElementById('mOrcamento').textContent =
                 budgetCodes.length ? budgetCodes.join(', ') : (itemHasBudget(item) ? 'SIM' : '—');
-            document.getElementById('mPreco').textContent = formatBRL(item.preco_geral_a_vista);
+            document.getElementById('mPreco').textContent = formatBRL(getDisplayedOSValue(item));
             document.getElementById('mEntrega').textContent = formatDateOnly(
                 item.entrega_normalizada || item.prev_entrega_orcamento || item.prev_entrega_os
             );
