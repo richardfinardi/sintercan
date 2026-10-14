@@ -558,13 +558,17 @@
         function separarEventosHistorico(raw) {
             const texto = String(raw || '').replace(/\r\n?/g, '\n');
             const regex = /^=== HISTORICO \| ([^|\n]+) \| ([^|\n]+) \| ([^\n]+?) ===\n([\s\S]*?)\n=== FIM ===/gm;
-            const eventos = []; let match;
+            const eventos = []; let match; let ultimaPosicao = 0;
             while ((match = regex.exec(texto)) !== null) {
                 eventos.push({data:match[1].trim(), usuario:match[2].trim(),
-                              acao:match[3].trim(), corpo:match[4].trim()});
+                              acao:match[3].trim(),
+                              corpo:match[4].replace(/^Requisição: [0-9a-f-]+$/gmi, '').trim()});
+                ultimaPosicao = regex.lastIndex;
             }
-            if (!eventos.length && texto.trim()) {
-                eventos.push({data:'', usuario:'Registro anterior', acao:'Histórico legado', corpo:texto.trim()});
+            // O campo antigo de U_HIST não pode desaparecer da leitura após gravar um evento.
+            const textoLegado = (eventos.length ? texto.slice(ultimaPosicao) : texto).trim();
+            if (textoLegado) {
+                eventos.push({data:'', usuario:'Registro anterior', acao:'Histórico legado', corpo:textoLegado});
             }
             return eventos;
         }
