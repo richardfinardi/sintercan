@@ -223,7 +223,7 @@
 
     let rawDataEstoque = [];
     let rawDataOrcamento = [];
-    const RETIRADAS_STORAGE_KEY = 'sintercan_sc_retiradas_v1';
+    const RETIRADAS_STORAGE_KEY = 'sintercan_sc_retiradas_v2';
     let retiradas = loadRetiradas();
     let currentTab = 'estoque';
 
@@ -347,15 +347,45 @@ function persistirRetiradas(){
   }
 }
 
-function idRetirada(item){
-  // Usa somente identificadores estáveis; nunca usa linha/ordem ou quantidades.
-  const campos = [
-    'cod_empresa','cod_orcamento','n_orcamento',
-    'cod_orcamento_item','cod_orcamento_itens','cod_item_orcamento',
-    'id_item_orcamento','id_item','codigo_item','n_item','item',
-    'n_pedido','n_pedido_item','cod_produto','codigo_interno'
+function idRetirada(item) {
+  return item._idRetirada || '';
+}
+
+// TORCAMENTO_ITENS.GUID_LINHA identifica individualmente a linha do orçamento.
+function atribuirIdsRetirada(linhas) {
+  const ocorrencias = new Map();
+  const valor = (row, campo) => {
+    const chave = Object.keys(row).find(k => k.toLowerCase() === campo.toLowerCase());
+    return chave && row[chave] != null ? String(row[chave]).trim() : '';
+  };
+  const idsDeLinha = [
+    'guid_linha', 'guid_orcamento_item', 'guid_item_orcamento',
+    'cod_orcamento_item', 'cod_orcamento_itens', 'cod_item_orcamento',
+    'id_item_orcamento', 'codigo_item_orcamento', 'codigo_torcamento_itens',
+    'id_item', 'codigo_item', 'n_item', 'n_pedido_item'
   ];
-  return JSON.stringify(campos.map(c => item[c] == null ? '' : String(item[c]).trim()));
+  for (const item of linhas) {
+    const empresa = valor(item, 'cod_empresa');
+    const orcamento = valor(item, 'cod_orcamento') || valor(item, 'n_orcamento');
+    const identificador = idsDeLinha.map(c => [c, valor(item, c)]).find(([,v]) => v !== '');
+    let base;
+    if (identificador) {
+      base = JSON.stringify(['linha', empresa, orcamento, identificador[0], identificador[1]]);
+    } else {
+      // Sem GUID da linha, diferencia por data, descrição e quantidade.
+      base = JSON.stringify(['detalhes', empresa, orcamento,
+        valor(item, 'cod_produto'), valor(item, 'codigo_interno'),
+        valor(item, 'nome'), valor(item, 'descricao'), valor(item, 'item'),
+        valor(item, 'dt_previsao_entrega'), valor(item, 'dt_aprovacao'),
+        valor(item, 'qtde_reservada'), valor(item, 'qtde')
+      ]);
+    }
+    // Garante independência mesmo para registros completamente idênticos.
+    const numero = (ocorrencias.get(base) || 0) + 1;
+    ocorrencias.set(base, numero);
+    item._idRetirada = base + '#' + numero;
+  }
+  return linhas;
 }
 
 function numeroCampo(item, nomes){
@@ -439,9 +469,9 @@ function getRowClass(row,index){
         rawDataEstoque = dadosEstoque.map(item => ({
           ...item, localizacao_estoque: item.localizacao_estoque ?? item.LOCALIZACAO_ESTOQUE ?? ''
         }));
-        rawDataOrcamento = dadosOrcamento.map(item => ({
+        rawDataOrcamento = atribuirIdsRetirada(dadosOrcamento.map(item => ({
           ...item, localizacao_estoque: item.localizacao_estoque ?? item.LOCALIZACAO_ESTOQUE ?? ''
-        }));
+        })));
 
         // Uma retirada deixa de ser exibida quando o orçamento foi faturado
         // (ou deixou de constar no endpoint). Descarta marcações obsoletas.
