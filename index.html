@@ -119,6 +119,8 @@
 
                     if (res.ok) {
                         const updatedData = await res.json();
+                        // A verificação de permissões não substitui a sessão autenticada.
+                        updatedData.auth_token = user.auth_token || null;
                         localStorage.setItem('sintercan_user', JSON.stringify(updatedData));
                         showMenu(updatedData);
                     } else {
@@ -142,7 +144,7 @@
             btnLogin.innerText = "Autenticando...";
 
             try {
-                const res = await fetch(`${API_URL}/login`, {
+                const res = await fetch(`${API_URL}/auth/token`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ usuario, senha })
