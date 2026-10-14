@@ -1092,88 +1092,130 @@
         }
 
         function openEditModal(item) {
+            if (!canRenegotiate(item) || isSavingRenegociacao) return;
             selectedItemModal = item;
-
+            editTargets = [String(item.n_os).trim()];
             document.getElementById('mModalOS').textContent = `OS #${item.n_os}`;
             document.getElementById('mModalTitle').textContent = item.descricao || item.cliente || '';
-
-            const inputDate = document.getElementById('inputNewDate');
-            const dtAtual = item.entrega_normalizada || '';
-            if (dtAtual && dtAtual.length >= 10) {
-                inputDate.value = dtAtual.substring(0, 10);
-            } else {
-                inputDate.value = '';
-            }
-
+            document.getElementById('mModalInfo').textContent = 'Renegociação individual';
+            const dtAtual = item.u_data_renegociacao || item.entrega_normalizada || '';
+            document.getElementById('inputNewDate').value = String(dtAtual).slice(0, 10);
             document.getElementById('inputJustification').value = '';
+            showEditModal();
+        }
 
-            const modal = document.getElementById('editModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+        function openBulkEditModal() {
+            if (isSavingRenegociacao) return;
+            const rows = visibleSelectableKeys.filter(key => selectedRows.has(key))
+                .map(key => rowByKey.get(key)).filter(canRenegotiate);
+            if (!rows.length) return;
+            // O endpoint PATCH grava a renegociação da OS; cada OS recebe somente uma chamada.
+            editTargets = [...new Set(rows.map(item => String(item.n_os).trim()))];
+            selectedItemModal = null;
+            document.getElementById('mModalOS').textContent = 'RENEGOCIAÇÃO EM LOTE';
+            document.getElementById('mModalTitle').textContent = `${rows.length} item(ns) selecionado(s)`;
+            document.getElementById('mModalInfo').textContent = `${editTargets.length} OS distinta(s). A nova data será aplicada a todas elas.`;
+            document.getElementById('inputNewDate').value = '';
+            document.getElementById('inputJustification').value = '';
+            showEditModal();
+        }
+
+        function showEditModal() {
+            document.getElementById('editModal').classList.remove('hidden');
+            document.getElementById('editModal').classList.add('flex');
+            lucide.createIcons();
         }
 
         function closeEditModal() {
-            const modal = document.getElementById('editModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+            if (isSavingRenegociacao) return;
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editModal').classList.remove('flex');
             selectedItemModal = null;
+            editTargets = [];
+        }
+
+        function getUsuarioLogado() {
+            try {
+                const user = JSON.parse(localStorage.getItem('sintercan_user') || '{}');
+                return String(user.nome || user.usuario || 'SISTEMA').toUpperCase();
+            } catch (_) { return 'SISTEMA'; }
         }
 
         async function saveRenegociacao() {
-            if (!selectedItemModal) return;
-
+            if (!editTargets.length || isSavingRenegociacao) return;
             const newDate = document.getElementById('inputNewDate').value;
             const userTexto = document.getElementById('inputJustification').value.trim();
-
+            if (!newDate && !selectedItemModal) {
+                alert('Informe a nova data para renegociar os itens selecionados.');
+                return;
+            }
             if (!userTexto) {
                 alert('A justificativa é obrigatória para registrar a alteração.');
                 return;
             }
+            const targets = [...editTargets];
+            if (targets.length > 1 && !confirm(`Confirmar renegociação de ${targets.length} OS para ${formatDateOnly(newDate)}?`)) return;
+            const justificativa = `[${getUsuarioLogado()}] ${userTexto}`;
+            const btn = document.getElementById('btnSaveData');
+            const successOS = new Set(), failures = [];
+            let next = 0, finished = 0;
+            isSavingRenegociacao = true;
+            btn.disabled = true;
+            document.getElementById('inputNewDate').disabled = true;
+            document.getElementById('inputJustification').disabled = true;
+            updateSelectionUi();
 
-            const sessionUser = localStorage.getItem('sintercan_user');
-            let usuarioLogado = 'SISTEMA';
-            if (sessionUser) {
-                try {
-                    const uObj = JSON.parse(sessionUser);
-                    usuarioLogado = uObj.nome || uObj.usuario || 'SISTEMA';
-                } catch(e) {}
+            // Limita a três requisições simultâneas, sem exigir endpoint novo na API.
+            const worker = async () => {
+                while (next < targets.length) {
+                    const os = targets[next++];
+                    try {
+                        const response = await fetch(`${API_PATCH_URL}/${encodeURIComponent(os)}/alterar-renegociacao`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '69420' },
+                            body: JSON.stringify({
+                                u_data_renegociacao: newDate || null,
+                                U_JUST_ALT_DT_REN: justificativa
+                            })
+                        });
+                        if (!response.ok) {
+                            const details = await response.json().catch(() => ({}));
+                            throw new Error(typeof details.detail === 'string' ? details.detail : `HTTP ${response.status}`);
+                        }
+                        successOS.add(os);
+                    } catch (err) {
+                        console.error(`Falha ao renegociar OS ${os}:`, err);
+                        failures.push(`OS ${os}: ${err.message}`);
+                    } finally {
+                        finished++;
+                        btn.textContent = `Salvando ${finished}/${targets.length}...`;
+                    }
+                }
+            };
+            try {
+                await Promise.all(Array.from({length: Math.min(3, targets.length)}, worker));
+            } finally {
+                isSavingRenegociacao = false;
+                btn.disabled = false;
+                document.getElementById('inputNewDate').disabled = false;
+                document.getElementById('inputJustification').disabled = false;
+                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Salvar';
+                updateSelectionUi();
+                lucide.createIcons();
             }
 
-            const justificativaComUsuario = `[${usuarioLogado.toUpperCase()}] ${userTexto}`;
-
-            const btnSave = document.getElementById('btnSaveData');
-            btnSave.disabled = true;
-            btnSave.innerHTML = 'Salvando...';
-
-            try {
-                const response = await fetch(`${API_PATCH_URL}/${selectedItemModal.n_os}/alterar-renegociacao`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': '69420'
-                    },
-                    body: JSON.stringify({
-                        u_data_renegociacao: newDate || null,
-                        U_JUST_ALT_DT_REN: justificativaComUsuario
-                    })
-                });
-
-                if (!response.ok) {
-                    const errData = await response.json();
-                    throw new Error(errData.detail || 'Falha ao salvar renegociação.');
-                }
-
-                alert('Data e justificativa atualizadas com sucesso!');
+            if (successOS.size) {
+                selectedRows = new Set([...selectedRows].filter(key => {
+                    const item = rowByKey.get(key);
+                    return item && !successOS.has(String(item.n_os).trim());
+                }));
                 closeEditModal();
-                fetchData();
-
-            } catch (err) {
-                console.error(err);
-                alert(`Erro: ${err.message}`);
-            } finally {
-                btnSave.disabled = false;
-                btnSave.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Salvar';
-                lucide.createIcons();
+                await fetchData(false, true);
+            }
+            if (!failures.length) {
+                alert(`Renegociação concluída: ${successOS.size} OS atualizada(s).`);
+            } else {
+                alert(`${successOS.size} OS atualizada(s). Falharam ${failures.length}:\n\n${failures.join('\n').slice(0, 1400)}\n\nAs OS com erro não foram marcadas como concluídas.`);
             }
         }
 
