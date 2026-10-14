@@ -259,10 +259,13 @@ def _update_zero_cache(cod_empresa: int, codigo_os: int, zerar: int) -> None:
             if hasattr(main, "_producao_zerar_updates"):
                 main._producao_zerar_updates[key] = (int(zerar), time.monotonic())
             rows = main._producao_cache
+            mudou = False
             for row in rows:
                 if str(row.get("cod_empresa")) == key[0] and str(row.get("codigo_os")) == key[1]:
                     row["u_zerar"] = int(zerar)
-            main._salvar_cache_producao_em_disco(rows)
+                    mudou = True
+            if mudou:
+                main._salvar_cache_producao_em_disco(rows)
     except Exception as exc:
         print("Aviso: cache do zeramento não sincronizado:", exc)
 
