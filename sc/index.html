@@ -143,6 +143,15 @@
         </select>
       </div>
 
+      <div id="wrapperFilterRetirada" class="hidden flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 min-w-[160px]">
+        <i data-lucide="check-square" class="w-4 h-4 text-slate-400"></i>
+        <select id="filterRetirada" onchange="render()" class="w-full text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer">
+          <option value="">Todas as retiradas</option>
+          <option value="pendentes">Pendentes</option>
+          <option value="retirados">Retirados</option>
+        </select>
+      </div>
+
       <button onclick="clearFilters()" class="flex items-center gap-2 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded-xl font-bold text-xs transition">
         <i data-lucide="filter-x" class="w-4 h-4"></i>
         Limpar
@@ -214,6 +223,8 @@
 
     let rawDataEstoque = [];
     let rawDataOrcamento = [];
+    const RETIRADAS_STORAGE_KEY = 'sintercan_sc_retiradas_v1';
+    let retiradas = loadRetiradas();
     let currentTab = 'estoque';
 
     let sortColumn = 'cod_os_completo';
@@ -237,6 +248,7 @@
           { label: 'Cod OS completo', key: 'cod_os_completo' },
           { label: 'Cód. Produto', key: 'codigo_interno' },
           { label: 'Peça', key: 'nome' },
+          { label: 'Localização Estoque', key: 'localizacao_estoque' },
           { label: 'Disponivel', key: 'qtde_disponivel', align: 'right', sum: true },
           { label: 'n_orcamento', key: 'n_orcamento', align: 'right' },
           { label: 'cliente', key: 'cliente' }
@@ -247,16 +259,18 @@
       },
       orcamento: {
         cols: [
+          { label: 'Retirado', key: '__retirado', type: 'checkbox' },
           { label: 'Orçamento', key: 'n_orcamento' },
           { label: 'Cliente', key: 'cliente' },
           { label: 'Cód. Produto', key: 'codigo_interno' },
           { label: 'Item', key: 'nome' },
+          { label: 'Localização Estoque', key: 'localizacao_estoque' },
           { label: 'Qtde. Reservada', key: 'qtde_reservada', align: 'right', sum: true },
           { label: 'Pre. de entrega', key: 'dt_previsao_entrega', formatter: formatDate },
           { label: 'dt_aprovacao', key: 'dt_aprovacao', formatter: formatDate }
         ],
         source: () => rawDataOrcamento,
-        filter: item => true,
+        filter: item => !orcamentoJaFaturado(item),
         defaultSort: 'dt_previsao_entrega'
       },
       produzindo: {
@@ -312,6 +326,96 @@
       }
     };
 
+function loadRetiradas(){
+  try {
+    const salvo = JSON.parse(localStorage.getItem(RETIRADAS_STORAGE_KEY) || '{}');
+    return salvo && typeof salvo === 'object' && !Array.isArray(salvo) ? salvo : {};
+  } catch (err) {
+    console.warn('Não foi possível ler as retiradas locais.', err);
+    return {};
+  }
+}
+
+function persistirRetiradas(){
+  try {
+    localStorage.setItem(RETIRADAS_STORAGE_KEY, JSON.stringify(retiradas));
+    return true;
+  } catch (err) {
+    console.error('Não foi possível salvar a retirada neste navegador.', err);
+    alert('Não foi possível salvar a retirada neste navegador. Verifique se o armazenamento local está habilitado.');
+    return false;
+  }
+}
+
+function idRetirada(item){
+  // Usa somente identificadores estáveis; nunca usa linha/ordem ou quantidades.
+  const campos = [
+    'cod_empresa','cod_orcamento','n_orcamento',
+    'cod_orcamento_item','cod_orcamento_itens','cod_item_orcamento',
+    'id_item_orcamento','id_item','codigo_item','n_item','item',
+    'n_pedido','n_pedido_item','cod_produto','codigo_interno'
+  ];
+  return JSON.stringify(campos.map(c => item[c] == null ? '' : String(item[c]).trim()));
+}
+
+function numeroCampo(item, nomes){
+  for (const nome of nomes) {
+    if (item[nome] !== undefined && item[nome] !== null && String(item[nome]).trim() !== '') {
+      const n = Number(String(item[nome]).replace(',', '.'));
+      if (Number.isFinite(n)) return n;
+    }
+  }
+  return NaN;
+}
+
+function orcamentoJaFaturado(item){
+  const total = numeroCampo(item, ['qtde', 'quantidade', 'qtde_item']);
+  const faturada = numeroCampo(item, ['qtde_faturada', 'quantidade_faturada']);
+  if (total > 0 && Number.isFinite(faturada) && faturada >= total) return true;
+  const saldo = numeroCampo(item, ['saldo_a_faturar', 'qtde_pendente_faturar']);
+  if (Number.isFinite(saldo) && saldo <= 0 && (total > 0 || faturada > 0)) return true;
+  if (item.faturado === true || item.faturado === 1 || String(item.faturado).toLowerCase() === 'sim') return true;
+  return ['FATURADO', 'TOTALMENTE FATURADO'].includes(String(item.situacao_faturamento || item.status_faturamento || '').trim().toUpperCase());
+}
+
+function toggleRetirada(checkbox){
+  const id = decodeURIComponent(checkbox.dataset.retiradaId || '');
+  if (!id) return;
+  const anterior = retiradas[id];
+  if (checkbox.checked) {
+    retiradas[id] = { em: new Date().toISOString(), usuario: currentUser.nome || '' };
+  } else {
+    delete retiradas[id];
+  }
+  if (!persistirRetiradas()) {
+    if (anterior) retiradas[id] = anterior;
+    else delete retiradas[id];
+    checkbox.checked = !checkbox.checked;
+    return;
+  }
+  render();
+}
+
+function renderRetiradaCell(row){
+  const id = idRetirada(row);
+  const checked = Boolean(retiradas[id]);
+  return `<td class="text-center">
+    <label class="inline-flex items-center gap-2 cursor-pointer" title="${checked ? 'Desmarcar retirada' : 'Marcar como retirado'}">
+      <input type="checkbox" data-retirada-id="${encodeURIComponent(id)}" onchange="toggleRetirada(this)"
+        class="w-4 h-4 accent-emerald-600 cursor-pointer" ${checked ? 'checked' : ''}
+        aria-label="Retirado do estoque para o orçamento ${row.n_orcamento || ''}">
+      <span class="text-[10px] font-bold ${checked ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}">${checked ? 'RETIRADO' : 'PENDENTE'}</span>
+    </label>
+  </td>`;
+}
+
+function getRowClass(row,index){
+  if (currentTab === 'orcamento' && retiradas[idRetirada(row)]) {
+    return 'bg-emerald-50 dark:bg-emerald-950/30';
+  }
+  return index % 2 === 0 ? 'bg-slate-50/50 dark:bg-[#0b1329]' : 'bg-white dark:bg-[#0f172a]';
+}
+
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       fetchAllData();
@@ -327,8 +431,26 @@
           fetch(`${API_ORCAMENTO}?_t=${Date.now()}`)
         ]);
 
-        rawDataEstoque = await resEstoque.json();
-        rawDataOrcamento = await resOrcamento.json();
+        if (!resEstoque.ok || !resOrcamento.ok) throw new Error('Falha na consulta dos endpoints de estoque.');
+        const [dadosEstoque, dadosOrcamento] = await Promise.all([resEstoque.json(), resOrcamento.json()]);
+        if (!Array.isArray(dadosEstoque) || !Array.isArray(dadosOrcamento)) throw new Error('Resposta de estoque inválida.');
+
+        // Aceita tanto o alias minúsculo quanto o nome maiúsculo devolvido pelo SQL.
+        rawDataEstoque = dadosEstoque.map(item => ({
+          ...item, localizacao_estoque: item.localizacao_estoque ?? item.LOCALIZACAO_ESTOQUE ?? ''
+        }));
+        rawDataOrcamento = dadosOrcamento.map(item => ({
+          ...item, localizacao_estoque: item.localizacao_estoque ?? item.LOCALIZACAO_ESTOQUE ?? ''
+        }));
+
+        // Uma retirada deixa de ser exibida quando o orçamento foi faturado
+        // (ou deixou de constar no endpoint). Descarta marcações obsoletas.
+        const idsAtivos = new Set(rawDataOrcamento.filter(i => !orcamentoJaFaturado(i)).map(idRetirada));
+        let retiradasAlteradas = false;
+        for (const id of Object.keys(retiradas)) {
+          if (!idsAtivos.has(id)) { delete retiradas[id]; retiradasAlteradas = true; }
+        }
+        if (retiradasAlteradas) persistirRetiradas();
 
         populateDropdowns();
         render();
@@ -371,6 +493,7 @@
       } else {
         wrapperOs.classList.remove('hidden');
       }
+      document.getElementById('wrapperFilterRetirada').classList.toggle('hidden', tab !== 'orcamento');
 
       sortColumn = tabConfigs[tab].defaultSort;
       sortDirection = 'asc';
@@ -392,6 +515,11 @@
       const config = tabConfigs[currentTab];
       const sourceData = config.source();
       let filtered = sourceData.filter(config.filter);
+      if (currentTab === 'orcamento') {
+        const retirada = document.getElementById('filterRetirada').value;
+        if (retirada === 'pendentes') filtered = filtered.filter(i => !retiradas[idRetirada(i)]);
+        if (retirada === 'retirados') filtered = filtered.filter(i => Boolean(retiradas[idRetirada(i)]));
+      }
 
       const search = document.getElementById('searchInput').value.toLowerCase().trim();
       const osVal = document.getElementById('filterOs').value;
@@ -406,6 +534,7 @@
           (i.nome && String(i.nome).toLowerCase().includes(search)) ||
           (i.titulo && String(i.titulo).toLowerCase().includes(search)) ||
           (i.cliente && String(i.cliente).toLowerCase().includes(search)) ||
+          (i.localizacao_estoque && String(i.localizacao_estoque).toLowerCase().includes(search)) ||
           (i.n_orcamento && String(i.n_orcamento).toLowerCase().includes(search))
         );
       }
@@ -437,6 +566,7 @@
       document.getElementById('totalCount').textContent = filtered.length;
 
       document.getElementById('tableHeader').innerHTML = config.cols.map(c => {
+        if (c.type === 'checkbox') return `<th class="text-center text-slate-500 dark:text-slate-400">${c.label}</th>`;
         const isSorted = sortColumn === c.key;
         const icon = isSorted ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : '';
         const activeClass = isSorted ? 'text-amber-600 dark:text-amber-400 font-black' : 'text-slate-500 dark:text-slate-400';
@@ -449,8 +579,9 @@
       }).join('');
 
       document.getElementById('tableBody').innerHTML = filtered.map((row, index) => `
-        <tr class="${index % 2 === 0 ? 'bg-slate-50/50 dark:bg-[#0b1329]' : 'bg-white dark:bg-[#0f172a]'} hover:bg-slate-100 dark:hover:bg-[#1e293b] transition">
+        <tr class="${getRowClass(row, index)} hover:bg-slate-100 dark:hover:bg-[#1e293b] transition">
           ${config.cols.map(c => {
+            if (c.type === 'checkbox') return renderRetiradaCell(row);
             let val = row[c.key] !== null && row[c.key] !== undefined ? row[c.key] : '';
             if (c.formatter) val = c.formatter(val);
 
@@ -465,6 +596,10 @@
 
       const sumsContainer = document.getElementById('footerSums');
       sumsContainer.innerHTML = '';
+      if (currentTab === 'orcamento') {
+        const retirados = filtered.filter(i => Boolean(retiradas[idRetirada(i)])).length;
+        sumsContainer.innerHTML = `<span>RETIRADOS: <strong class="text-emerald-600 dark:text-emerald-400">${retirados}</strong></span><span>PENDENTES: <strong class="text-amber-600 dark:text-amber-400">${filtered.length - retirados}</strong></span>`;
+      }
       config.cols.filter(c => c.sum).forEach(c => {
         const total = filtered.reduce((acc, curr) => acc + (Number(curr[c.key]) || 0), 0);
         sumsContainer.innerHTML += `<span>TOTAL ${c.label.toUpperCase()}: <strong class="text-amber-600 dark:text-amber-400">${total}</strong></span>`;
@@ -478,6 +613,7 @@
       document.getElementById('filterOs').value = '';
       document.getElementById('filterProduto').value = '';
       document.getElementById('filterCliente').value = '';
+      document.getElementById('filterRetirada').value = '';
       sortColumn = tabConfigs[currentTab].defaultSort;
       sortDirection = 'asc';
       render();
