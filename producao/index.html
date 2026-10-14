@@ -430,6 +430,21 @@
                     <div id="mRelationMap"></div>
                 </section>
 
+                <!-- HISTÓRICO PERMANENTE DA OS - TOS.U_HIST -->
+                <section id="boxHistoricoOS" class="hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 p-3 space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <h4 class="text-xs font-black uppercase tracking-wide">Histórico da OS</h4>
+                        <button type="button" onclick="carregarHistoricoOS()" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline">Atualizar histórico</button>
+                    </div>
+                    <div id="historicoOSLista" class="space-y-2 max-h-72 overflow-y-auto custom-scroll" aria-live="polite"></div>
+                    <div class="space-y-2 border-t border-slate-200 dark:border-slate-800 pt-3">
+                        <label for="historicoNovaObservacao" class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Nova observação</label>
+                        <textarea id="historicoNovaObservacao" rows="3" maxlength="5000" placeholder="Registre uma ocorrência ou justificativa..." class="w-full rounded-lg p-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700"></textarea>
+                        <div class="flex justify-end">
+                            <button type="button" id="btnSalvarObservacaoHistorico" onclick="salvarObservacaoHistorico()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg">Salvar observação</button>
+                        </div>
+                    </div>
+                </section>
                 <!-- PAINEL EDICAO PRAZO (ESCONDIDO POR PADRÃO) -->
                 <div id="boxEditPrazo" class="hidden p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2">
                     <h5 class="font-bold text-amber-600 dark:text-amber-400 text-xs flex items-center gap-1">
@@ -454,6 +469,7 @@
 
             <div class="bg-slate-100 dark:bg-slate-950 px-4 sm:px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex flex-wrap justify-between items-center gap-2">
                 <div class="flex items-center gap-2 flex-wrap">
+                    <button type="button" onclick="abrirHistoricoOS()" class="px-3 py-2 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 rounded-xl font-semibold text-xs hover:bg-emerald-500/20 flex items-center gap-1.5"><i data-lucide="history" class="w-4 h-4"></i> Histórico</button>
                     <button id="btnOpenEditPrazo" onclick="toggleEditPrazo(true)" class="px-3 py-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl font-semibold text-xs hover:bg-amber-500/20 flex items-center gap-1.5 transition">
                         <i data-lucide="calendar-plus" class="w-4 h-4"></i>
                         <span>Alterar entrega</span>
@@ -530,6 +546,142 @@
         }
 
         const API_URL = 'https://sintercan.consultoriarf.net/PRODUCAO';
+
+        // Histórico em TOS.U_HIST: usa o login já existente no portal Sintercan.
+        function authHistHeaders() {
+            return {'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': '69420'};
+        }
+
+        function uuidHistorico() {
+            if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+            // Fallback com CSPRNG para navegadores que ainda não suportam randomUUID.
+            const bytes = crypto.getRandomValues(new Uint8Array(16));
+            bytes[6] = (bytes[6] & 15) | 64;
+            bytes[8] = (bytes[8] & 63) | 128;
+            return [...bytes].map((n, i) => n.toString(16).padStart(2,'0') +
+                  ([3,5,7,9].includes(i) ? '-' : '')).join('');
+        }
+
+        function separarEventosHistorico(raw) {
+            const texto = String(raw || '').replace(/\r\n?/g, '\n');
+            const regex = /^=== HISTORICO \| ([^|\n]+) \| ([^|\n]+) \| ([^\n]+?) ===\n([\s\S]*?)\n=== FIM ===/gm;
+            const eventos = []; let match; let ultimaPosicao = 0;
+            while ((match = regex.exec(texto)) !== null) {
+                eventos.push({data:match[1].trim(), usuario:match[2].trim(),
+                              acao:match[3].trim(),
+                              corpo:match[4].replace(/^Requisição: [0-9a-f-]+$/gmi, '').trim()});
+                ultimaPosicao = regex.lastIndex;
+            }
+            // O campo antigo de U_HIST não pode desaparecer da leitura após gravar um evento.
+            const textoLegado = (eventos.length ? texto.slice(ultimaPosicao) : texto).trim();
+            if (textoLegado) {
+                eventos.push({data:'', usuario:'Registro anterior', acao:'Histórico legado', corpo:textoLegado});
+            }
+            return eventos;
+        }
+
+        function renderizarHistoricoOS(texto) {
+            const area = document.getElementById('historicoOSLista');
+            if (!area) return;
+            area.replaceChildren();
+            const eventos = separarEventosHistorico(texto);
+            if (!eventos.length) {
+                const el = document.createElement('div');
+                el.className = 'text-xs text-slate-500 py-4 text-center';
+                el.textContent = 'Nenhum registro nesta OS.';
+                area.appendChild(el);
+                return;
+            }
+            eventos.forEach((evento, index) => {
+                const cartao = document.createElement('article');
+                cartao.className = (index === 0
+                    ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/40'
+                    : 'border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-700') +
+                    ' border rounded-xl p-3 space-y-1';
+                const titulo = document.createElement('div');
+                titulo.className = 'flex flex-wrap gap-x-2 gap-y-1 text-[10px] font-black uppercase tracking-wide text-slate-700 dark:text-slate-300';
+                const ator = document.createElement('span');
+                ator.textContent = evento.usuario;
+                const data = document.createElement('span');
+                data.className = 'text-slate-500';
+                data.textContent = evento.data;
+                const acao = document.createElement('div');
+                acao.className = 'text-xs font-bold text-emerald-700 dark:text-emerald-400';
+                acao.textContent = evento.acao;
+                const corpo = document.createElement('p');
+                corpo.className = 'text-xs leading-relaxed whitespace-pre-wrap break-words text-slate-700 dark:text-slate-300';
+                corpo.textContent = evento.corpo;
+                titulo.append(ator, data);
+                cartao.append(titulo, acao, corpo);
+                area.appendChild(cartao);
+            });
+        }
+
+        async function carregarHistoricoOS() {
+            if (!currentOSItem) return;
+            const os = String(currentOSItem.codigo_os);
+            const empresa = Number(currentOSItem.cod_empresa);
+            const area = document.getElementById('historicoOSLista');
+            if (area) area.textContent = 'Carregando histórico...';
+            try {
+                const response = await fetch(API_URL + '/' + encodeURIComponent(os) +
+                    '/historico?cod_empresa=' + encodeURIComponent(empresa), {
+                    headers: authHistHeaders(), cache: 'no-store'
+                });
+                const resposta = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(resposta.detail || 'Falha ao carregar histórico.');
+                if (currentOSItem && String(currentOSItem.codigo_os) === os &&
+                    Number(currentOSItem.cod_empresa) === empresa) {
+                    renderizarHistoricoOS(resposta.historico || '');
+                }
+            } catch (error) {
+                if (area) area.textContent = error.message;
+            }
+        }
+
+        function abrirHistoricoOS() {
+            const box = document.getElementById('boxHistoricoOS');
+            if (!box || !currentOSItem) return;
+            const hidden = box.classList.toggle('hidden');
+            if (!hidden) {
+                carregarHistoricoOS();
+                box.scrollIntoView({block:'nearest', behavior:'smooth'});
+            }
+        }
+
+        async function salvarObservacaoHistorico() {
+            if (!currentOSItem) return;
+            const input = document.getElementById('historicoNovaObservacao');
+            const button = document.getElementById('btnSalvarObservacaoHistorico');
+            const observacao = (input.value || '').trim();
+            if (!observacao || button.disabled) return;
+            const os = String(currentOSItem.codigo_os);
+            const empresa = Number(currentOSItem.cod_empresa);
+            button.disabled = true;
+            button.textContent = 'Salvando...';
+            try {
+                const response = await fetch(API_URL + '/' + encodeURIComponent(os) + '/observacao', {
+                    method:'POST',
+                    headers: {...authHistHeaders(), 'X-Idempotency-Key': uuidHistorico()},
+                    body: JSON.stringify({cod_empresa:empresa, observacao, usuario: currentUser.nome})
+                });
+                const resposta = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(resposta.detail || 'Falha ao gravar observação.');
+                if (currentOSItem && String(currentOSItem.codigo_os) === os &&
+                    Number(currentOSItem.cod_empresa) === empresa) {
+                    renderizarHistoricoOS(resposta.historico || '');
+                    input.value = '';
+                }
+            } catch (error) {
+                alert('Erro ao registrar observação: ' + error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Salvar observação';
+            }
+        }
+
+
         const PRODUCTION_DB_NAME = 'SINTERCAN_PRODUCAO_CACHE';
         const PRODUCTION_DB_VERSION = 1;
         const PRODUCTION_STORE_NAME = 'datasets';
@@ -631,8 +783,8 @@
                     API_URL + '/' + encodeURIComponent(codigoOs) + '/alterar-zerar',
                     {
                         method: 'PATCH',
-                        headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '69420'},
-                        body: JSON.stringify({cod_empresa: Number(codEmpresa), u_zerar: value})
+                        headers: {...authHistHeaders(), 'X-Idempotency-Key': uuidHistorico()},
+                        body: JSON.stringify({cod_empresa: Number(codEmpresa), u_zerar: value, usuario: currentUser.nome})
                     }
                 );
                 if (!response.ok) {
@@ -696,7 +848,7 @@
                     {
                         method: 'PATCH',
                         headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '69420'},
-                        body: JSON.stringify({cod_empresa: Number(codEmpresa), u_libfat: value})
+                        body: JSON.stringify({cod_empresa: Number(codEmpresa), u_libfat: value, usuario: currentUser.nome})
                     }
                 );
                 if (!response.ok) {
@@ -1384,7 +1536,14 @@
                 if (!response.ok) throw new Error(`Status HTTP: ${response.status}`);
 
                 const data = await response.json();
-                const normalized = Array.isArray(data) ? data : [data];
+                // Não zerar a carteira se a API responder erro JSON/objeto ou lista vazia.
+                // Preserva o último cache válido até o servidor voltar.
+                if (!Array.isArray(data) || data.length === 0) {
+                    const erroAPI = data && typeof data === 'object'
+                        ? (data.detail || data.mensagem || data.status || 'retorno inesperado') : 'sem registros';
+                    throw new Error('A API não enviou uma lista válida de produção: ' + erroAPI);
+                }
+                const normalized = data;
                 const savedAt = new Date().toISOString();
 
                 productionLastApiSyncAtMs = Date.now();
@@ -2511,11 +2670,13 @@
                         method: 'PATCH',
                         headers: {
                             'Content-Type': 'application/json',
-                            'ngrok-skip-browser-warning': '69420'
+                            'ngrok-skip-browser-warning': '69420',
+                                                         'X-Idempotency-Key': uuidHistorico()
                         },
                         body: JSON.stringify({
                             cod_empresa: Number(codEmpresa),
-                            prioridade: selected
+                            prioridade: selected,
+                            usuario: currentUser.nome
                         })
                     }
                 );
@@ -2868,6 +3029,9 @@
         function openModal(item, preserveHistory = false) {
             if (!preserveHistory) osNavigationHistory = [];
             currentOSItem = item;
+            const painelHistorico = document.getElementById('boxHistoricoOS');
+            if (painelHistorico) painelHistorico.classList.add('hidden');
+            document.getElementById('historicoNovaObservacao').value = '';
         
             const type = getItemType(item);
             const progressValue = getProductionPercentValue(item);
@@ -3005,11 +3169,14 @@
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': '69420'
+                        'ngrok-skip-browser-warning': '69420',
+                                                 'X-Idempotency-Key': uuidHistorico()
                     },
                     body: JSON.stringify({
+                        cod_empresa: Number(currentOSItem.cod_empresa),
                         nova_data: novaData,
-                        justificativa: justificativa
+                        justificativa: justificativa,
+                        usuario: currentUser.nome
                     })
                 });
 
