@@ -1,32 +1,19 @@
 """Histórico operacional Sintercan (PostgreSQL) -- somente TOS.U_HIST.
 
-Instalação: salvar ao lado de main.py e, imediatamente após app = FastAPI(),
-adicionar:
-    from historico_sintercan_api import router as historico_router
-    app.include_router(historico_router)
-
-A importação PRECISA ocorrer ANTES das rotas PATCH antigas para permitir que
-as novas rotas autenticadas preservem as URLs existentes.
-
-A chave de assinatura é gerada automaticamente ao iniciar esta API; sem setup manual.
+Instalação: salvar ao lado de main.py e iniciar uvicorn sintercan_historico_app:app.
+Mantém o login já existente do portal Sintercan (/login), sem tokens adicionais.
+O nome do usuário é recebido dos dados da sessão atual do portal.
 """
 from __future__ import annotations
 
-import base64
-import hashlib
-import hmac
-import json
-import secrets
 import re
-import time
 import unicodedata
 import uuid
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fastapi import APIRouter, Depends, Header, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from conexao import engine
@@ -34,33 +21,33 @@ from conexao import engine
 router = APIRouter(tags=["Histórico de OS"])
 
 
-class LoginRequest(BaseModel):
-    usuario: str
-    senha: str
-
-
 class ObservacaoRequest(BaseModel):
+    usuario: str = Field(min_length=1, max_length=100)
     cod_empresa: int = Field(ge=1)
     observacao: str = Field(min_length=1, max_length=5000)
 
 
 class PrazoRequest(BaseModel):
+    usuario: str = Field(min_length=1, max_length=100)
     cod_empresa: int = Field(default=1, ge=1)
     nova_data: str
     justificativa: str
 
 
 class PrioridadeRequest(BaseModel):
+    usuario: str = Field(min_length=1, max_length=100)
     cod_empresa: int = Field(ge=1)
     prioridade: int = Field(ge=0, le=9)
 
 
 class ZerarRequest(BaseModel):
+    usuario: str = Field(min_length=1, max_length=100)
     cod_empresa: int = Field(ge=1)
     u_zerar: int = Field(ge=0, le=1)
 
 
 class RenegociacaoRequest(BaseModel):
+    usuario: str = Field(min_length=1, max_length=100)
     cod_empresa: int = Field(default=1, ge=1)
     u_data_renegociacao: Optional[str] = None
     U_JUST_ALT_DT_REN: str
@@ -71,43 +58,15 @@ class RenegociacaoRequest(BaseModel):
 _RUNTIME_SESSION_SECRET = secrets.token_urlsafe(48)
 
 
-def _secret() -> str:
-    return _RUNTIME_SESSION_SECRET
+def _get_user(nome: str) -> dict:
+    """Identifica o usuário do login que já existe no portal, sem token extra.
 
-
-def _base64(data: bytes) -> str:
-    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
-
-
-def _issue_token(nome: str) -> str:
-    payload = {"v": 1, "sub": nome.strip().upper(), "exp": int(time.time()) + 43200}
-    body = _base64(json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
-    mac = _base64(hmac.new(_secret().encode("utf-8"), body.encode("ascii"), hashlib.sha256).digest())
-    return f"{body}.{mac}"
-
-
-# Swagger UI não envia cabeçalho "Authorization" declarado como parâmetro comum.
-# HTTPBearer registra o esquema de segurança e ativa o botão "Authorize".
-_bearer_scheme = HTTPBearer(auto_error=False)
-
-
-def _check_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer_scheme)) -> dict:
-    if not credentials or credentials.scheme.lower() != "bearer":
-        raise HTTPException(status_code=401, detail="Sessão ausente. Faça login novamente no portal.")
-    try:
-        body, mac = credentials.credentials.strip().split(".", 1)
-        expected = _base64(hmac.new(_secret().encode("utf-8"), body.encode("ascii"), hashlib.sha256).digest())
-        if not hmac.compare_digest(mac, expected):
-            raise ValueError("assinatura")
-        claims = json.loads(base64.urlsafe_b64decode(body + "=" * (-len(body) % 4)))
-        if claims.get("v") != 1 or int(claims["exp"]) <= int(time.time()):
-            raise ValueError("expirada")
-        nome = str(claims["sub"]).strip().upper()
-        if not nome:
-            raise ValueError("usuário")
-    except (TypeError, ValueError, KeyError, UnicodeError, OverflowError):
-        raise HTTPException(status_code=401, detail="Sessão inválida/expirada. Faça login novamente.")
-
+    O nome é informado pela sessão do navegador e conferido em CSENHA.
+    Atenção: sem autenticação adicional no backend, esse nome é declaratório.
+    """
+    nome = str(nome or "").strip().upper()
+    if not nome:
+        raise HTTPException(status_code=422, detail="Usuário da sessão não informado.")
     with engine.connect() as conn:
         user = conn.execute(text("""
             SELECT TRIM(nome) AS nome,
@@ -119,69 +78,14 @@ def _check_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(_
                AND (inativo = 0 OR inativo IS NULL)
                AND (cod_empresa = 1 OR cod_empresa = '1')
         """), {"nome": nome}).mappings().first()
-    if user is None:
-        raise HTTPException(status_code=403, detail="Usuário inativo ou não encontrado.")
+    if not user:
+        raise HTTPException(status_code=403, detail="Usuário do CPS não encontrado ou inativo.")
     return dict(user)
 
 
 def _permission(user: dict, *keys: str) -> None:
     if not any(str(user.get(key)) == "1" for key in keys):
         raise HTTPException(status_code=403, detail="Permissão insuficiente para esta operação.")
-
-
-def _md5_variants(password: str, username: str) -> set[str]:
-    password = password.strip()
-    username = username.strip()
-    values = [password, password.upper(), password.lower(),
-              username.upper() + password, password + username.upper(),
-              username.lower() + password, password + username.lower()]
-    hashes = set()
-    for value in values:
-        for encoding in ("utf-8", "cp1252", "utf-16le"):
-            try:
-                hashes.add(hashlib.md5(value.encode(encoding)).hexdigest().upper())
-            except UnicodeEncodeError:
-                pass
-        utf8_hash = hashlib.md5(value.encode("utf-8")).hexdigest()
-        hashes.add(hashlib.md5(utf8_hash.encode("utf-8")).hexdigest().upper())
-    return hashes
-
-
-@router.post("/auth/token")
-def emitir_token_de_login(body: LoginRequest):
-    """Login real com senha, diferente de /me (que apenas consulta permissões)."""
-    _secret()
-    nome = body.usuario.strip().upper()
-    if not nome or not body.senha:
-        raise HTTPException(status_code=401, detail="Usuário ou senha inválidos.")
-    with engine.connect() as conn:
-        users = conn.execute(text("""
-            SELECT TRIM(nome) AS nome, TRIM(senha) AS senha,
-                   COALESCE(u_producao::text,'0') AS u_producao,
-                   COALESCE(u_producao_valor::text,'0') AS u_producao_valor,
-                   COALESCE(u_estoque_pa::text,'0') AS u_estoque_pa,
-                   COALESCE(u_estoque_mp::text,'0') AS u_estoque_mp,
-                   COALESCE(u_faturamento::text,'0') AS u_faturamento,
-                   COALESCE(u_qualidade::text,'0') AS u_qualidade,
-                   COALESCE(u_financeiro::text,'0') AS u_financeiro,
-                   COALESCE(u_rs::text,'0') AS u_rs,
-                   COALESCE(u_compras::text,'0') AS u_compras,
-                   COALESCE(u_custos::text,'0') AS u_custos
-              FROM CSENHA
-             WHERE UPPER(TRIM(nome)) = :nome
-               AND (inativo = 0 OR inativo IS NULL)
-               AND (cod_empresa = 1 OR cod_empresa = '1')
-        """), {"nome": nome}).mappings().all()
-    hashes = _md5_variants(body.senha, nome)
-    for found in users:
-        user = dict(found)
-        password_db = str(user.pop("senha") or "").strip()
-        if (password_db.upper() in hashes or
-                hmac.compare_digest(password_db, body.senha.strip()) or
-                hmac.compare_digest(password_db.upper(), body.senha.strip().upper())):
-            user["auth_token"] = _issue_token(str(user["nome"]))
-            return user
-    raise HTTPException(status_code=401, detail="Usuário ou senha inválidos.")
 
 
 def _sanitize(value: object) -> str:
@@ -272,8 +176,7 @@ def _unchanged(row: dict, key: str, **other) -> dict:
 
 
 @router.get("/PRODUCAO/{codigo_os}/historico")
-def obter_historico(codigo_os: int, cod_empresa: int = 1, user: dict = Depends(_check_token)):
-    _permission(user, "u_producao", "u_producao_valor", "u_faturamento")
+def obter_historico(codigo_os: int, cod_empresa: int = 1):
     with engine.connect() as conn:
         row = conn.execute(text("""
             SELECT COD_EMPRESA, CODIGO, N_OS, U_HIST FROM TOS
@@ -290,8 +193,8 @@ def obter_historico(codigo_os: int, cod_empresa: int = 1, user: dict = Depends(_
 def salvar_observacao(
     codigo_os: int, body: ObservacaoRequest,
     key_header: Optional[str] = Header(None, alias="X-Idempotency-Key"),
-    user: dict = Depends(_check_token),
 ):
+    user = _get_user(body.usuario)
     _permission(user, "u_producao", "u_producao_valor", "u_faturamento")
     note = _sanitize(body.observacao)
     if not note:
@@ -310,8 +213,8 @@ def salvar_observacao(
 def alterar_prazo(
     n_os: str, body: PrazoRequest,
     key_header: Optional[str] = Header(None, alias="X-Idempotency-Key"),
-    user: dict = Depends(_check_token),
 ):
+    user = _get_user(body.usuario)
     _permission(user, "u_producao", "u_producao_valor")
     note = _sanitize(body.justificativa)
     if not note:
@@ -365,8 +268,8 @@ def _update_zero_cache(cod_empresa: int, codigo_os: int, zerar: int) -> None:
 def alterar_prioridade(
     codigo_os: int, body: PrioridadeRequest,
     key_header: Optional[str] = Header(None, alias="X-Idempotency-Key"),
-    user: dict = Depends(_check_token),
 ):
+    user = _get_user(body.usuario)
     _permission(user, "u_producao", "u_producao_valor")
     key = _request_key(key_header)
     with engine.begin() as conn:
@@ -388,8 +291,8 @@ def alterar_prioridade(
 def alterar_zerar(
     codigo_os: int, body: ZerarRequest,
     key_header: Optional[str] = Header(None, alias="X-Idempotency-Key"),
-    user: dict = Depends(_check_token),
 ):
+    user = _get_user(body.usuario)
     _permission(user, "u_producao", "u_producao_valor")
     key = _request_key(key_header)
     with engine.begin() as conn:
@@ -412,8 +315,8 @@ def alterar_zerar(
 def alterar_renegociacao(
     n_os: str, body: RenegociacaoRequest,
     key_header: Optional[str] = Header(None, alias="X-Idempotency-Key"),
-    user: dict = Depends(_check_token),
 ):
+    user = _get_user(body.usuario)
     _permission(user, "u_faturamento")
     note = _sanitize(body.U_JUST_ALT_DT_REN)
     if not note:
