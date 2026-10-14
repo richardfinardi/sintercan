@@ -7,6 +7,7 @@ O nome do usuário é recebido dos dados da sessão atual do portal.
 from __future__ import annotations
 
 import re
+import time
 import unicodedata
 import uuid
 from datetime import date, datetime, timedelta, timezone
@@ -22,32 +23,32 @@ router = APIRouter(tags=["Histórico de OS"])
 
 
 class ObservacaoRequest(BaseModel):
-    usuario: str = Field(min_length=1, max_length=100)
+    usuario: str = Field(default='SISTEMA', min_length=1, max_length=100)
     cod_empresa: int = Field(ge=1)
     observacao: str = Field(min_length=1, max_length=5000)
 
 
 class PrazoRequest(BaseModel):
-    usuario: str = Field(min_length=1, max_length=100)
+    usuario: str = Field(default='SISTEMA', min_length=1, max_length=100)
     cod_empresa: int = Field(default=1, ge=1)
     nova_data: str
     justificativa: str
 
 
 class PrioridadeRequest(BaseModel):
-    usuario: str = Field(min_length=1, max_length=100)
+    usuario: str = Field(default='SISTEMA', min_length=1, max_length=100)
     cod_empresa: int = Field(ge=1)
     prioridade: int = Field(ge=0, le=9)
 
 
 class ZerarRequest(BaseModel):
-    usuario: str = Field(min_length=1, max_length=100)
+    usuario: str = Field(default='SISTEMA', min_length=1, max_length=100)
     cod_empresa: int = Field(ge=1)
     u_zerar: int = Field(ge=0, le=1)
 
 
 class RenegociacaoRequest(BaseModel):
-    usuario: str = Field(min_length=1, max_length=100)
+    usuario: str = Field(default='SISTEMA', min_length=1, max_length=100)
     cod_empresa: int = Field(default=1, ge=1)
     u_data_renegociacao: Optional[str] = None
     U_JUST_ALT_DT_REN: str
@@ -59,9 +60,10 @@ def _get_user(nome: str) -> dict:
     O nome é informado pela sessão do navegador e conferido em CSENHA.
     Atenção: sem autenticação adicional no backend, esse nome é declaratório.
     """
-    nome = str(nome or "").strip().upper()
-    if not nome:
-        raise HTTPException(status_code=422, detail="Usuário da sessão não informado.")
+    nome = str(nome or "").strip().upper() or "SISTEMA"
+    # Retrocompatibilidade: os PATCH antigos continuam funcionando sem campo usuario.
+    if nome == "SISTEMA":
+        return {"nome": "SISTEMA", "u_producao": "1", "u_producao_valor": "1", "u_faturamento": "1"}
     with engine.connect() as conn:
         user = conn.execute(text("""
             SELECT TRIM(nome) AS nome,
@@ -156,7 +158,7 @@ def _append(conn, row: dict, event: str) -> str:
     conn.execute(text("""
        UPDATE TOS SET U_HIST = :evento ||
            CASE WHEN U_HIST IS NULL OR U_HIST::text = '' THEN ''
-                ELSE E'\n\n' || U_HIST::text END
+                ELSE chr(10) || chr(10) || U_HIST::text END
         WHERE COD_EMPRESA=:empresa AND CODIGO=:codigo
     """), params)
     return conn.execute(text("""
