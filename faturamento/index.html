@@ -322,6 +322,7 @@
         let dataReady = false;
         let cacheSavedAt = null;
         let lastApiSyncMs = 0;
+        let lastApiAttemptMs = 0;
         let rowKeys = new WeakMap();
         let rowByKey = new Map();
         let nextRowKey = 1;
@@ -334,14 +335,14 @@
             loadFaturamento();
             setInterval(() => {
                 if (document.visibilityState === 'visible' && !isSavingRenegociacao && !isModalOpen()
-                    && Date.now() - lastApiSyncMs >= FAT_REFRESH_MS) fetchData(false, true);
+                    && Date.now() - Math.max(lastApiSyncMs, lastApiAttemptMs) >= FAT_REFRESH_MS) fetchData(false, true);
             }, 60 * 1000);
             document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible' && Date.now() - lastApiSyncMs >= FAT_REFRESH_MS
+                if (document.visibilityState === 'visible' && Date.now() - Math.max(lastApiSyncMs, lastApiAttemptMs) >= FAT_REFRESH_MS
                     && !isSavingRenegociacao && !isModalOpen()) fetchData(false, true);
             });
             window.addEventListener('focus', () => {
-                if (Date.now() - lastApiSyncMs >= FAT_REFRESH_MS && !isSavingRenegociacao
+                if (Date.now() - Math.max(lastApiSyncMs, lastApiAttemptMs) >= FAT_REFRESH_MS && !isSavingRenegociacao
                     && !isModalOpen()) fetchData(false, true);
             });
             document.addEventListener('keydown', event => {
@@ -459,6 +460,7 @@
         async function fetchData(manual = false, quiet = false) {
             if (isRefreshingData || isSavingRenegociacao || (isModalOpen() && !manual)) return;
             isRefreshingData = true;
+            lastApiAttemptMs = Date.now();
             const icon = document.getElementById('refreshIcon');
             const btn = document.getElementById('btnRefresh');
             if (icon) icon.classList.add('animate-spin');
@@ -591,9 +593,7 @@
             const dtRefStr = isFaturado ? item.dt_emissao : item.entrega_normalizada;
             if (!dtRefStr) return null;
 
-            const date = new Date(dtRefStr);
-            if (isNaN(date.getTime())) return null;
-            return date;
+            return parseApiDate(dtRefStr);
         }
 
         function populateWeekFilter() {
@@ -745,11 +745,20 @@
             return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseValue(val));
         }
 
+        function parseApiDate(value) {
+            if (!value) return null;
+            const txt = String(value).trim();
+            // Datas de banco sem horário devem permanecer no dia original no fuso brasileiro.
+            const localDay = txt.match(/^(\d{4})-(\d{2})-(\d{2})(?:T00:00:00(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$/);
+            const date = localDay
+                ? new Date(Number(localDay[1]), Number(localDay[2]) - 1, Number(localDay[3]))
+                : new Date(txt);
+            return isNaN(date.getTime()) ? null : date;
+        }
+
         function formatDateOnly(dateStr) {
-            if (!dateStr) return '-';
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return '-';
-            return d.toLocaleDateString('pt-BR');
+            const date = parseApiDate(dateStr);
+            return date ? date.toLocaleDateString('pt-BR') : '-';
         }
 
         function getISOWeekNumber(itemDate) {
