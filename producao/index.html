@@ -2478,6 +2478,16 @@
                    </span>`
                 : '';
         
+            // O checkbox de zeramento fica no rodapé para não disputar espaço com o tipo, a prioridade e a OS.
+            const zeroCheckboxHTML = `<label onclick="event.stopPropagation()" title="Zerar valor apenas na aplicação. O CPS grava somente o campo U_ZERAR." class="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 px-1.5 py-1 text-[9px] whitespace-nowrap font-black cursor-pointer select-none hover:border-blue-400">
+                    <input type="checkbox" aria-label="Zerar valor da OS ${escapeAuxText(item.n_os)}" ${isZeroed ? 'checked' : ''}
+                    data-zero-company="${encodeURIComponent(String(item.cod_empresa ?? ''))}"
+                    data-zero-code="${encodeURIComponent(String(item.codigo_os ?? ''))}"
+                    onchange="alterarZerarOS(event, this)"
+                    class="w-3.5 h-3.5 accent-blue-600 cursor-pointer">
+                    <span>Zerar</span>
+                    </label>`;
+
             return `
                 <div onclick='openModal(${payload})' class="relative overflow-hidden border ${isZeroed ? 'border-slate-400/70 dark:border-slate-600' : 'border-slate-200 dark:border-slate-800'} rounded-xl bg-white dark:bg-slate-950 hover:border-amber-500 dark:hover:border-amber-500/60 hover:shadow-lg transition cursor-pointer text-xs">
                     <span class="absolute inset-y-0 left-0 w-1.5 ${type.rail}"></span>
@@ -2493,14 +2503,7 @@
                                 ${isZeroed ? '<span class="rounded-md bg-slate-700 text-white px-1.5 py-1 text-[9px] font-black">ZERADA</span>' : ''}
                             </div>
                             <div class="shrink-0 flex items-center gap-1.5">
-                                <label onclick="event.stopPropagation()" title="Zerar valor apenas na aplicação. O CPS grava somente o campo U_ZERAR." class="inline-flex items-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 px-1.5 py-1 text-[9px] font-black cursor-pointer select-none hover:border-blue-400">
-                                    <input type="checkbox" aria-label="Zerar valor da OS ${escapeAuxText(item.n_os)}" ${isZeroed ? 'checked' : ''}
-                                        data-zero-company="${encodeURIComponent(String(item.cod_empresa ?? ''))}"
-                                        data-zero-code="${encodeURIComponent(String(item.codigo_os ?? ''))}"
-                                        onchange="alterarZerarOS(event, this)"
-                                        class="w-3.5 h-3.5 accent-blue-600 cursor-pointer">
-                                    <span>Zerar</span>
-                                </label>
+
                                 ${priorityBadgeHTML(item)}
                                 <span class="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1 rounded-md font-black border border-slate-200 dark:border-slate-800">OS ${item.n_os}</span>
                             </div>
@@ -2527,8 +2530,11 @@
                         </div>
         
                         <div class="mt-2.5 pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
-                            <span class="truncate text-[9px] font-semibold text-slate-500 dark:text-slate-400">${item.status || ''}</span>
-                            <span class="shrink-0 text-[10px] font-black ${isAtrasada ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}">${formatBRL(val)}</span>
+                            <span class="min-w-0 flex-1 truncate text-[9px] font-semibold text-slate-500 dark:text-slate-400">${item.status || ''}</span>
+                            <div class="shrink-0 flex items-center gap-2">
+                                ${zeroCheckboxHTML}
+                                <span class="whitespace-nowrap text-[10px] font-black ${isAtrasada ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}">${formatBRL(val)}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
