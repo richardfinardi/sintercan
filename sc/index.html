@@ -232,7 +232,8 @@
     let rawDataEstoque = [];
     let rawDataOrcamento = [];
     const API_RETIRADAS = 'https://sintercan.consultoriarf.net/sc/retiradas';
-    const RETIRADAS_STORAGE_KEY = 'sintercan_sc_retiradas_v2';
+    const RETIRADAS_STORAGE_KEY = 'sintercan_sc_retiradas_v3';
+    const RETIRADAS_LEGACY_KEY = 'sintercan_sc_retiradas_v2';
     let retiradas = {}; // Apenas o servidor define o estado compartilhado.
     let versaoRetiradas = 0;
     const MARCACAO_MIGRADA = 'sintercan_sc_v2_migrado';
@@ -355,6 +356,15 @@ function loadRetiradas(){
   }
 }
 
+function loadRetiradasAntigas() {
+  try {
+    const dados = JSON.parse(localStorage.getItem(RETIRADAS_LEGACY_KEY) || '{}');
+    return dados && typeof dados === 'object' && !Array.isArray(dados) ? dados : {};
+  } catch (err) {
+    return {};
+  }
+}
+
 function persistirRetiradas(){
   try {
     localStorage.setItem(RETIRADAS_STORAGE_KEY, JSON.stringify(retiradas));
@@ -443,7 +453,7 @@ function statusCompartilhamentoSc(online) {
 
 async function migrarRetiradasLocaisAntigas(estadoRemoto) {
   if (!dadosCarregadosSc || localStorage.getItem(MARCACAO_MIGRADA)) return;
-  const antigas = loadRetiradas();
+  const antigas = loadRetiradasAntigas();
   // Importa marcações antigas somente na primeira ativação, se o servidor
   // estiver vazio. Nunca sobrescreve o trabalho de outro funcionário.
   if (Object.keys(estadoRemoto).length === 0) {
