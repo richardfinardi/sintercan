@@ -1,34 +1,29 @@
 # Sintercan — Histórico da OS (TOS.U_HIST)
 
-> Integração preparada em branch de homologação. **Não foi aplicada ao servidor CPS.**
-> `TOS.OBS` não é alterado por nenhum comando desta implementação.
+> Integração na branch de homologação; não instalada/publicada automaticamente.
+> Sem tocar no campo TOS.OBS.
 
-## Ativação no servidor Windows
+## Instalação, mesmo fluxo que já existe no portal
 
-**Não é necessário gerar senha, configurar chave ou adicionar variável no BAT.** A API cria internamente sua própria chave ao iniciar.
+1. Coloque `historico_sintercan_api.py` e `sintercan_historico_app.py` ao lado do `main.py` e `conexao.py` da API Sintercan. Não substitua o `main.py`.
+2. No BAT atual, mude somente `uvicorn main:app` para `uvicorn sintercan_historico_app:app`. Mantenha parâmetros/porta/túnel existentes.
+3. Reinicie a API. Abra `http://127.0.0.1:8000/docs`; na seção **Histórico de OS**, execute **GET /PRODUCAO/{codigo_os}/historico** preenchendo código interno e empresa. Deve retornar o campo `TOS.U_HIST` sem nenhum token.
+4. Para testar **POST /PRODUCAO/{codigo_os}/observacao**, use `{"cod_empresa":1,"usuario":"RICHARD","observacao":"Teste de histórico"}`. Releia o GET e confira o texto gravado.
+5. Depois de confirmar, publique/mescle `index.html`, `producao/index.html` e `faturamento/index.html` da branch. O login do portal continua usando `POST /login`.
 
-1. Copie `api/historico_sintercan_api.py` e `api/sintercan_historico_app.py` para a MESMA pasta de `main.py`, `conexao.py` e `sc_retiradas_api.py`. Não substitua o `main.py`.
-2. No BAT de inicialização, troque somente `uvicorn main:app` por `uvicorn sintercan_historico_app:app`, mantendo os demais parâmetros e o Cloudflared.
-3. Reinicie a API e abra `/docs`. Faça `POST /auth/token`, copie o `auth_token`, clique no botão **Authorize** (cadeado) e cole somente o token (sem prefixo `Bearer`). Teste leitura do histórico, nova observação, alteração de prazo, prioridade, zeramento e renegociação do campo `TOS.U_DATA_RENEGOCIACAO` em uma OS de teste. A documentação enviará `Authorization: Bearer <token>` automaticamente.
-4. **Só após testar a API**, publique/mescle os HTMLs do GitHub: `index.html`, `producao/index.html` e `faturamento/index.html`. Faça login novamente no portal.
+**Não há geração de chave, login extra, auth/token, Authorize, Bearer ou alterações no BAT além do módulo do Uvicorn.**
 
-Nota: ao reiniciar a API, as sessões antigas expiram e é necessário fazer login novamente. A implementação pressupõe uma única instância de API, como o BAT existente.
+## Funcionalidades
 
-## O que foi implementado
+- `TOS.U_HIST`: histórico em texto puro, novo evento primeiro, preserva conteúdo antigo.
+- Observação manual com usuário, data/hora; prazo, prioridade, zeramento e renegociação gravam anterior → novo.
+- `TOS.U_DATA_RENEGOCIACAO` na tela de faturamento, inclusive atualização em lote por OS.
+- Gravação e histórico na mesma transação, bloqueio de linha e idempotência de requisição.
+- Nome do usuário vem do login **já existente** do portal (`sintercan_user.nome`), enviado à API no campo `usuario` e conferido contra `CSENHA` e permissões.
+- As demais rotas do `main.py` permanecem.
 
-- Login pelo portal: valida senha em CSENHA e identifica o usuário; a chave de sessão é automática, sem configuração manual.
-- `GET /PRODUCAO/{codigo_os}/historico`: consulta `TOS.U_HIST`.
-- `POST /PRODUCAO/{codigo_os}/observacao`: escreve nova observação em texto puro.
-- PATCHs existentes de prazo, prioridade, zeramento e renegociação registram **anterior → novo**, usuário autenticado, data/hora, justificativa, ID de requisição.
-- `SELECT ... FOR UPDATE`, atualização da OS e histórico na mesma transação, concatenação no banco, controle de repetição com `X-Idempotency-Key`.
-- Interface da produção: histórico em cartões, evento recente destacado em verde, observações registradas sem recarregar.
-- Alterações em `TOS.U_DATA_RENEGOCIACAO` (inclusive renegociação em lote no faturamento) geram histórico por OS alterada, diferenciando empresas.
-- As demais consultas e funcionalidades do `main.py` original permanecem.
+## Observação técnica
 
-## Limitações e verificação
+Sem autenticação de requisições na API, o campo `usuario` é informado pelo navegador e pode ser forjado por alguém com acesso técnico às rotas. Isso segue a decisão de não introduzir autenticação adicional e não deve ser descrito como identificação inviolável. Nenhum usuário novo é criado.
 
-- O fluxo de Kanban/aprovação não existe nas telas de Produção da Sintercan abrangidas por este patch; portanto não foram criadas aprovações fictícias.
-- `TOS.U_HIST` não pode ser `BYTEA` sem conversão definida; a API interrompe com erro em vez de corromper os bytes.
-- O histórico antigo em `TOS.U_HIST` fica preservado. `TOS.OBS` não é lido nem modificado pela implementação.
-- Verificar que a query do faturamento retorna `cod_empresa` ou `empresa` (`EMP1`/`EMP2`) para diferenciar as OS de empresas diferentes.
-- O pacote foi compilado sintaticamente e o JavaScript validado; falta teste conectado ao banco CPS, que não está acessível nesta sessão.
+O banco deve ter `TOS.U_HIST` em tipo textual PostgreSQL (TEXT/VARCHAR); caso seja binário, a API impede alterações para não corromper os dados.
