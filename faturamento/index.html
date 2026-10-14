@@ -309,14 +309,11 @@
         const API_URL = 'https://sintercan.consultoriarf.net/faturamento';
         const API_PATCH_URL = 'https://sintercan.consultoriarf.net/faturamento';
 
-        // A sessão das gravações é assinada pela API após a senha ser validada.
+        // Cabeçalhos padrão. O nome vem do login já existente no portal.
         function headersFaturamentoHist() {
-            const usuario = JSON.parse(localStorage.getItem('sintercan_user') || '{}');
-            if (!usuario.auth_token) throw new Error('Entre novamente no portal para ativar a sessão segura.');
             return {
                 'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': '69420',
-                'Authorization': 'Bearer ' + usuario.auth_token
+                'ngrok-skip-browser-warning': '69420'
             };
         }
         function empresaFaturamentoOS(item) {
@@ -1190,7 +1187,7 @@
             }
             const targets = [...editTargets];
             if (targets.length > 1 && !confirm(`Confirmar renegociação de ${targets.length} OS para ${formatDateOnly(newDate)}?`)) return;
-            const justificativa = userTexto; // Usuário é obtido da sessão validada na API.
+            const justificativa = userTexto; // Histórico usa o usuário da sessão atual do portal.
             const btn = document.getElementById('btnSaveData');
             const successOS = new Set(), failures = [];
             let next = 0, finished = 0;
@@ -1213,7 +1210,8 @@
                             body: JSON.stringify({
                                 cod_empresa: empresa,
                                 u_data_renegociacao: newDate || null,
-                                U_JUST_ALT_DT_REN: justificativa
+                                U_JUST_ALT_DT_REN: justificativa,
+                                usuario: getUsuarioLogado()
                             })
                         });
                         if (!response.ok) {
