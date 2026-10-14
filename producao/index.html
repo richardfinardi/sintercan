@@ -536,13 +536,10 @@
 
         const API_URL = 'https://sintercan.consultoriarf.net/PRODUCAO';
 
-        // Histórico da OS: exclusivo TOS.U_HIST, sem HTML inserido pelo usuário.
+        // Histórico em TOS.U_HIST: usa o login já existente no portal Sintercan.
         function authHistHeaders() {
-            const sessao = JSON.parse(localStorage.getItem('sintercan_user') || '{}');
-            if (!sessao.auth_token) throw new Error('Faça logout e login novamente pelo portal Sintercan.');
             return {'Content-Type': 'application/json',
-                    'ngrok-skip-browser-warning': '69420',
-                    'Authorization': 'Bearer ' + sessao.auth_token};
+                    'ngrok-skip-browser-warning': '69420'};
         }
 
         function uuidHistorico() {
@@ -656,7 +653,7 @@
                 const response = await fetch(API_URL + '/' + encodeURIComponent(os) + '/observacao', {
                     method:'POST',
                     headers: {...authHistHeaders(), 'X-Idempotency-Key': uuidHistorico()},
-                    body: JSON.stringify({cod_empresa:empresa, observacao})
+                    body: JSON.stringify({cod_empresa:empresa, observacao, usuario: currentUser.nome})
                 });
                 const resposta = await response.json().catch(() => ({}));
                 if (!response.ok) throw new Error(resposta.detail || 'Falha ao gravar observação.');
@@ -756,7 +753,7 @@
                     {
                         method: 'PATCH',
                         headers: {...authHistHeaders(), 'X-Idempotency-Key': uuidHistorico()},
-                        body: JSON.stringify({cod_empresa: Number(codEmpresa), u_zerar: value})
+                        body: JSON.stringify({cod_empresa: Number(codEmpresa), u_zerar: value, usuario: currentUser.nome})
                     }
                 );
                 if (!response.ok) {
@@ -2566,12 +2563,12 @@
                         headers: {
                             'Content-Type': 'application/json',
                             'ngrok-skip-browser-warning': '69420',
-                            'Authorization': authHistHeaders().Authorization,
-                            'X-Idempotency-Key': uuidHistorico()
+                                                         'X-Idempotency-Key': uuidHistorico()
                         },
                         body: JSON.stringify({
                             cod_empresa: Number(codEmpresa),
-                            prioridade: selected
+                            prioridade: selected,
+                            usuario: currentUser.nome
                         })
                     }
                 );
@@ -3054,13 +3051,13 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'ngrok-skip-browser-warning': '69420',
-                        'Authorization': authHistHeaders().Authorization,
-                        'X-Idempotency-Key': uuidHistorico()
+                                                 'X-Idempotency-Key': uuidHistorico()
                     },
                     body: JSON.stringify({
                         cod_empresa: Number(currentOSItem.cod_empresa),
                         nova_data: novaData,
-                        justificativa: justificativa
+                        justificativa: justificativa,
+                        usuario: currentUser.nome
                     })
                 });
 
