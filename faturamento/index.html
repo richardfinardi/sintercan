@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.8.8</title>
+    <title>Sintercan - Controle de Faturamento V1.9.0</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -79,7 +79,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.8.8</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.9.0</span></p>
                 </div>
             </div>
 
@@ -112,7 +112,11 @@
                     Exportar Excel
                 </button>
 
-                <button id="btnRefresh" onclick="fetchData()" class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs transition-all shadow cursor-pointer">
+                <span id="dataStatusBadge" role="status" aria-live="polite" class="inline-flex items-center gap-2 px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-[10px] font-bold">
+                    <span id="dataStatusDot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span id="dataStatusText">Carregando...</span>
+                </span>
+                <button id="btnRefresh" onclick="fetchData(true)" class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs transition-all shadow cursor-pointer">
                     <i data-lucide="refresh-cw" class="w-4 h-4" id="refreshIcon"></i>
                     Atualizar Dados
                 </button>
@@ -155,13 +159,16 @@
                 </button>
             </div>
 
-            <!-- Filtro por Status (Faturado / Pendente) -->
+            <!-- Status da NF e da reserva de estoque -->
             <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="check-circle-2" class="w-4 h-4 text-slate-400"></i>
-                <select id="statusFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[150px] font-bold">
-                    <option value="" class="bg-white dark:bg-slate-900">Todos os Status</option>
-                    <option value="faturado" class="bg-white dark:bg-slate-900">🟢 Somente Faturados</option>
-                    <option value="pendente" class="bg-white dark:bg-slate-900">🟡 Somente Pendentes</option>
+                <select id="statusFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[190px] font-bold">
+                    <option value="">Todos os Status</option>
+                    <option value="faturado">Faturado</option>
+                    <option value="a_faturar">A faturar (todos)</option>
+                    <option value="pendente">Pendente (sem reserva)</option>
+                    <option value="disponivel">Disponível (reserva total)</option>
+                    <option value="disponivel_parcial">Disponível parcial</option>
                 </select>
             </div>
 
@@ -188,6 +195,18 @@
             </button>
         </div>
 
+        <div class="bg-white dark:bg-slate-900 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
+            <label class="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                <input type="checkbox" id="selectAllVisible" onchange="toggleAllVisible(this.checked)" class="w-4 h-4 accent-blue-600 cursor-pointer">
+                Selecionar todos os itens visíveis a faturar
+            </label>
+            <div class="flex flex-wrap items-center gap-3">
+                <span id="selectionCount" class="text-xs text-slate-500 dark:text-slate-400 font-semibold">0 selecionados</span>
+                <button id="btnBulkRenegociar" onclick="openBulkEditModal()" disabled class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed transition">
+                    <i data-lucide="calendar-cog" class="w-4 h-4"></i> Renegociar selecionados
+                </button>
+            </div>
+        </div>
         <!-- CONTEÚDO PRINCIPAL DAS SEMANAS -->
         <div id="faturamentoGrid" class="space-y-4">
             <!-- As tabelas de faturamento serão geradas aqui -->
@@ -259,6 +278,7 @@
                 <div>
                     <span id="mModalOS" class="text-xs font-bold bg-blue-500 text-slate-950 px-2 py-0.5 rounded uppercase"></span>
                     <h3 id="mModalTitle" class="font-bold text-sm mt-1 text-slate-900 dark:text-white truncate max-w-[280px]"></h3>
+                    <p id="mModalInfo" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1"></p>
                 </div>
                 <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-800 dark:hover:text-white p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
@@ -289,42 +309,185 @@
         const API_URL = 'https://sintercan.consultoriarf.net/faturamento';
         const API_PATCH_URL = 'https://sintercan.consultoriarf.net/faturamento';
 
+        const FAT_CACHE_DB = 'SINTERCAN_FATURAMENTO_CACHE';
+        const FAT_CACHE_STORE = 'dados';
+        const FAT_CACHE_KEY = 'faturamento_v1';
+        const FAT_REFRESH_MS = 5 * 60 * 1000;
         let rawData = [];
         let currentDate = new Date();
         let selectedItemModal = null;
+        let editTargets = [];
+        let isSavingRenegociacao = false;
+        let isRefreshingData = false;
+        let dataReady = false;
+        let cacheSavedAt = null;
+        let lastApiSyncMs = 0;
+        let rowKeys = new WeakMap();
+        let rowByKey = new Map();
+        let nextRowKey = 1;
+        let selectedRows = new Set();
+        let visibleSelectableKeys = [];
+        let visibleWeekKeys = new Map();
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            fetchData();
-
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape') closeSearchHelp();
+            loadFaturamento();
+            setInterval(() => {
+                if (document.visibilityState === 'visible' && !isSavingRenegociacao && !isModalOpen()
+                    && Date.now() - lastApiSyncMs >= FAT_REFRESH_MS) fetchData(false, true);
+            }, 60 * 1000);
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && Date.now() - lastApiSyncMs >= FAT_REFRESH_MS
+                    && !isSavingRenegociacao && !isModalOpen()) fetchData(false, true);
+            });
+            window.addEventListener('focus', () => {
+                if (Date.now() - lastApiSyncMs >= FAT_REFRESH_MS && !isSavingRenegociacao
+                    && !isModalOpen()) fetchData(false, true);
+            });
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape') {
+                    closeSearchHelp();
+                    if (!isSavingRenegociacao) closeEditModal();
+                }
             });
         });
 
-        async function fetchData() {
-            const icon = document.getElementById('refreshIcon');
-            if (icon) icon.classList.add('animate-spin');
+        function isModalOpen() {
+            return !document.getElementById('editModal').classList.contains('hidden');
+        }
 
+        function formatSyncTime(value) {
+            const date = value && new Date(value);
+            return date && !isNaN(date.getTime())
+                ? date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : '';
+        }
+
+        function updateDataStatus(mode, savedAt = cacheSavedAt) {
+            const badge = document.getElementById('dataStatusBadge');
+            const dot = document.getElementById('dataStatusDot');
+            const label = document.getElementById('dataStatusText');
+            const stamp = formatSyncTime(savedAt);
+            const styles = {
+                api: ['bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300','bg-emerald-500', `API • ${stamp || 'atualizado'}`],
+                cache: ['bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-700 text-sky-700 dark:text-sky-300','bg-sky-500', `CACHE LOCAL • ${stamp || 'sem data'}`],
+                updating: ['bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300','bg-amber-500 animate-pulse', `SINCRONIZANDO • ${stamp || 'aguarde'}`],
+                error: ['bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-700 text-rose-700 dark:text-rose-300','bg-rose-500','API indisponível / sem cache'],
+                loading: ['bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300','bg-amber-500 animate-pulse','Carregando...']
+            };
+            const [classes, dotClass, message] = styles[mode] || styles.loading;
+            badge.className = `inline-flex items-center gap-2 px-2.5 py-2 rounded-xl border text-[10px] font-bold whitespace-nowrap ${classes}`;
+            dot.className = `w-2 h-2 rounded-full ${dotClass}`;
+            label.textContent = message;
+            badge.title = mode === 'api' ? 'Dados atualizados pela API e salvos neste computador.'
+                : mode === 'cache' ? 'Exibindo dados locais. A API está indisponível ou sincronizando.'
+                : mode === 'updating' ? 'Atualizando em segundo plano sem bloquear a tabela.'
+                : mode === 'error' ? 'Sem dados disponíveis; tente atualizar novamente.' : 'Carregando dados.';
+        }
+
+        function openFaturamentoCacheDb() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) return reject(new Error('IndexedDB indisponível'));
+                const request = indexedDB.open(FAT_CACHE_DB, 1);
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains(FAT_CACHE_STORE)) db.createObjectStore(FAT_CACHE_STORE);
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        async function readFaturamentoCache() {
+            const db = await openFaturamentoCacheDb();
+            try {
+                return await new Promise((resolve, reject) => {
+                    const req = db.transaction(FAT_CACHE_STORE, 'readonly').objectStore(FAT_CACHE_STORE).get(FAT_CACHE_KEY);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => reject(req.error);
+                });
+            } finally { db.close(); }
+        }
+        async function writeFaturamentoCache(data, savedAt) {
+            const db = await openFaturamentoCacheDb();
+            try {
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(FAT_CACHE_STORE, 'readwrite');
+                    tx.objectStore(FAT_CACHE_STORE).put({ data, savedAt }, FAT_CACHE_KEY);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error);
+                    tx.onabort = () => reject(tx.error || new Error('Gravação de cache interrompida'));
+                });
+            } finally { db.close(); }
+        }
+
+        // Mantém cada ocorrência separada, mesmo com OS e código interno repetidos.
+        function applyDataset(data) {
+            const previous = new Map();
+            rawData.forEach(item => {
+                const fingerprint = JSON.stringify(item);
+                if (!previous.has(fingerprint)) previous.set(fingerprint, []);
+                previous.get(fingerprint).push(rowKeys.get(item));
+            });
+            const newKeys = new WeakMap(), newLookup = new Map();
+            data.forEach(item => {
+                const fingerprint = JSON.stringify(item), reuse = previous.get(fingerprint);
+                const key = reuse && reuse.length ? reuse.shift() : nextRowKey++;
+                newKeys.set(item, key);
+                newLookup.set(key, item);
+            });
+            rawData = data; rowKeys = newKeys; rowByKey = newLookup;
+            selectedRows = new Set([...selectedRows].filter(key => newLookup.has(key) && canRenegotiate(newLookup.get(key))));
+            dataReady = true;
+            populateDropdowns();
+            renderCalendar();
+        }
+
+        async function loadFaturamento() {
+            updateDataStatus('loading');
+            try {
+                const cached = await readFaturamentoCache();
+                if (cached && Array.isArray(cached.data)) {
+                    cacheSavedAt = cached.savedAt || null;
+                    lastApiSyncMs = cacheSavedAt ? (new Date(cacheSavedAt).getTime() || 0) : 0;
+                    applyDataset(cached.data);
+                    updateDataStatus('cache', cacheSavedAt);
+                }
+            } catch (err) { console.warn('Cache local indisponível:', err); }
+            fetchData(false, true);
+        }
+
+        async function fetchData(manual = false, quiet = false) {
+            if (isRefreshingData || isSavingRenegociacao || (isModalOpen() && !manual)) return;
+            isRefreshingData = true;
+            const icon = document.getElementById('refreshIcon');
+            const btn = document.getElementById('btnRefresh');
+            if (icon) icon.classList.add('animate-spin');
+            if (btn) btn.disabled = true;
+            updateDataStatus('updating', cacheSavedAt);
             try {
                 const response = await fetch(`${API_URL}?_t=${Date.now()}`, {
-                    method: 'GET',
-                    headers: { 'ngrok-skip-browser-warning': '69420' },
-                    cache: 'no-store'
+                    method: 'GET', headers: { 'ngrok-skip-browser-warning': '69420', 'Cache-Control': 'no-cache' }, cache: 'no-store'
                 });
-
                 if (!response.ok) throw new Error(`Status HTTP: ${response.status}`);
-                
                 const data = await response.json();
-                rawData = Array.isArray(data) ? data : [data];
-                
-                populateDropdowns();
-                renderCalendar();
+                if (!Array.isArray(data)) throw new Error('Resposta de faturamento não é uma lista.');
+                const savedAt = new Date().toISOString();
+                applyDataset(data);
+                cacheSavedAt = savedAt;
+                lastApiSyncMs = Date.now();
+                updateDataStatus('api', savedAt);
+                try { await writeFaturamentoCache(data, savedAt); }
+                catch (err) { console.warn('Falha ao salvar cache do faturamento:', err); }
             } catch (err) {
-                console.error("Erro ao buscar faturamento:", err);
-                alert("Erro de conexão com o servidor de faturamento!");
+                console.error('Erro ao buscar faturamento:', err);
+                updateDataStatus(dataReady ? 'cache' : 'error', cacheSavedAt);
+                if (manual && !quiet) alert(dataReady
+                    ? 'API indisponível. Os dados salvos foram mantidos na tela.'
+                    : 'Erro de conexão com o servidor de faturamento. Sem cache disponível.');
             } finally {
+                isRefreshingData = false;
                 if (icon) icon.classList.remove('animate-spin');
+                if (btn) btn.disabled = false;
             }
         }
 
