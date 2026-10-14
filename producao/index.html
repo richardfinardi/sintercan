@@ -192,6 +192,16 @@
                 </select>
             </div>
 
+            <!-- Liberacao para faturamento - preferencia independente do filtro de zerados -->
+            <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
+                <i data-lucide="badge-check" class="w-4 h-4 text-emerald-500"></i>
+                <select id="libfatFilter" onchange="changeLibfatFilter()" aria-label="Filtrar OS liberadas para faturamento" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[165px]">
+                    <option value="all" class="bg-white dark:bg-slate-900">Exibir liberadas</option>
+                    <option value="hide" class="bg-white dark:bg-slate-900">Ocultar liberadas</option>
+                    <option value="only" class="bg-white dark:bg-slate-900">Apenas liberadas</option>
+                </select>
+            </div>
+
             <!-- Filtro por Cliente -->
             <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
@@ -527,6 +537,8 @@
         const PRODUCTION_AUTO_REFRESH_MS = 5 * 60 * 1000;
         const ZERO_FILTER_STORAGE_KEY = 'sintercan_producao_filtro_zerados_' +
             String(currentUser.usuario || currentUser.nome || 'usuario').trim().toUpperCase();
+        const LIBFAT_FILTER_STORAGE_KEY = 'sintercan_producao_filtro_libfat_' +
+            String(currentUser.usuario || currentUser.nome || 'usuario').trim().toUpperCase();
 
         let rawData = [];
         let currentOSItem = null;
@@ -552,6 +564,24 @@
             } catch (_) { return 'hide'; }
         })();
         const zeroWritePending = new Set();
+        let libfatFilterMode = (() => {
+            try {
+                const saved = localStorage.getItem(LIBFAT_FILTER_STORAGE_KEY);
+                return ['hide', 'all', 'only'].includes(saved) ? saved : 'all';
+            } catch (_) { return 'all'; }
+        })();
+        const libfatWritePending = new Set();
+
+        function isOSLibfat(item) {
+            return ['1', 'true', 't', 'sim'].includes(String(item?.u_libfat ?? 0).trim().toLowerCase());
+        }
+
+        function changeLibfatFilter() {
+            const selected = document.getElementById('libfatFilter').value;
+            libfatFilterMode = ['hide', 'all', 'only'].includes(selected) ? selected : 'all';
+            try { localStorage.setItem(LIBFAT_FILTER_STORAGE_KEY, libfatFilterMode); } catch (_) {}
+            renderCalendar();
+        }
 
         function isOSZeroed(item) {
             return ['1', 'true', 't', 'sim'].includes(String(item?.u_zerar ?? 0).trim().toLowerCase());
@@ -626,6 +656,69 @@
                 alert('Erro ao alterar zeramento da OS: ' + error.message);
             } finally {
                 zeroWritePending.delete(key);
+                checkbox.disabled = false;
+            }
+        }
+
+        async function persistOSLibfatToBrowserCache(codEmpresa, codigoOs, value) {
+            try {
+                const cacheRecord = await readProductionCache();
+                if (!cacheRecord || !Array.isArray(cacheRecord.data)) return;
+                let changed = false;
+                cacheRecord.data.forEach(row => {
+                    if (String(row?.cod_empresa ?? '') === String(codEmpresa) &&
+                        String(row?.codigo_os ?? '') === String(codigoOs)) {
+                        row.u_libfat = value;
+                        changed = true;
+                    }
+                });
+                if (changed) await writeProductionCache(cacheRecord.data, cacheRecord.savedAt || new Date().toISOString());
+            } catch (error) {
+                console.warn('Não foi possível atualizar U_LIBFAT no cache local:', error);
+            }
+        }
+
+        async function alterarLibfatOS(event, checkbox) {
+            event.stopPropagation();
+            const codEmpresa = decodeURIComponent(checkbox.dataset.libfatCompany || '');
+            const codigoOs = decodeURIComponent(checkbox.dataset.libfatCode || '');
+            const value = checkbox.checked ? 1 : 0;
+            const key = codEmpresa + ':' + codigoOs;
+            if (!codEmpresa || !codigoOs || libfatWritePending.has(key)) {
+                checkbox.checked = !checkbox.checked;
+                return;
+            }
+            libfatWritePending.add(key);
+            checkbox.disabled = true;
+            try {
+                const response = await fetch(
+                    API_URL + '/' + encodeURIComponent(codigoOs) + '/alterar-libfat',
+                    {
+                        method: 'PATCH',
+                        headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '69420'},
+                        body: JSON.stringify({cod_empresa: Number(codEmpresa), u_libfat: value})
+                    }
+                );
+                if (!response.ok) {
+                    let detail = 'Não foi possível salvar U_LIBFAT no CPS.';
+                    try { detail = (await response.json()).detail || detail; } catch (_) {}
+                    throw new Error(detail);
+                }
+                // Mesma OS pode aparecer em diferentes datas/cartoes.
+                rawData.forEach(row => {
+                    if (String(row?.cod_empresa ?? '') === String(codEmpresa) &&
+                        String(row?.codigo_os ?? '') === String(codigoOs)) row.u_libfat = value;
+                });
+                if (currentOSItem && String(currentOSItem.cod_empresa) === codEmpresa &&
+                    String(currentOSItem.codigo_os) === codigoOs) currentOSItem.u_libfat = value;
+                globalSearchCache = new WeakMap();
+                renderCalendar();
+                await persistOSLibfatToBrowserCache(codEmpresa, codigoOs, value);
+            } catch (error) {
+                checkbox.checked = !checkbox.checked;
+                alert('Erro ao alterar liberação para faturamento: ' + error.message);
+            } finally {
+                libfatWritePending.delete(key);
                 checkbox.disabled = false;
             }
         }
@@ -1017,6 +1110,7 @@
                 btnToggle.classList.add('flex');
             }
             document.getElementById('zeroFilter').value = zeroFilterMode;
+            document.getElementById('libfatFilter').value = libfatFilterMode;
             lucide.createIcons();
             loadProductionData();
             startProductionAutoRefresh();
@@ -1405,6 +1499,9 @@
             document.getElementById('zeroFilter').value = 'hide';
             zeroFilterMode = 'hide';
             try { localStorage.setItem(ZERO_FILTER_STORAGE_KEY, zeroFilterMode); } catch (_) {}
+            document.getElementById('libfatFilter').value = 'all';
+            libfatFilterMode = 'all';
+            try { localStorage.setItem(LIBFAT_FILTER_STORAGE_KEY, libfatFilterMode); } catch (_) {}
 
             onlyCurrentMonth = true;
             onlyWithBudget = false;
@@ -1592,12 +1689,15 @@
                 !!selectedTerceiros ||
                 completionSelection !== 'open' ||
                 onlyWithBudget ||
-                zeroFilterMode === 'only';
+                zeroFilterMode === 'only' ||
+                libfatFilterMode === 'only';
 
             let filtered = rawData.filter(item => {
                 if (!matchesCompletionFilter(item, completionSelection)) return false;
                 if (zeroFilterMode === 'hide' && isOSZeroed(item)) return false;
                 if (zeroFilterMode === 'only' && !isOSZeroed(item)) return false;
+                if (libfatFilterMode === 'hide' && isOSLibfat(item)) return false;
+                if (libfatFilterMode === 'only' && !isOSLibfat(item)) return false;
                 if (!item.entrega_normalizada) return false;
                 const date = new Date(item.entrega_normalizada);
                 if (isNaN(date)) return false;
@@ -2459,6 +2559,7 @@
             const isAtrasada = !completed && item.atrasada === 'sim';
             const val = getDisplayedOSValue(item);
             const isZeroed = isOSZeroed(item);
+            const isLibfat = isOSLibfat(item);
             const type = getItemType(item);
             const progressValue = getProductionPercentValue(item);
             const progressLabel = getProductionLabel(item);
@@ -2479,7 +2580,7 @@
                    </span>`
                 : '';
         
-            // O checkbox de zeramento fica no rodapé para não disputar espaço com o tipo, a prioridade e a OS.
+            // Checkbox de zeramento e liberacao ficam em linha propria sem sobrepor o titulo.
             const zeroCheckboxHTML = `<label onclick="event.stopPropagation()" title="Zerar valor apenas na aplicação. O CPS grava somente o campo U_ZERAR." class="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 px-1.5 py-1 text-[9px] whitespace-nowrap font-black cursor-pointer select-none hover:border-blue-400">
                     <input type="checkbox" aria-label="Zerar valor da OS ${escapeAuxText(item.n_os)}" ${isZeroed ? 'checked' : ''}
                     data-zero-company="${encodeURIComponent(String(item.cod_empresa ?? ''))}"
@@ -2487,6 +2588,14 @@
                     onchange="alterarZerarOS(event, this)"
                     class="w-3.5 h-3.5 accent-blue-600 cursor-pointer">
                     <span>Zerar</span>
+                    </label>`;
+            const libfatCheckboxHTML = `<label onclick="event.stopPropagation()" title="Marcar OS liberada para faturamento no CPS (TOS.U_LIBFAT)." class="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-300 dark:border-emerald-800 px-2 py-1 text-[9px] whitespace-nowrap font-black cursor-pointer select-none hover:border-emerald-500">
+                    <input type="checkbox" aria-label="Liberar faturamento da OS ${escapeAuxText(item.n_os)}" ${isLibfat ? 'checked' : ''}
+                    data-libfat-company="${encodeURIComponent(String(item.cod_empresa ?? ''))}"
+                    data-libfat-code="${encodeURIComponent(String(item.codigo_os ?? ''))}"
+                    onchange="alterarLibfatOS(event, this)"
+                    class="w-3.5 h-3.5 accent-emerald-600 cursor-pointer">
+                    <span>Lib. fat.</span>
                     </label>`;
 
             return `
@@ -2502,6 +2611,7 @@
                                 ${budgetBadge}
                                 ${delayBadge}
                                 ${isZeroed ? '<span class="rounded-md bg-slate-700 text-white px-1.5 py-1 text-[9px] font-black">ZERADA</span>' : ''}
+                                ${isLibfat ? '<span class="rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 px-1.5 py-1 text-[9px] font-black">LIB. FAT.</span>' : ''}
                             </div>
                             <div class="shrink-0 flex items-center gap-1.5">
 
@@ -2530,12 +2640,13 @@
                             <div class="h-full ${progressValue !== null && progressValue >= 100 ? 'bg-emerald-500' : 'bg-blue-500'} rounded-full" style="width:${progressValue === null ? 0 : progressValue}%"></div>
                         </div>
         
-                        <div class="mt-2.5 pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+                        <div class="mt-2.5 flex flex-wrap items-center gap-2">
+                            ${zeroCheckboxHTML}
+                            ${libfatCheckboxHTML}
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
                             <span class="min-w-0 flex-1 truncate text-[9px] font-semibold text-slate-500 dark:text-slate-400">${item.status || ''}</span>
-                            <div class="shrink-0 flex items-center gap-2">
-                                ${zeroCheckboxHTML}
-                                <span class="whitespace-nowrap text-[10px] font-black ${isAtrasada ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}">${formatBRL(val)}</span>
-                            </div>
+                            <span class="shrink-0 whitespace-nowrap text-[10px] font-black ${isAtrasada ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}">${formatBRL(val)}</span>
                         </div>
                     </div>
                 </div>
