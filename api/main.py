@@ -29,10 +29,10 @@ app = FastAPI()
 from sc_retiradas_api import router as sc_retiradas_router
 app.include_router(sc_retiradas_router)
 
-# Historico TOS.U_HIST: rotas adicionais; preserva login, cache e demais endpoints.
-# Carregar ANTES das rotas PATCH originais; nao muda o comando uvicorn main:app.
+# Historico de OS em TOS.U_HIST, preservando todas as rotas/funcionalidades existentes.
 from historico_sintercan_api import router as historico_router
 app.include_router(historico_router)
+
 
 # Configuração de CORS com permissão explícita para o header do Ngrok e GitHub Pages
 app.add_middleware(
@@ -66,6 +66,11 @@ class UpdatePrioridadeRequest(BaseModel):
 class UpdateZerarRequest(BaseModel):
     cod_empresa: int = Field(ge=1)
     u_zerar: int = Field(ge=0, le=1)
+
+
+class UpdateLibfatRequest(BaseModel):
+    cod_empresa: int = Field(ge=1)
+    u_libfat: int = Field(ge=0, le=1)
 
 
 class LoginRequest(BaseModel):
@@ -178,6 +183,8 @@ _producao_refresh_lock = threading.Lock()
 # Evita que um snapshot iniciado antes do PATCH sobrescreva a marcacao recem-gravada.
 # Chave: (empresa, codigo_os); valor: (u_zerar, instante da confirmacao no banco).
 _producao_zerar_updates = {}
+# Preserva PATCHs de liberacao de faturamento durante refresh da query.
+_producao_libfat_updates = {}
 _producao_cache_meta = {
     "ultima_atualizacao": None,
     "ultima_tentativa": None,
@@ -255,10 +262,17 @@ def _atualizar_cache_producao() -> bool:
                 if alteracao is not None and alteracao[1] >= inicio_snapshot:
                     item["u_zerar"] = alteracao[0]
 
+                liberacao = _producao_libfat_updates.get(chave)
+                if liberacao is not None and liberacao[1] >= inicio_snapshot:
+                    item["u_libfat"] = liberacao[0]
+
             # Os PATCH anteriores ao inicio desta consulta ja constam no CPS.
             for chave, (_, instante) in list(_producao_zerar_updates.items()):
                 if instante < inicio_snapshot:
                     del _producao_zerar_updates[chave]
+            for chave, (_, instante) in list(_producao_libfat_updates.items()):
+                if instante < inicio_snapshot:
+                    del _producao_libfat_updates[chave]
 
             _producao_cache = dados
             _producao_cache_meta["ultima_atualizacao"] = agora
@@ -932,3 +946,60 @@ def alterar_zerar_os(codigo_os: int, payload: UpdateZerarRequest):
         "codigo_os": codigo_os,
         "u_zerar": int(payload.u_zerar),
     }
+
+
+# ==========================================
+# PRODUCAO - LIBERACAO DE FATURAMENTO U_LIBFAT
+# ==========================================
+@app.patch("/PRODUCAO/{codigo_os}/alterar-libfat")
+def alterar_libfat_os(codigo_os: int, payload: UpdateLibfatRequest):
+    """Grava somente TOS.U_LIBFAT (0/1), sem alterar qualquer valor da OS."""
+    try:
+        with engine.begin() as conn:
+            resultado = conn.execute(
+                text("""
+                    UPDATE TOS
+                       SET U_LIBFAT = :u_libfat
+                     WHERE COD_EMPRESA = :cod_empresa
+                       AND CODIGO = :codigo_os
+                """),
+                {
+                    "u_libfat": int(payload.u_libfat),
+                    "cod_empresa": payload.cod_empresa,
+                    "codigo_os": codigo_os,
+                },
+            )
+            if resultado.rowcount == 0:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"OS codigo {codigo_os} da empresa {payload.cod_empresa} nao encontrada.",
+                )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao atualizar U_LIBFAT da OS: {exc}",
+        )
+
+    # Atualiza o cache de forma atomica, preservando alteracoes contra
+    # snapshots iniciados antes da gravacao no CPS.
+    with _producao_cache_lock:
+        chave = (str(payload.cod_empresa), str(codigo_os))
+        _producao_libfat_updates[chave] = (int(payload.u_libfat), time.monotonic())
+        mudou = False
+        for item in _producao_cache:
+            if (
+                str(item.get("cod_empresa")) == chave[0]
+                and str(item.get("codigo_os")) == chave[1]
+            ):
+                item["u_libfat"] = int(payload.u_libfat)
+                mudou = True
+
+        if mudou:
+            try:
+                _salvar_cache_producao_em_disco(_producao_cache)
+            except Exception as exc:
+                print(f"Falha ao persistir cache de producao apos U_LIBFAT: {exc}")
+
+    return {
