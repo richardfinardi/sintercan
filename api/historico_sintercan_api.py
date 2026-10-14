@@ -8,7 +8,7 @@ adicionar:
 A importação PRECISA ocorrer ANTES das rotas PATCH antigas para permitir que
 as novas rotas autenticadas preservem as URLs existentes.
 
-Configure SINTERCAN_SESSION_SECRET no ambiente e reinicie o servidor.
+A chave de assinatura é gerada automaticamente ao iniciar esta API; sem setup manual.
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ import base64
 import hashlib
 import hmac
 import json
-import os
+import secrets
 import re
 import time
 import unicodedata
@@ -65,12 +65,13 @@ class RenegociacaoRequest(BaseModel):
     U_JUST_ALT_DT_REN: str
 
 
+# Chave privada criada automaticamente no processo Python: nenhuma configuração no BAT.
+# Ao reiniciar a API, as sessões anteriores expiram e o usuário entra novamente.
+_RUNTIME_SESSION_SECRET = secrets.token_urlsafe(48)
+
+
 def _secret() -> str:
-    value = os.getenv("SINTERCAN_SESSION_SECRET", "").strip()
-    if len(value) < 32:
-        raise HTTPException(status_code=503,
-                            detail="Configure SINTERCAN_SESSION_SECRET no servidor (mínimo de 32 caracteres).")
-    return value
+    return _RUNTIME_SESSION_SECRET
 
 
 def _base64(data: bytes) -> str:
