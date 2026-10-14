@@ -47,6 +47,12 @@ class ZerarRequest(BaseModel):
     u_zerar: int = Field(ge=0, le=1)
 
 
+class LibfatRequest(BaseModel):
+    usuario: str = Field(default="SISTEMA", min_length=1, max_length=100)
+    cod_empresa: int = Field(ge=1)
+    u_libfat: int = Field(ge=0, le=1)
+
+
 class RenegociacaoRequest(BaseModel):
     usuario: str = Field(default='SISTEMA', min_length=1, max_length=100)
     cod_empresa: int = Field(default=1, ge=1)
@@ -137,7 +143,7 @@ def _lock(conn, cod_empresa: int, *, codigo_os: Optional[int] = None, n_os: Opti
         where, params = "COD_EMPRESA=:empresa AND N_OS=:n_os", {"empresa": cod_empresa, "n_os": n_os}
     rows = conn.execute(text("""
        SELECT COD_EMPRESA, CODIGO, N_OS, U_HIST, PRIORIDADE,
-              DT_PREVISTA, U_DATA_RENEGOCIACAO, U_ZERAR
+              DT_PREVISTA, U_DATA_RENEGOCIACAO, U_ZERAR, U_LIBFAT
          FROM TOS WHERE """ + where + " FOR UPDATE"), params).mappings().all()
     if not rows:
         raise HTTPException(status_code=404, detail="OS não encontrada.")
@@ -306,6 +312,50 @@ def alterar_zerar(
     _update_zero_cache(body.cod_empresa, codigo_os, body.u_zerar)
     return {"status":"ok","alterou":True,"cod_empresa":body.cod_empresa,
             "codigo_os":codigo_os,"u_zerar":body.u_zerar,"historico":hist}
+
+
+def _update_libfat_cache(cod_empresa: int, codigo_os: int, libfat: int) -> None:
+    """Atualiza o mesmo cache/anti-snapshot já usado no main.py atual."""
+    try:
+        import main
+        with main._producao_cache_lock:
+            key = (str(cod_empresa), str(codigo_os))
+            if hasattr(main, "_producao_libfat_updates"):
+                main._producao_libfat_updates[key] = (int(libfat), time.monotonic())
+            mudou = False
+            for row in main._producao_cache:
+                if str(row.get("cod_empresa")) == key[0] and str(row.get("codigo_os")) == key[1]:
+                    row["u_libfat"] = int(libfat)
+                    mudou = True
+            if mudou:
+                main._salvar_cache_producao_em_disco(main._producao_cache)
+    except Exception as exc:
+        print("Aviso: cache de liberação de faturamento não sincronizado:", exc)
+
+
+@router.patch("/PRODUCAO/{codigo_os}/alterar-libfat")
+def alterar_libfat(
+    codigo_os: int, body: LibfatRequest,
+    key_header: Optional[str] = Header(None, alias="X-Idempotency-Key"),
+):
+    user = _get_user(body.usuario)
+    _permission(user, "u_producao", "u_producao_valor", "u_faturamento")
+    key = _request_key(key_header)
+    with engine.begin() as conn:
+        row = _lock(conn, body.cod_empresa, codigo_os=codigo_os)
+        antes = int(row["u_libfat"] or 0)
+        if _duplicate(row, key) or antes == body.u_libfat:
+            return _unchanged(row, key, u_libfat=antes)
+        conn.execute(text("""
+            UPDATE TOS SET U_LIBFAT=:novo
+             WHERE COD_EMPRESA=:empresa AND CODIGO=:codigo
+        """), {"novo": body.u_libfat, "empresa": body.cod_empresa, "codigo": codigo_os})
+        hist = _append(conn, row, _event(user, "LIBERAÇÃO DE FATURAMENTO",
+            [("Liberado para faturar", "Sim" if antes else "Não",
+                                        "Sim" if body.u_libfat else "Não")], key=key))
+    _update_libfat_cache(body.cod_empresa, codigo_os, body.u_libfat)
+    return {"status": "ok", "alterou": True, "cod_empresa": body.cod_empresa,
+            "codigo_os": codigo_os, "u_libfat": body.u_libfat, "historico": hist}
 
 
 @router.patch("/faturamento/{n_os}/alterar-renegociacao")
