@@ -29,9 +29,12 @@ app = FastAPI()
 from sc_retiradas_api import router as sc_retiradas_router
 app.include_router(sc_retiradas_router)
 
-# Historico de OS em TOS.U_HIST, preservando todas as rotas/funcionalidades existentes.
-from historico_sintercan_api import router as historico_router
-app.include_router(historico_router)
+# Historico opcional: falhas nesse modulo NAO podem derrubar a API principal.
+try:
+    from historico_sintercan_api import router as historico_router
+    app.include_router(historico_router)
+except Exception as _hist_exc:
+    print("AVISO: modulo TOS.U_HIST indisponivel; endpoints originais mantidos:", _hist_exc)
 
 
 # Configuração de CORS com permissão explícita para o header do Ngrok e GitHub Pages
