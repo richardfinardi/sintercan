@@ -53,11 +53,6 @@ class RenegociacaoRequest(BaseModel):
     U_JUST_ALT_DT_REN: str
 
 
-# Chave privada criada automaticamente no processo Python: nenhuma configuração no BAT.
-# Ao reiniciar a API, as sessões anteriores expiram e o usuário entra novamente.
-_RUNTIME_SESSION_SECRET = secrets.token_urlsafe(48)
-
-
 def _get_user(nome: str) -> dict:
     """Identifica o usuário do login que já existe no portal, sem token extra.
 
