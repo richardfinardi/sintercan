@@ -309,6 +309,19 @@
         const API_URL = 'https://sintercan.consultoriarf.net/faturamento';
         const API_PATCH_URL = 'https://sintercan.consultoriarf.net/faturamento';
 
+        function sintercanAuthHeaders() {
+            let user;
+            try {
+                user = JSON.parse(localStorage.getItem('sintercan_user') || '{}');
+            } catch (_) {
+                user = {};
+            }
+            if (!user.auth_token) {
+                throw new Error('Sessão antiga ou expirada. Volte ao portal, saia e entre novamente.');
+            }
+            return { 'Authorization': 'Bearer ' + user.auth_token };
+        }
+
         const FAT_CACHE_DB = 'SINTERCAN_FATURAMENTO_CACHE';
         const FAT_CACHE_STORE = 'dados';
         const FAT_CACHE_KEY = 'faturamento_v1';
@@ -1181,7 +1194,7 @@
                     try {
                         const response = await fetch(`${API_PATCH_URL}/${encodeURIComponent(os)}/alterar-renegociacao`, {
                             method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '69420' },
+                            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '69420', ...sintercanAuthHeaders() },
                             body: JSON.stringify({
                                 u_data_renegociacao: newDate || null,
                                 U_JUST_ALT_DT_REN: justificativa
