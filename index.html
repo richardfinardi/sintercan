@@ -108,25 +108,40 @@
 
         async function checkSession() {
             const userData = localStorage.getItem('sintercan_user');
-            if (userData) {
-                const user = JSON.parse(userData);
-                try {
-                    const res = await fetch(`${API_URL}/me`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ usuario: user.nome })
-                    });
-
-                    if (res.ok) {
-                        const updatedData = await res.json();
-                        localStorage.setItem('sintercan_user', JSON.stringify(updatedData));
-                        showMenu(updatedData);
-                    } else {
-                        logout();
-                    }
-                } catch (e) {
-                    showMenu(user);
+            if (!userData) return;
+            let user;
+            try {
+                user = JSON.parse(userData);
+                // Sessões antigas não têm o token necessário para alterações no CPS.
+                // O login em /auth/token emite um token autenticado válido por 12 horas.
+                if (!user.auth_token) throw new Error('Sessão antiga');
+                const encoded = user.auth_token.split('.')[0];
+                const claims = JSON.parse(atob(encoded.replace(/-/g, '+').replace(/_/g, '/')));
+                if (!claims.exp || claims.exp <= Math.floor(Date.now() / 1000)) {
+                    throw new Error('Sessão expirada');
                 }
+            } catch (_) {
+                localStorage.removeItem('sintercan_user');
+                return;
+            }
+            try {
+                const res = await fetch(`${API_URL}/me`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: user.nome })
+                });
+
+                if (res.ok) {
+                    const updatedData = await res.json();
+                    // O /me atualiza permissões, mas não emite um novo token.
+                    const session = { ...updatedData, auth_token: user.auth_token };
+                    localStorage.setItem('sintercan_user', JSON.stringify(session));
+                    showMenu(session);
+                } else {
+                    logout();
+                }
+            } catch (e) {
+                showMenu(user);
             }
         }
 
@@ -142,7 +157,7 @@
             btnLogin.innerText = "Autenticando...";
 
             try {
-                const res = await fetch(`${API_URL}/login`, {
+                const res = await fetch(`${API_URL}/auth/token`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ usuario, senha })
