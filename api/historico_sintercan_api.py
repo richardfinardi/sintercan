@@ -26,6 +26,7 @@ from typing import Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from conexao import engine
@@ -85,11 +86,16 @@ def _issue_token(nome: str) -> str:
     return f"{body}.{mac}"
 
 
-def _check_token(authorization: Optional[str] = Header(None)) -> dict:
-    if not authorization or not authorization.lower().startswith("bearer "):
+# Swagger UI não envia cabeçalho "Authorization" declarado como parâmetro comum.
+# HTTPBearer registra o esquema de segurança e ativa o botão "Authorize".
+_bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def _check_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer_scheme)) -> dict:
+    if not credentials or credentials.scheme.lower() != "bearer":
         raise HTTPException(status_code=401, detail="Sessão ausente. Faça login novamente no portal.")
     try:
-        body, mac = authorization.split(" ", 1)[1].strip().split(".", 1)
+        body, mac = credentials.credentials.strip().split(".", 1)
         expected = _base64(hmac.new(_secret().encode("utf-8"), body.encode("ascii"), hashlib.sha256).digest())
         if not hmac.compare_digest(mac, expected):
             raise ValueError("assinatura")
