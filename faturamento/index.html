@@ -1243,8 +1243,7 @@
                 // Mesma proteção da tela: NF de remessa com valor zero não é exportada.
                 if (temNF && fat <= 0) return false;
 
-                if (selectedStatus === 'faturado' && !isFaturado) return false;
-                if (selectedStatus === 'pendente' && isFaturado) return false;
+                if (!matchesStatusFilter(item, selectedStatus)) return false;
 
                 if (!isFaturado) {
                     const qtdAFaturar = parseValue(item.qtde_a_faturar);
@@ -1275,7 +1274,7 @@
             // Usa Blob em vez de data URI. Isso evita que caracteres como #
             // interrompam o arquivo CSV durante o download.
             let csvContent = "\uFEFF";
-            csvContent += "Orçamento;Cliente;Cod. Interno;OS;Descrição;Qtd;Dt Prev. Entrega;Status;NF;Dt Previsto/Permitido Faturar;Valor\n";
+            csvContent += "Orçamento;Cliente;Cod. Interno;OS;Descrição;Qtd;Qtd Reservada;Dt Prev. Entrega;Status;NF;Dt Previsto/Permitido Faturar;Valor\n";
 
             items.forEach(item => {
                 const fat = parseValue(item.vl_faturado);
@@ -1290,8 +1289,9 @@
                     `"${item.n_os || ''}"`,
                     `"${(item.descricao || '').replace(/"/g, '""')}"`,
                     item.qtde || 0,
+                    item.qtde_reservada ?? item.QTDE_RESERVADA ?? 0,
                     `"${formatDateOnly(item.dt_item || item.dt_previsao_entrega)}"`,
-                    `"${isFaturado ? 'FATURADO' : 'PENDENTE'}"`,
+                    `"${getFaturamentoStatus(item).label}"`,
                     `"${item.numero_nf || ''}"`,
                     `"${formatDateOnly(isFaturado ? item.dt_emissao : item.entrega_normalizada)}"`,
                     valorExibir.toFixed(2).replace('.', ',')
