@@ -32,3 +32,11 @@ Feche a API, restaure `main.py.BACKUP_HIST_YYYYMMDD_HHMMSS` para `main.py` e rei
 ## Observação de testes
 
 O módulo e o instalador passaram em testes sintáticos e simulações de rotas e banco. Ainda falta a validação ao vivo com o banco CPS, que deve preceder a publicação da interface.
+
+## CORREÇÃO BYTEA — 14/10/2026
+
+O CPS usa `TOS.U_HIST` como `bytea`. O erro anterior 409 ("é binário") era uma limitação do módulo anterior, não um problema com seu banco.
+
+**API já instalada:** copie somente a versão nova de `historico_sintercan_api.py` para a pasta do `main.py` e reinicie a API com o BAT original. **Não rode o instalador outra vez**, não altere o `main.py`, CORS, Cloudflare, login, SQL, ou o tipo da coluna.
+
+A versão nova decodifica `memoryview`/`bytes` para exibir, gera eventos em ANSI `cp1252` e faz concatenação direta `bytea || bytea`, mantendo todos os bytes antigos de `U_HIST`. O módulo não lê nem altera `TOS.OBS`.
