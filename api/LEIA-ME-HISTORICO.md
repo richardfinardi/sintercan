@@ -9,7 +9,7 @@
 
 1. Copie `api/historico_sintercan_api.py` e `api/sintercan_historico_app.py` para a MESMA pasta de `main.py`, `conexao.py` e `sc_retiradas_api.py`. Não substitua o `main.py`.
 2. No BAT de inicialização, troque somente `uvicorn main:app` por `uvicorn sintercan_historico_app:app`, mantendo os demais parâmetros e o Cloudflared.
-3. Reinicie a API e teste uma OS: login normal, histórico, nova observação, alteração de prazo, prioridade, zeramento e renegociação do campo `TOS.U_DATA_RENEGOCIACAO`.
+3. Reinicie a API e abra `/docs`. Faça `POST /auth/token`, copie o `auth_token`, clique no botão **Authorize** (cadeado) e cole somente o token (sem prefixo `Bearer`). Teste leitura do histórico, nova observação, alteração de prazo, prioridade, zeramento e renegociação do campo `TOS.U_DATA_RENEGOCIACAO` em uma OS de teste. A documentação enviará `Authorization: Bearer <token>` automaticamente.
 4. **Só após testar a API**, publique/mescle os HTMLs do GitHub: `index.html`, `producao/index.html` e `faturamento/index.html`. Faça login novamente no portal.
 
 Nota: ao reiniciar a API, as sessões antigas expiram e é necessário fazer login novamente. A implementação pressupõe uma única instância de API, como o BAT existente.
