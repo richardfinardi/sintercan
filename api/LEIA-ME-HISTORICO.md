@@ -1,68 +1,34 @@
-# Sintercan — histórico em TOS.U_HIST
+# Sintercan — Histórico TOS.U_HIST (instalação sem substituir API)
 
-## Instalação: preservar o BAT e o login que já funcionam
+**Os arquivos do servidor e o login em produção NÃO foram alterados remotamente.** A aplicação web de produção e faturamento desta branch também NÃO foi publicada.
 
-Não usar o arquivo antigo `sintercan_historico_app.py`. Volte ao comando ORIGINAL:
-`uvicorn main:app`.
+## Instalação segura (1 comando)
 
-Opção A — `main.py` pronto:
+Baixe o pacote `SINTERCAN_HISTORICO_IMPLANTACAO_SEGURA.zip` disponibilizado no chat. Coloque `historico_sintercan_api.py` e `instalar_historico.py` na mesma pasta do `main.py` **atual e funcionando**. Execute nesse diretório:
 
-1. Faça backup do `main.py` atual do servidor.
-2. Copie `api/main.py` e `api/historico_sintercan_api.py` desta branch para a pasta da API (junto de `conexao.py` e `sc_retiradas_api.py`). A base do `main.py` agora inclui U_LIBFAT e seus caches; confira se seu servidor não tem alterações mais recentes.
-3. Reinicie **com o mesmo BAT**. O `main.py` completo tem só duas linhas adicionadas à sua versão original, logo depois de `app.include_router(sc_retiradas_router)`.
-
-Opção B — manter seu `main.py` exato (recomendado quando já tem mudanças locais):
-
-1. Faça backup do `main.py` atual.
-2. Copie `historico_sintercan_api.py` para junto do `main.py`.
-3. Logo após `app.include_router(sc_retiradas_router)`, adicione:
-   ```python
-   from historico_sintercan_api import router as historico_router
-   app.include_router(historico_router)
-   ```
-4. Reinicie com o BAT existente, sem trocas.
-
-Não mexer em `/login`, `/me`, senha, token, `SINTERCAN_SESSION_SECRET` ou configuração do servidor.
-
-## Teste sem tokens
-
-Abra `http://127.0.0.1:8000/docs`. Execute
-`GET /PRODUCAO/{codigo_os}/historico?cod_empresa=1` com código interno de uma OS válida.
-Sem "Authorize" e sem "Bearer".
-
-Em OS de teste, execute `POST /PRODUCAO/{codigo_os}/observacao`:
-```json
-{"cod_empresa":1,"usuario":"RICHARD","observacao":"Teste de histórico"}
+```cmd
+python instalar_historico.py
 ```
-Depois confira com GET. Verifique no CPS que gravou em `TOS.U_HIST`, sem tocar `TOS.OBS`.
 
-Teste a alteração de `TOS.U_ZERAR` primeiro com a chamada usada pelo front antigo (sem `usuario`):
-```json
-{"cod_empresa":1,"u_zerar":1}
-```
-A requisição antiga deve retornar 200 e continuar funcionando. Ao não enviar o campo `usuario`, o registro mostra `SISTEMA`. Depois os novos HTMLs enviam `usuario` obtido do login atual.
+O instalador verifica a sintaxe, rotas já existentes, U_LIBFAT, campos no CPS e tipo textual de U_HIST; se alguma checagem falhar, **não modifica o main.py**. Depois faz backup do main atual e acrescenta apenas uma importação protegida do módulo. Reinicie usando o **BAT ORIGINAL**, sem trocar `uvicorn main:app`.
 
-Somente após validar a API, publique `producao/index.html` e `faturamento/index.html` desta branch.
-`index.html` é **idêntico ao da branch main** e não precisa ser alterado.
+**Não mudar** login, senhas, tokens, Cloudflare, CORS, SQL, cache, local do banco ou porta.
 
-## Implementação
+## Validação antes de publicar o frontend
 
-- Um evento novo vem antes do anterior em `TOS.U_HIST`, em texto puro.
-- Observação manual, prioridade, zeramento `U_ZERAR`, liberação de faturamento `U_LIBFAT`, previsão `DT_PREVISTA` e `U_DATA_RENEGOCIACAO` (individual e em lote no faturamento).
-- Histórico com usuário informado pelo portal, data/hora, valor anterior→novo e justificativa.
-- Alteração operacional e registro de histórico na mesma transação; `SELECT ... FOR UPDATE` e idempotência.
-- Mantém cache de prioridade, U_ZERAR, U_LIBFAT e endpoints antigos, inclusive sem usuario.
-- Se importacao do historico falhar, a API principal continua subindo.
-- Na tela de producao, retorno inesperado ou vazio da API nao sobrescreve o ultimo cache valido.
-- `TOS.U_HIST` precisa ser tipo textual (TEXT/VARCHAR), não BYTEA.
-- **A API não autentica o nome enviado pelo navegador**, replicando a simplicidade da implementação anterior. Um cliente externo poderia informar o nome de outro usuário, portanto isto não é uma trilha de autoria à prova de fraude.
+1. Confirme o GET `http://127.0.0.1:8000/PRODUCAO/10338/historico?cod_empresa=1` com um código de OS existente. Sem token.
+2. Teste no navegador atual o U_ZERAR e U_LIBFAT em uma OS de teste; confirme que os totais continuam corretos.
+3. Teste o `POST /PRODUCAO/{codigo_os}/observacao` numa OS de teste com JSON `{"cod_empresa":1,"usuario":"RICHARD","observacao":"Teste de histórico"}`, e verifique o registro no GET.
+4. Somente depois, publique `producao/index.html` e `faturamento/index.html` desta branch. `index.html` permanece idêntico ao original.
 
-## Desfazer
+O histórico registra observações, zeramento U_ZERAR, liberação U_LIBFAT, prioridade, previsão DT_PREVISTA e data U_DATA_RENEGOCIACAO (individual ou em lote), com anterior→novo, data/hora, usuário declarado pelo portal e justificativa. Novos registros vêm antes dos antigos em **TOS.U_HIST**. Nenhum acesso a TOS.OBS.
 
-Restaure `main.py` do backup, reinicie o BAT original. Nenhuma tabela nova e nenhuma mudança de schema são necessárias.
+> O usuário enviado pelo navegador não é uma comprovação inviolável de identidade. A escolha mantém o login e a simplicidade atuais, sem autenticação adicional.
 
-> Não houve teste real conectado ao CPS nesta sessão; validar leitura e gravação em OS de teste antes de publicar o front.
+## Reversão
 
-## Diagnóstico: tudo zero / CORS
+Feche a API, restaure `main.py.BACKUP_HIST_YYYYMMDD_HHMMSS` para `main.py` e reinicie o BAT original. Nenhum DDL no CPS.
 
-Cabeçalho CORS ausente não comprova erro de configuração CORS na aplicação: pode ser erro da conexão entre Cloudflare e servidor local. Antes de reinstalar, testar localhost na porta 8000, cache-status local, endereço público / e cache-status público. Se localhost responder mas domínio público falhar, verificar cloudflared/túnel. Se cache-status indicar 0 registros ou ultimo_erro, verificar a SQL e o snapshot. Não modificar valores no CPS durante o diagnóstico.
+## Observação de testes
+
+O módulo e o instalador passaram em testes sintáticos e simulações de rotas e banco. Ainda falta a validação ao vivo com o banco CPS, que deve preceder a publicação da interface.
