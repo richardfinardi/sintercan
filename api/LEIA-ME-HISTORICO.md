@@ -8,7 +8,7 @@ Não usar o arquivo antigo `sintercan_historico_app.py`. Volte ao comando ORIGIN
 Opção A — `main.py` pronto:
 
 1. Faça backup do `main.py` atual do servidor.
-2. Copie `api/main.py` e `api/historico_sintercan_api.py` desta branch para a pasta da API (junto de `conexao.py` e `sc_retiradas_api.py`).
+2. Copie `api/main.py` e `api/historico_sintercan_api.py` desta branch para a pasta da API (junto de `conexao.py` e `sc_retiradas_api.py`). A base do `main.py` agora inclui U_LIBFAT e seus caches; confira se seu servidor não tem alterações mais recentes.
 3. Reinicie **com o mesmo BAT**. O `main.py` completo tem só duas linhas adicionadas à sua versão original, logo depois de `app.include_router(sc_retiradas_router)`.
 
 Opção B — manter seu `main.py` exato (recomendado quando já tem mudanças locais):
@@ -48,10 +48,12 @@ Somente após validar a API, publique `producao/index.html` e `faturamento/index
 ## Implementação
 
 - Um evento novo vem antes do anterior em `TOS.U_HIST`, em texto puro.
-- Observação manual, prioridade, zeramento, previsão `DT_PREVISTA` e `U_DATA_RENEGOCIACAO` (individual e em lote no faturamento).
+- Observação manual, prioridade, zeramento `U_ZERAR`, liberação de faturamento `U_LIBFAT`, previsão `DT_PREVISTA` e `U_DATA_RENEGOCIACAO` (individual e em lote no faturamento).
 - Histórico com usuário informado pelo portal, data/hora, valor anterior→novo e justificativa.
 - Alteração operacional e registro de histórico na mesma transação; `SELECT ... FOR UPDATE` e idempotência.
-- Mantém cache de prioridade e `U_ZERAR` e endpoints antigos, inclusive sem `usuario`.
+- Mantém cache de prioridade, U_ZERAR, U_LIBFAT e endpoints antigos, inclusive sem usuario.
+- Se importacao do historico falhar, a API principal continua subindo.
+- Na tela de producao, retorno inesperado ou vazio da API nao sobrescreve o ultimo cache valido.
 - `TOS.U_HIST` precisa ser tipo textual (TEXT/VARCHAR), não BYTEA.
 - **A API não autentica o nome enviado pelo navegador**, replicando a simplicidade da implementação anterior. Um cliente externo poderia informar o nome de outro usuário, portanto isto não é uma trilha de autoria à prova de fraude.
 
@@ -60,3 +62,7 @@ Somente após validar a API, publique `producao/index.html` e `faturamento/index
 Restaure `main.py` do backup, reinicie o BAT original. Nenhuma tabela nova e nenhuma mudança de schema são necessárias.
 
 > Não houve teste real conectado ao CPS nesta sessão; validar leitura e gravação em OS de teste antes de publicar o front.
+
+## Diagnóstico: tudo zero / CORS
+
+Cabeçalho CORS ausente não comprova erro de configuração CORS na aplicação: pode ser erro da conexão entre Cloudflare e servidor local. Antes de reinstalar, testar localhost na porta 8000, cache-status local, endereço público / e cache-status público. Se localhost responder mas domínio público falhar, verificar cloudflared/túnel. Se cache-status indicar 0 registros ou ultimo_erro, verificar a SQL e o snapshot. Não modificar valores no CPS durante o diagnóstico.
