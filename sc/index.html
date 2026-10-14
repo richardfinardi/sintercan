@@ -233,7 +233,9 @@
     let rawDataOrcamento = [];
     const API_RETIRADAS = 'https://sintercan.consultoriarf.net/sc/retiradas';
     const RETIRADAS_STORAGE_KEY = 'sintercan_sc_retiradas_v2';
-    let retiradas = loadRetiradas();
+    let retiradas = {}; // Apenas o servidor define o estado compartilhado.
+    let versaoRetiradas = 0;
+    const MARCACAO_MIGRADA = 'sintercan_sc_v2_migrado';
     let retiradasSincronizadas = false;
     let sincronizandoRetiradas = false;
     let salvandoRetirada = false;
@@ -439,18 +441,50 @@ function statusCompartilhamentoSc(online) {
     'Sem acesso ao armazenamento compartilhado. Marcações bloqueadas para evitar dados inconsistentes.';
 }
 
+async function migrarRetiradasLocaisAntigas(estadoRemoto) {
+  if (!dadosCarregadosSc || localStorage.getItem(MARCACAO_MIGRADA)) return;
+  const antigas = loadRetiradas();
+  // Importa marcações antigas somente na primeira ativação, se o servidor
+  // estiver vazio. Nunca sobrescreve o trabalho de outro funcionário.
+  if (Object.keys(estadoRemoto).length === 0) {
+    const idsValidos = new Set(rawDataOrcamento.filter(i => !orcamentoJaFaturado(i)).map(idRetirada));
+    for (const [id, registro] of Object.entries(antigas)) {
+      if (!registro || !idsValidos.has(id)) continue;
+      const res = await fetch(API_RETIRADAS, {
+        method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+        body: JSON.stringify({id,retirado:true,usuario:registro.usuario || currentUser.nome || ''})
+      });
+      if (!res.ok) throw new Error('Falha ao migrar retiradas salvas neste navegador.');
+    }
+  }
+  localStorage.setItem(MARCACAO_MIGRADA, new Date().toISOString());
+}
+
 async function sincronizarRetiradas() {
   if (sincronizandoRetiradas || salvandoRetirada) return;
   sincronizandoRetiradas = true;
+  const versaoAntes = versaoRetiradas;
   try {
-    const resposta = await fetch(API_RETIRADAS, {cache:'no-store'});
+    let resposta = await fetch(API_RETIRADAS, {cache:'no-store'});
     if (!resposta.ok) throw new Error('Servidor de retiradas: HTTP ' + resposta.status);
-    const dados = await resposta.json();
+    let dados = await resposta.json();
     if (!dados.retiradas || typeof dados.retiradas !== 'object' || Array.isArray(dados.retiradas))
       throw new Error('Retiradas: resposta inválida');
+
+    if (dadosCarregadosSc && !localStorage.getItem(MARCACAO_MIGRADA)) {
+      await migrarRetiradasLocaisAntigas(dados.retiradas);
+      // Releia após migrar, sem ignorar estado publicado por outro usuário.
+      resposta = await fetch(API_RETIRADAS, {cache:'no-store'});
+      if (!resposta.ok) throw new Error('Falha ao reler retiradas após migração.');
+      dados = await resposta.json();
+      if (!dados.retiradas || typeof dados.retiradas !== 'object' || Array.isArray(dados.retiradas))
+        throw new Error('Retiradas: resposta inválida após migração.');
+    }
+
+    if (salvandoRetirada || versaoAntes !== versaoRetiradas) return;
     retiradas = dados.retiradas;
     retiradasSincronizadas = true;
-    persistirRetiradas(); // Apenas cache local; servidor é a fonte oficial.
+    persistirRetiradas(); // Cache opcional; API é a única fonte oficial.
     statusCompartilhamentoSc(true);
     render();
   } catch (err) {
@@ -474,6 +508,7 @@ async function toggleRetirada(checkbox) {
   const marcado = checkbox.checked;
   checkbox.disabled = true;
   salvandoRetirada = true;
+  versaoRetiradas++;
   try {
     const resposta = await fetch(API_RETIRADAS, {
       method:'POST',
@@ -687,10 +722,12 @@ function getRowClass(row,index){
 
       const fill = (id, key) => {
         const el = document.getElementById(id);
+        const selecionado = el.value;
         const vals = [...new Set(combined.map(i => i[key]).filter(Boolean))].sort();
         const firstOpt = el.options[0].text;
         el.innerHTML = `<option value="" class="bg-white dark:bg-slate-900">${firstOpt}</option>`;
         vals.forEach(v => el.innerHTML += `<option value="${v}" class="bg-white dark:bg-slate-900">${v}</option>`);
+        if (vals.some(v => String(v) === String(selecionado))) el.value = selecionado;
       };
 
       fill('filterOs', 'n_os');
