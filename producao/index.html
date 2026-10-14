@@ -520,19 +520,6 @@
         }
 
         const API_URL = 'https://sintercan.consultoriarf.net/PRODUCAO';
-
-        function sintercanAuthHeaders() {
-            let session;
-            try {
-                session = JSON.parse(localStorage.getItem('sintercan_user') || '{}');
-            } catch (_) {
-                session = {};
-            }
-            if (!session.auth_token) {
-                throw new Error('Sessão antiga ou expirada. Volte ao portal, saia e entre novamente.');
-            }
-            return { 'Authorization': 'Bearer ' + session.auth_token };
-        }
         const PRODUCTION_DB_NAME = 'SINTERCAN_PRODUCAO_CACHE';
         const PRODUCTION_DB_VERSION = 1;
         const PRODUCTION_STORE_NAME = 'datasets';
@@ -614,7 +601,7 @@
                     API_URL + '/' + encodeURIComponent(codigoOs) + '/alterar-zerar',
                     {
                         method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '69420', ...sintercanAuthHeaders() },
+                        headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '69420'},
                         body: JSON.stringify({cod_empresa: Number(codEmpresa), u_zerar: value})
                     }
                 );
@@ -2424,8 +2411,7 @@
                         method: 'PATCH',
                         headers: {
                             'Content-Type': 'application/json',
-                            'ngrok-skip-browser-warning': '69420',
-                            ...sintercanAuthHeaders()
+                            'ngrok-skip-browser-warning': '69420'
                         },
                         body: JSON.stringify({
                             cod_empresa: Number(codEmpresa),
@@ -2908,8 +2894,7 @@
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': '69420',
-                        ...sintercanAuthHeaders()
+                        'ngrok-skip-browser-warning': '69420'
                     },
                     body: JSON.stringify({
                         nova_data: novaData,
