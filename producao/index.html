@@ -1536,7 +1536,14 @@
                 if (!response.ok) throw new Error(`Status HTTP: ${response.status}`);
 
                 const data = await response.json();
-                const normalized = Array.isArray(data) ? data : [data];
+                // Não zerar a carteira se a API responder erro JSON/objeto ou lista vazia.
+                // Preserva o último cache válido até o servidor voltar.
+                if (!Array.isArray(data) || data.length === 0) {
+                    const erroAPI = data && typeof data === 'object'
+                        ? (data.detail || data.mensagem || data.status || 'retorno inesperado') : 'sem registros';
+                    throw new Error('A API não enviou uma lista válida de produção: ' + erroAPI);
+                }
+                const normalized = data;
                 const savedAt = new Date().toISOString();
 
                 productionLastApiSyncAtMs = Date.now();
