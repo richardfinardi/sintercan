@@ -309,6 +309,29 @@
         const API_URL = 'https://sintercan.consultoriarf.net/faturamento';
         const API_PATCH_URL = 'https://sintercan.consultoriarf.net/faturamento';
 
+        // A sessão das gravações é assinada pela API após a senha ser validada.
+        function headersFaturamentoHist() {
+            const usuario = JSON.parse(localStorage.getItem('sintercan_user') || '{}');
+            if (!usuario.auth_token) throw new Error('Entre novamente no portal para ativar a sessão segura.');
+            return {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': '69420',
+                'Authorization': 'Bearer ' + usuario.auth_token
+            };
+        }
+        function empresaFaturamentoOS(item) {
+            const numero = Number(item?.cod_empresa || item?.cod_empresa_os || 0);
+            if (numero >= 1) return numero;
+            return String(item?.empresa || '').trim().toUpperCase() === 'EMP2' ? 2 : 1;
+        }
+        function uuidFaturamento() {
+            if (crypto.randomUUID) return crypto.randomUUID();
+            const bytes = crypto.getRandomValues(new Uint8Array(16));
+            bytes[6]=(bytes[6]&15)|64; bytes[8]=(bytes[8]&63)|128;
+            return [...bytes].map((n,i)=>n.toString(16).padStart(2,'0')+([3,5,7,9].includes(i)?'-':'')).join('');
+        }
+
+
         const FAT_CACHE_DB = 'SINTERCAN_FATURAMENTO_CACHE';
         const FAT_CACHE_STORE = 'dados';
         const FAT_CACHE_KEY = 'faturamento_v1';
@@ -1103,7 +1126,7 @@
         function openEditModal(item) {
             if (!canRenegotiate(item) || isSavingRenegociacao) return;
             selectedItemModal = item;
-            editTargets = [String(item.n_os).trim()];
+            editTargets = [{os: String(item.n_os).trim(), empresa: empresaFaturamentoOS(item)}];
             document.getElementById('mModalOS').textContent = `OS #${item.n_os}`;
             document.getElementById('mModalTitle').textContent = item.descricao || item.cliente || '';
             document.getElementById('mModalInfo').textContent = 'Renegociação individual';
@@ -1119,7 +1142,10 @@
                 .map(key => rowByKey.get(key)).filter(canRenegotiate);
             if (!rows.length) return;
             // O endpoint PATCH grava a renegociação da OS; cada OS recebe somente uma chamada.
-            editTargets = [...new Set(rows.map(item => String(item.n_os).trim()))];
+            editTargets = [...new Map(rows.map(item => {
+                const target = {os: String(item.n_os).trim(), empresa: empresaFaturamentoOS(item)};
+                return [target.empresa + ':' + target.os, target];
+            })).values()];
             selectedItemModal = null;
             document.getElementById('mModalOS').textContent = 'RENEGOCIAÇÃO EM LOTE';
             document.getElementById('mModalTitle').textContent = `${rows.length} item(ns) selecionado(s)`;
@@ -1164,7 +1190,7 @@
             }
             const targets = [...editTargets];
             if (targets.length > 1 && !confirm(`Confirmar renegociação de ${targets.length} OS para ${formatDateOnly(newDate)}?`)) return;
-            const justificativa = `[${getUsuarioLogado()}] ${userTexto}`;
+            const justificativa = userTexto; // Usuário é obtido da sessão validada na API.
             const btn = document.getElementById('btnSaveData');
             const successOS = new Set(), failures = [];
             let next = 0, finished = 0;
@@ -1177,12 +1203,15 @@
             // Limita a três requisições simultâneas, sem exigir endpoint novo na API.
             const worker = async () => {
                 while (next < targets.length) {
-                    const os = targets[next++];
+                    const target = targets[next++];
+                    const os = target.os;
+                    const empresa = target.empresa;
                     try {
                         const response = await fetch(`${API_PATCH_URL}/${encodeURIComponent(os)}/alterar-renegociacao`, {
                             method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '69420' },
+                            headers: {...headersFaturamentoHist(), 'X-Idempotency-Key': uuidFaturamento()},
                             body: JSON.stringify({
+                                cod_empresa: empresa,
                                 u_data_renegociacao: newDate || null,
                                 U_JUST_ALT_DT_REN: justificativa
                             })
@@ -1191,7 +1220,7 @@
                             const details = await response.json().catch(() => ({}));
                             throw new Error(typeof details.detail === 'string' ? details.detail : `HTTP ${response.status}`);
                         }
-                        successOS.add(os);
+                        successOS.add(empresa + ':' + os);
                     } catch (err) {
                         console.error(`Falha ao renegociar OS ${os}:`, err);
                         failures.push(`OS ${os}: ${err.message}`);
@@ -1216,7 +1245,7 @@
             if (successOS.size) {
                 selectedRows = new Set([...selectedRows].filter(key => {
                     const item = rowByKey.get(key);
-                    return item && !successOS.has(String(item.n_os).trim());
+                    return item && !successOS.has(empresaFaturamentoOS(item) + ':' + String(item.n_os).trim());
                 }));
                 closeEditModal();
                 await fetchData(false, true);
