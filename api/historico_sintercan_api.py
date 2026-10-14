@@ -130,10 +130,25 @@ def _event(user: dict, operation: str, changes=(), note: Optional[str] = None, k
 
 
 def _history_value(row: dict) -> str:
-    v = row.get("u_hist")
-    if isinstance(v, (bytes, bytearray, memoryview)):
-        raise HTTPException(status_code=409, detail="TOS.U_HIST é binário; exige conversão de codificação configurada.")
-    return v or ""
+    """Le BYTEA do CPS como texto; NUNCA altera o BLOB original.
+
+    O CPS/Delphi normalmente armazena memos em Windows-1252 (ANSI), como
+    TOS.OBS no projeto Brastorno. Aceitamos UTF-8 legado quando presente.
+    """
+    value = row.get("u_hist")
+    if value is None:
+        return ""
+    if isinstance(value, memoryview):
+        value = value.tobytes()
+    if isinstance(value, (bytes, bytearray)):
+        raw = bytes(value)
+        if not raw:
+            return ""
+        try:
+            return raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            return raw.decode("cp1252", errors="replace")
+    return str(value)
 
 
 def _lock(conn, cod_empresa: int, *, codigo_os: Optional[int] = None, n_os: Optional[str] = None) -> dict:
@@ -159,17 +174,30 @@ def _duplicate(row: dict, key: str) -> bool:
 
 
 def _append(conn, row: dict, event: str) -> str:
-    """Operação atômica executada com o row lock e alteração de OS na MESMA transação."""
-    params = {"empresa": row["cod_empresa"], "codigo": row["codigo"], "evento": event}
+    """Prepend no BYTEA com a alteracao da OS na mesma transacao.
+
+    Preserva TODOS os bytes do BLOB anterior, sem cast de BYTEA para texto,
+    e escreve em Windows-1252 para o CPS/Delphi mostrar acentos corretamente.
+    """
+    evento_cps = event.replace("→", "->").replace("\n", "\r\n")
+    params = {
+        "empresa": row["cod_empresa"], "codigo": row["codigo"],
+        "evento_bin": evento_cps.encode("cp1252", errors="replace"),
+        "separador_bin": b"\r\n\r\n",
+    }
     conn.execute(text("""
-       UPDATE TOS SET U_HIST = :evento ||
-           CASE WHEN U_HIST IS NULL OR U_HIST::text = '' THEN ''
-                ELSE chr(10) || chr(10) || U_HIST::text END
-        WHERE COD_EMPRESA=:empresa AND CODIGO=:codigo
+        UPDATE TOS
+           SET U_HIST = CAST(:evento_bin AS bytea) ||
+               CASE WHEN U_HIST IS NULL OR octet_length(U_HIST) = 0
+                    THEN CAST('' AS bytea)
+                    ELSE CAST(:separador_bin AS bytea) || U_HIST END
+         WHERE COD_EMPRESA=:empresa AND CODIGO=:codigo
     """), params)
-    return conn.execute(text("""
-       SELECT U_HIST FROM TOS WHERE COD_EMPRESA=:empresa AND CODIGO=:codigo
-    """), params).scalar() or ""
+    raw = conn.execute(text("""
+        SELECT U_HIST FROM TOS
+         WHERE COD_EMPRESA=:empresa AND CODIGO=:codigo
+    """), params).scalar()
+    return _history_value({"u_hist": raw})
 
 
 def _unchanged(row: dict, key: str, **other) -> dict:
