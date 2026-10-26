@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.9.6</title>
+    <title>Sintercan - Controle de Faturamento V1.9.7</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -79,7 +79,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.9.6</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.9.7</span></p>
                 </div>
             </div>
 
@@ -134,6 +134,14 @@
             <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">A Faturar</span>
                 <span id="metricAFaturar" class="text-xl font-extrabold text-blue-600 dark:text-blue-400">R$ 0,00</span>
+                <div class="mt-3 border-t border-slate-200 dark:border-slate-700 pt-2 grid grid-cols-3 gap-2">
+                    <div class="min-w-0"><span class="block text-[10px] uppercase font-extrabold text-amber-600 dark:text-amber-400">Pendente</span>
+                        <span id="metricFatPendente" class="block text-sm font-extrabold font-mono text-amber-700 dark:text-amber-300 break-words">R$ 0,00</span></div>
+                    <div class="min-w-0"><span class="block text-[10px] uppercase font-extrabold text-sky-600 dark:text-sky-400">Disponível</span>
+                        <span id="metricFatDisponivel" class="block text-sm font-extrabold font-mono text-sky-700 dark:text-sky-300 break-words">R$ 0,00</span></div>
+                    <div class="min-w-0"><span class="block text-[10px] uppercase font-extrabold text-emerald-600 dark:text-emerald-400">Liberado</span>
+                        <span id="metricFatLiberado" class="block text-sm font-extrabold font-mono text-emerald-700 dark:text-emerald-300 break-words">R$ 0,00</span></div>
+                </div>
             </div>
             <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">Total Geral Previsto</span>
@@ -725,6 +733,7 @@
                 cache: ['bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-700 text-sky-700 dark:text-sky-300','bg-sky-500', `CACHE LOCAL • ${stamp || 'sem data'}`],
                 updating: ['bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300','bg-amber-500 animate-pulse', `SINCRONIZANDO • ${stamp || 'aguarde'}`],
                 error: ['bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-700 text-rose-700 dark:text-rose-300','bg-rose-500','API indisponível / sem cache'],
+                error_cache: ['bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-700 text-rose-700 dark:text-rose-300','bg-rose-500', `ERRO NA API • dados locais • ${stamp || 'sem data'}`],
                 loading: ['bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300','bg-amber-500 animate-pulse','Carregando...']
             };
             const [classes, dotClass, message] = styles[mode] || styles.loading;
@@ -822,9 +831,12 @@
                 const response = await fetch(`${API_URL}?_t=${Date.now()}`, {
                     method: 'GET', headers: { 'ngrok-skip-browser-warning': '69420', 'Cache-Control': 'no-cache' }, cache: 'no-store'
                 });
-                if (!response.ok) throw new Error(`Status HTTP: ${response.status}`);
-                const data = await response.json();
-                if (!Array.isArray(data)) throw new Error('Resposta de faturamento não é uma lista.');
+                const data = await response.json().catch(() => null);
+                if (!response.ok || !Array.isArray(data)) {
+                    const detalhe = data?.detail ?? data?.mensagem ?? data?.error ??
+                        (!response.ok ? `HTTP ${response.status}` : 'Formato da resposta invalido');
+                    throw new Error(typeof detalhe === 'string' ? detalhe : JSON.stringify(detalhe));
+                }
                 const savedAt = new Date().toISOString();
                 applyDataset(data);
                 cacheSavedAt = savedAt;
@@ -834,10 +846,11 @@
                 catch (err) { console.warn('Falha ao salvar cache do faturamento:', err); }
             } catch (err) {
                 console.error('Erro ao buscar faturamento:', err);
-                updateDataStatus(dataReady ? 'cache' : 'error', cacheSavedAt);
-                if (manual && !quiet) alert(dataReady
-                    ? 'API indisponível. Os dados salvos foram mantidos na tela.'
-                    : 'Erro de conexão com o servidor de faturamento. Sem cache disponível.');
+                updateDataStatus(dataReady ? 'error_cache' : 'error', cacheSavedAt);
+                const badge = document.getElementById('dataStatusBadge');
+                if (badge) badge.title = 'Falha ao atualizar FAT.sql: ' + err.message;
+                if (manual && !quiet) alert('Erro na consulta de faturamento:\n' + err.message +
+                    (dataReady ? '\n\nOs dados do cache local foram mantidos.' : ''));
             } finally {
                 isRefreshingData = false;
                 if (icon) icon.classList.remove('animate-spin');
@@ -1367,6 +1380,9 @@
             // Cálculo das métricas topo
             let totalFaturado = 0;
             let totalAFaturar = 0;
+            let totalPendente = 0;
+            let totalDisponivel = 0;
+            let totalLiberado = 0;
 
             filtered.forEach(item => {
                 const fat = parseValue(item.vl_faturado);
@@ -1381,11 +1397,22 @@
                 // mas esse valor não deve entrar no KPI.
                 if (!isMesPassado && !isFaturado) {
                     totalAFaturar += aFat;
+                    // Tres faixas exclusivas: a soma deve ser sempre igual ao total A FATURAR.
+                    if (Number(item.liberado_faturamento ?? item.LIBERADO_FATURAMENTO ?? 0) === 1) {
+                        totalLiberado += aFat;
+                    } else if (getSaldoFaturamento(item).disponivel > 0) {
+                        totalDisponivel += aFat;
+                    } else {
+                        totalPendente += aFat;
+                    }
                 }
             });
 
             document.getElementById('metricTotalFaturado').textContent = formatBRL(totalFaturado);
             document.getElementById('metricAFaturar').textContent = formatBRL(totalAFaturar);
+            document.getElementById('metricFatPendente').textContent = formatBRL(totalPendente);
+            document.getElementById('metricFatDisponivel').textContent = formatBRL(totalDisponivel);
+            document.getElementById('metricFatLiberado').textContent = formatBRL(totalLiberado);
             document.getElementById('metricTotalGeral').textContent = formatBRL(totalFaturado + totalAFaturar);
 
             // Agrupamento por semanas usando a data correta do calendário:
@@ -1697,7 +1724,10 @@
         function openEditModal(item) {
             if (!canRenegotiate(item) || isSavingRenegociacao) return;
             selectedItemModal = item;
-            editTargets = [{os: String(item.n_os).trim(), empresa: empresaFaturamentoOS(item)}];
+            editTargets = [{
+                os:String(item.n_os).trim(), empresa:empresaFaturamentoOS(item),
+                cod_orcamentos:Number(item.cod_orcamento || 0)>0 ? [Number(item.cod_orcamento)] : []
+            }];
             document.getElementById('mModalOS').textContent = `OS #${item.n_os}`;
             document.getElementById('mModalTitle').textContent = item.descricao || item.cliente || '';
             document.getElementById('mModalInfo').textContent = 'Renegociação individual';
@@ -1713,10 +1743,16 @@
                 .map(key => rowByKey.get(key)).filter(canRenegotiate);
             if (!rows.length) return;
             // O endpoint PATCH grava a renegociação da OS; cada OS recebe somente uma chamada.
-            editTargets = [...new Map(rows.map(item => {
-                const target = {os: String(item.n_os).trim(), empresa: empresaFaturamentoOS(item)};
-                return [target.empresa + ':' + target.os, target];
-            })).values()];
+            const targetsPorOS = new Map();
+            rows.forEach(item => {
+                const os = String(item.n_os).trim(), empresa = empresaFaturamentoOS(item);
+                const key = empresa + ':' + os;
+                if (!targetsPorOS.has(key)) targetsPorOS.set(key, {os, empresa, cod_orcamentos:[]});
+                const orc = Number(item.cod_orcamento || 0);
+                if (orc > 0 && !targetsPorOS.get(key).cod_orcamentos.includes(orc))
+                    targetsPorOS.get(key).cod_orcamentos.push(orc);
+            });
+            editTargets = [...targetsPorOS.values()];
             selectedItemModal = null;
             document.getElementById('mModalOS').textContent = 'RENEGOCIAÇÃO EM LOTE';
             document.getElementById('mModalTitle').textContent = `${rows.length} item(ns) selecionado(s)`;
@@ -1785,7 +1821,8 @@
                                 cod_empresa: empresa,
                                 u_data_renegociacao: newDate || null,
                                 U_JUST_ALT_DT_REN: justificativa,
-                                usuario: getUsuarioLogado()
+                                usuario: getUsuarioLogado(),
+                                cod_orcamentos: target.cod_orcamentos
                             })
                         });
                         const details = await response.json().catch(() => ({}));
@@ -1796,6 +1833,9 @@
                         if (details.status !== 'ok' ||
                             String(details.nova_data || '').slice(0,10) !== String(newDate || '')) {
                             throw new Error('API nao confirmou a data gravada no CPS.');
+                        }
+                        if (details.alterou && Number(details.historicos_registrados || 0) < 1) {
+                            throw new Error('A data mudou, mas nao houve registro no historico do orcamento.');
                         }
                         successOS.add(empresa + ':' + os);
                     } catch (err) {
@@ -1822,11 +1862,28 @@
             if (successOS.size) {
                 fatHistCache.clear();
                 fecharPopupFatHist();
+                // Aplica no cache imediatamente a data CONFIRMADA pelo backend.
+                // A antiga API retornava objeto de erro com HTTP 200; enquanto houver
+                // erro no GET a tela nao pode voltar silenciosamente a data velha.
+                const agora = new Date();
+                const y = agora.getFullYear(), m = String(agora.getMonth()+1).padStart(2,'0');
+                const d = String(agora.getDate()).padStart(2,'0');
+                const hoje = `${y}-${m}-${d}`;
+                rawData.forEach(item => {
+                    const key = empresaFaturamentoOS(item) + ':' + String(item.n_os ?? '').trim();
+                    if (!successOS.has(key) || parseValue(item.vl_faturado) > 0) return;
+                    item.u_data_renegociacao = newDate;
+                    item.dt_prevista_fat = newDate;
+                    item.entrega_normalizada = newDate ? (newDate > hoje ? newDate : hoje) : hoje;
+                });
+                try { await writeFaturamentoCache(rawData, new Date().toISOString()); }
+                catch(e) { console.warn('Cache nao atualizado:', e); }
                 selectedRows = new Set([...selectedRows].filter(key => {
                     const item = rowByKey.get(key);
                     return item && !successOS.has(empresaFaturamentoOS(item) + ':' + String(item.n_os).trim());
                 }));
                 closeEditModal();
+                renderCalendar();
                 await fetchData(false, true);
             }
             if (!failures.length) {
