@@ -694,6 +694,7 @@
                     closeSearchHelp();
                     if (!isSavingRenegociacao) closeEditModal();
                     fecharHistoricoFaturamento();
+                    fecharModalLiberacao();
                     fecharPopupFatHist();
                 }
             });
@@ -1599,38 +1600,67 @@
             updateSelectionUi();
         }
 
-        // Alteracao por GUID, validada pelo banco, toda a selecao em uma transacao.
-        async function alterarLiberacaoSelecionados(liberar) {
+        // Abre janela para observacao opcional antes de confirmar liberacao.
+        function alterarLiberacaoSelecionados(liberar) {
             if (isSavingLiberacao || isSavingRenegociacao || isRefreshingData) return;
-            const rows = visibleSelectableKeys.filter(key => selectedRows.has(key)).map(key => rowByKey.get(key));
+            const rows = visibleSelectableKeys.filter(key => selectedRows.has(key))
+                .map(key => rowByKey.get(key));
             if (!rows.length) return;
             if (!rows.every(liberar === 1 ? podeLiberar : podeDesliberar)) {
-                alert(liberar === 1 ? 'Somente itens com quantidade disponivel podem ser liberados.'
-                                   : 'Somente itens ja liberados podem ter liberacao cancelada.');
+                alert(liberar === 1
+                    ? 'Somente itens com quantidade disponivel podem ser liberados.'
+                    : 'Somente itens ja liberados podem ter liberacao cancelada.');
                 return;
             }
             const itens = [...new Map(rows.map(item => {
-                const obj = {cod_empresa: empresaFaturamentoOS(item),
-                    cod_orcamento: Number(item.cod_orcamento ?? item.COD_ORCAMENTO),
-                    guid_linha: String(item.guid_linha ?? item.GUID_LINHA).trim()};
-                return [JSON.stringify([obj.cod_empresa, obj.cod_orcamento, obj.guid_linha]), obj];
+                const obj = {cod_empresa:empresaFaturamentoOS(item),
+                    cod_orcamento:Number(item.cod_orcamento ?? item.COD_ORCAMENTO),
+                    guid_linha:String(item.guid_linha ?? item.GUID_LINHA).trim()};
+                return [JSON.stringify([obj.cod_empresa,obj.cod_orcamento,obj.guid_linha]),obj];
             })).values()];
-            const verbo = liberar === 1 ? 'liberar' : 'cancelar a liberacao de';
-            if (!confirm(`Confirma ${verbo} ${itens.length} item(ns)?`)) return;
+            fatLiberacaoPendente = {itens,liberar};
+            document.getElementById('fatLiberacaoObs').value = '';
+            document.getElementById('fatLiberacaoTitulo').textContent =
+                liberar === 1 ? 'Liberar para faturar' : 'Cancelar liberação';
+            document.getElementById('fatLiberacaoResumo').textContent =
+                itens.length + (itens.length === 1 ? ' item selecionado' : ' itens selecionados');
+            const confirmar = document.getElementById('fatBtnConfirmarLiberacao');
+            confirmar.textContent = liberar === 1 ? 'Confirmar liberação' : 'Confirmar cancelamento';
+            confirmar.classList.toggle('bg-emerald-600', liberar === 1);
+            confirmar.classList.toggle('hover:bg-emerald-500', liberar === 1);
+            confirmar.classList.toggle('bg-amber-600', liberar === 0);
+            confirmar.classList.toggle('hover:bg-amber-500', liberar === 0);
+            const modal = document.getElementById('fatLiberacaoModal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
+
+        function fecharModalLiberacao() {
+            if (isSavingLiberacao) return;
+            const modal = document.getElementById('fatLiberacaoModal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+            fatLiberacaoPendente = null;
+        }
+
+        async function confirmarLiberacaoSelecionados() {
+            if (!fatLiberacaoPendente || isSavingLiberacao || isSavingRenegociacao) return;
+            const {itens,liberar} = fatLiberacaoPendente;
+            const observacao = document.getElementById('fatLiberacaoObs').value.trim();
+            const botao = document.getElementById('fatBtnConfirmarLiberacao');
+            const campo = document.getElementById('fatLiberacaoObs');
             isSavingLiberacao = true;
+            botao.disabled = true; campo.disabled = true;
             updateSelectionUi();
             let confirmou = false;
             try {
-                const response = await fetch(`${API_PATCH_URL}/liberar-itens`, {
-                    method: 'POST',
-                    headers: {...headersFaturamentoHist(), 'X-Idempotency-Key': uuidFaturamento()},
-                    body: JSON.stringify({itens, liberar, usuario: getUsuarioLogado()})
+                const response = await fetch(API_PATCH_URL + '/liberar-itens', {
+                    method:'POST',
+                    headers:{...headersFaturamentoHist(),'X-Idempotency-Key':uuidFaturamento()},
+                    body:JSON.stringify({itens,liberar,usuario:getUsuarioLogado(),observacao})
                 });
-                if (!response.ok) {
-                    const data = await response.json().catch(() => ({}));
-                    throw new Error(typeof data.detail === 'string' ? data.detail : `HTTP ${response.status}`);
-                }
-                const chaves = new Set(itens.map(o => JSON.stringify([o.cod_empresa, o.cod_orcamento, o.guid_linha])));
+                const dados = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(typeof dados.detail === 'string' ? dados.detail : 'HTTP ' + response.status);
+                const chaves = new Set(itens.map(o =>
+                    JSON.stringify([o.cod_empresa,o.cod_orcamento,o.guid_linha])));
                 rawData.forEach(item => {
                     const chave = JSON.stringify([empresaFaturamentoOS(item),
                         Number(item.cod_orcamento ?? item.COD_ORCAMENTO ?? 0),
@@ -1643,18 +1673,20 @@
                 applyDataset(rawData);
                 const savedAt = new Date().toISOString();
                 cacheSavedAt = savedAt;
-                try { await writeFaturamentoCache(rawData, savedAt); }
-                catch (e) { console.warn('Cache indisponivel:', e); }
+                try { await writeFaturamentoCache(rawData,savedAt); }
+                catch(e) { console.warn('Cache indisponivel:',e); }
                 confirmou = true;
-            } catch (e) {
-                alert('Falha na liberacao: ' + e.message);
-            } finally {
+            } catch(e) { alert('Falha na liberação: '+e.message); }
+            finally {
                 isSavingLiberacao = false;
+                botao.disabled = false; campo.disabled = false;
                 updateSelectionUi();
             }
             if (confirmou) {
-                await fetchData(false, true);
-                alert(`${itens.length} item(ns) ${liberar === 1 ? 'liberado(s)' : 'desliberado(s)'} com sucesso.`);
+                fecharModalLiberacao();
+                await fetchData(false,true);
+                alert(itens.length + ' item(ns) ' +
+                    (liberar === 1 ? 'liberado(s)' : 'com liberação cancelada') + ' com sucesso.');
             }
         }
         function openEditModalByKey(key) {
