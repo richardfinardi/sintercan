@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.9.8</title>
+    <title>Sintercan - Controle de Faturamento V1.9.9</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -79,7 +79,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.9.8</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.9.9</span></p>
                 </div>
             </div>
 
@@ -158,7 +158,7 @@
             <!-- Busca Avançada -->
             <div class="flex items-center gap-2 flex-1 min-w-[260px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="search" class="w-4 h-4 text-slate-400 shrink-0"></i>
-                <input type="text" id="searchInput" oninput="renderCalendar()"
+                <input type="text" id="searchInput" oninput="onFaturamentoFilterChange()"
                        placeholder="Pesquisa avançada: TERMO1, TERMO2 | %TERMO1%TERMO2% | -EXCLUIR"
                        class="w-full text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none placeholder-slate-400 dark:placeholder-slate-500">
                 <button type="button" onclick="openSearchHelp()" title="Ajuda da pesquisa"
@@ -193,7 +193,7 @@
             <!-- Filtro por Semana -->
             <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="calendar-days" class="w-4 h-4 text-slate-400"></i>
-                <select id="weekFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[210px] font-bold">
+                <select id="weekFilter" onchange="onFaturamentoFilterChange()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[210px] font-bold">
                     <option value="" class="bg-white dark:bg-slate-900">Todas as Semanas</option>
                 </select>
             </div>
@@ -201,7 +201,7 @@
             <!-- Filtro por Cliente -->
             <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
                 <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
-                <select id="clientFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[180px]">
+                <select id="clientFilter" onchange="onFaturamentoFilterChange()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[180px]">
                     <option value="" class="bg-white dark:bg-slate-900">Todos os Clientes</option>
                 </select>
             </div>
@@ -660,7 +660,65 @@
         const FAT_CACHE_DB = 'SINTERCAN_FATURAMENTO_CACHE';
         const FAT_CACHE_STORE = 'dados';
         const FAT_CACHE_KEY = 'faturamento_v1';
-        const FAT_REFRESH_MS = 5 * 60 * 1000;
+        // Revalidacao mais rapida sem descartar o cache; apenas uma requisicao simultanea.
+        const FAT_REFRESH_MS = 60 * 1000;
+        const FAT_RETURN_REFRESH_MS = 15 * 1000;
+        const FAT_FILTER_STORAGE_PREFIX = 'sintercan_faturamento_filtros_v1:';
+
+        function fatFilterStorageKey() {
+            // Evita que usuarios diferentes do mesmo computador compartilhem filtros.
+            try {
+                const usuario = JSON.parse(localStorage.getItem('sintercan_user') || '{}');
+                const identidade = String(usuario.email || usuario.usuario || usuario.nome || usuario.codigo || 'local')
+                    .trim().toLowerCase();
+                return FAT_FILTER_STORAGE_PREFIX + encodeURIComponent(identidade);
+            } catch (_) { return FAT_FILTER_STORAGE_PREFIX + 'local'; }
+        }
+
+        function salvarFiltrosFaturamento() {
+            try {
+                const data = {
+                    versao: 1,
+                    ano: currentDate.getFullYear(),
+                    mes: currentDate.getMonth(),
+                    pesquisa: document.getElementById('searchInput')?.value || '',
+                    cliente: document.getElementById('clientFilter')?.value || '',
+                    semana: document.getElementById('weekFilter')?.value || '',
+                    status: getSelectedStatusFilters()
+                };
+                localStorage.setItem(fatFilterStorageKey(), JSON.stringify(data));
+            } catch (e) { console.warn('Nao foi possivel memorizar os filtros:', e); }
+        }
+
+        function restaurarFiltrosFaturamento() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(fatFilterStorageKey()) || 'null');
+                if (!saved || saved.versao !== 1) return;
+                if (Number.isInteger(saved.ano) && saved.ano >= 2020 && saved.ano <= 2100 &&
+                    Number.isInteger(saved.mes) && saved.mes >= 0 && saved.mes <= 11) {
+                    currentDate = new Date(saved.ano, saved.mes, 1);
+                }
+                document.getElementById('searchInput').value = String(saved.pesquisa || '');
+                // Seletores sao montados com os dados do cache/API; os valores persistem
+                // enquanto as opcoes sao reconstruidas.
+                const cliente = document.getElementById('clientFilter');
+                if (saved.cliente) cliente.add(new Option(String(saved.cliente), String(saved.cliente)));
+                cliente.value = String(saved.cliente || '');
+                const semana = document.getElementById('weekFilter');
+                if (saved.semana) semana.add(new Option('Semana ' + saved.semana, String(saved.semana)));
+                semana.value = String(saved.semana || '');
+                const status = new Set(Array.isArray(saved.status) ? saved.status : []);
+                document.querySelectorAll('#statusFilterMenu .status-option').forEach(el => {
+                    el.checked = status.has(el.value);
+                });
+                updateStatusFilterLabel();
+            } catch (e) { console.warn('Filtros anteriores indisponiveis:', e); }
+        }
+
+        function onFaturamentoFilterChange() {
+            salvarFiltrosFaturamento();
+            renderCalendar();
+        }
         let rawData = [];
         let currentDate = new Date();
         let selectedItemModal = null;
@@ -683,19 +741,25 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             ativarHoverFaturamento();
+            restaurarFiltrosFaturamento();
             loadFaturamento();
-            setInterval(() => {
-                if (document.visibilityState === 'visible' && !isSavingRenegociacao && !isSavingLiberacao && !isModalOpen()
-                    && Date.now() - Math.max(lastApiSyncMs, lastApiAttemptMs) >= FAT_REFRESH_MS) fetchData(false, true);
-            }, 60 * 1000);
+
+            function sincronizarSeNecessario(intervalo) {
+                if (document.visibilityState !== 'visible' || isRefreshingData ||
+                    isSavingRenegociacao || isSavingLiberacao || isModalOpen() ||
+                    !document.getElementById('fatLiberacaoModal').classList.contains('hidden') ||
+                    !document.getElementById('fatHistModal').classList.contains('hidden')) return;
+                if (Date.now() - Math.max(lastApiSyncMs, lastApiAttemptMs) >= intervalo)
+                    fetchData(false, true);
+            }
+
+            // Consulta automatica em ate ~60 segundos com aba aberta. Ao voltar a
+            // janela, atualiza apos 15 segundos de dados desatualizados.
+            setInterval(() => sincronizarSeNecessario(FAT_REFRESH_MS), 10 * 1000);
             document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible' && Date.now() - Math.max(lastApiSyncMs, lastApiAttemptMs) >= FAT_REFRESH_MS
-                    && !isSavingRenegociacao && !isSavingLiberacao && !isModalOpen()) fetchData(false, true);
+                if (document.visibilityState === 'visible') sincronizarSeNecessario(FAT_RETURN_REFRESH_MS);
             });
-            window.addEventListener('focus', () => {
-                if (Date.now() - Math.max(lastApiSyncMs, lastApiAttemptMs) >= FAT_REFRESH_MS && !isSavingRenegociacao
-                    && !isModalOpen()) fetchData(false, true);
-            });
+            window.addEventListener('focus', () => sincronizarSeNecessario(FAT_RETURN_REFRESH_MS));
             document.addEventListener('keydown', event => {
                 if (event.key === 'Escape') {
                     closeStatusFilterDropdown();
@@ -942,6 +1006,10 @@
                 clientSelect.appendChild(new Option(val, val, false, false)).className = 'bg-white dark:bg-slate-900';
             });
 
+            // Se o cliente nao estiver nos dados novos, nao apaga o filtro salvo.
+            if (currentClient && !Array.from(clientSelect.options).some(opt => opt.value === currentClient)) {
+                clientSelect.appendChild(new Option(currentClient + ' (sem registros atuais)', currentClient));
+            }
             clientSelect.value = currentClient;
         }
 
@@ -991,8 +1059,12 @@
                     weekSelect.appendChild(option);
                 });
 
+            // Atualizacoes da API/cache nao podem alterar a semana escolhida.
             const currentStillExists = Array.from(weekSelect.options).some(opt => opt.value === currentWeek);
-            weekSelect.value = currentStillExists ? currentWeek : '';
+            if (currentWeek && !currentStillExists) {
+                weekSelect.appendChild(new Option('Semana ' + currentWeek + ' (sem registros atuais)', currentWeek));
+            }
+            weekSelect.value = currentWeek;
         }
 
         function getSelectedStatusFilters() {
@@ -1031,6 +1103,7 @@
 
         function onStatusFilterChange() {
             updateStatusFilterLabel();
+            salvarFiltrosFaturamento();
             renderCalendar();
         }
 
@@ -1042,6 +1115,7 @@
 
         function clearStatusFilter() {
             resetStatusFilterSelection();
+            salvarFiltrosFaturamento();
             renderCalendar();
         }
 
@@ -1050,13 +1124,17 @@
             document.getElementById('clientFilter').value = '';
             resetStatusFilterSelection();
             document.getElementById('weekFilter').value = '';
+            salvarFiltrosFaturamento();
             renderCalendar();
         }
 
         function changeMonth(delta) {
+            // Evita pular meses em dias 29/30/31.
+            currentDate.setDate(1);
             currentDate.setMonth(currentDate.getMonth() + delta);
             const weekFilter = document.getElementById('weekFilter');
             if (weekFilter) weekFilter.value = '';
+            salvarFiltrosFaturamento();
             renderCalendar();
         }
 
@@ -1064,6 +1142,7 @@
             currentDate = new Date();
             const weekFilter = document.getElementById('weekFilter');
             if (weekFilter) weekFilter.value = '';
+            salvarFiltrosFaturamento();
             renderCalendar();
         }
 
