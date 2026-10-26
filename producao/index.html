@@ -444,7 +444,7 @@
                     <button type="button" onclick="alternarAnexosOS()" class="w-full px-3 py-2 flex items-center justify-between gap-3 hover:bg-sky-500/10 transition">
                         <span class="flex items-center gap-2 min-w-0">
                             <i data-lucide="paperclip" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"></i>
-                            <span class="text-[10px] font-black uppercase tracking-wide">Anexos / desenhos técnicos</span>
+                            <span class="text-[10px] font-black uppercase tracking-wide">Desenhos técnicos (PDF)</span>
                             <span id="mAnexosProdCount" class="text-[9px] font-black text-slate-400"></span>
                         </span>
                         <i id="mAnexosProdChevron" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform"></i>
@@ -3314,7 +3314,7 @@
             const empresa = String(currentOSItem.cod_empresa || 1);
             const requestId = ++anexosProdRequestId;
             const lista = document.getElementById('mAnexosProdList');
-            lista.textContent = 'Buscando anexos da OS e das sub-OS...';
+            lista.textContent = 'Buscando desenhos PDF da OS e das sub-OS...';
             const query = new URLSearchParams({cod_empresa: empresa, cod_os: os});
             try {
                 const res = await fetch(ANEXOS_API_URL + '/lista?' + query.toString(), {
@@ -3338,7 +3338,7 @@
                 document.getElementById('mAnexosProdCount').textContent =
                     rows.length ? String(rows.length) + (rows.length === 1 ? ' arquivo' : ' arquivos') : 'sem anexos';
                 if (!rows.length) {
-                    lista.textContent = 'Nenhum anexo encontrado nesta OS.';
+                    lista.textContent = 'Nenhum desenho PDF encontrado nesta OS.';
                     return;
                 }
                 lista.innerHTML = rows.map(function(anexo, index) {
@@ -3347,7 +3347,7 @@
                     const tamanho = Number(anexo.tamanho_bytes || 0);
                     const tamanhoTexto = tamanho < 1048576 ? (tamanho / 1024).toFixed(0) + ' KB' : (tamanho / 1048576).toFixed(1) + ' MB';
                     const ext = String(anexo.nome_arquivo || '').split('.').pop().toLowerCase();
-                    const visivel = ['dwg', 'dxf', 'pdf', 'png', 'jpg', 'jpeg', 'webp'].includes(ext);
+                    const visivel = true; // TOS_AUX_DESENHO(S) guarda apenas PDFs
                     const botaoVisualizar = visivel
                         ? '<button type="button" onclick="acaoAnexoOS(' + index + ', \'abrir\', this)" class="px-2.5 py-1.5 rounded-lg text-white bg-sky-600 hover:bg-sky-500 font-black text-[10px]">Visualizar</button>'
                         : '';
@@ -3357,7 +3357,7 @@
                         '<div class="text-[10px] text-slate-500 dark:text-slate-400">Sub-OS ' + escapeAuxText(anexo.cod_os_aux) +
                         ' · ' + tamanhoTexto + (descricao ? ' · ' + descricao : '') + '</div></div>' +
                         botaoVisualizar +
-                        '<button type="button" onclick="acaoAnexoOS(' + index + ', \'baixar\', this)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 font-black text-[10px]">Baixar original</button></div>';
+                        '<button type="button" onclick="acaoAnexoOS(' + index + ', \'baixar\', this)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 font-black text-[10px]">Baixar PDF</button></div>';
                 }).join('');
                 lucide.createIcons();
             } catch (e) {
