@@ -344,6 +344,54 @@
         </div>
     </div>
 
+
+    <!-- DESENHOS FORA DO MODAL DA OS -->
+    <div id="anexosOSDialog" role="dialog" aria-modal="true" aria-labelledby="anexosOSDialogTitle"
+         class="fixed inset-0 z-[115] hidden items-center justify-center bg-slate-950/75 backdrop-blur-sm p-3 sm:p-5"
+         onclick="if(event.target === this) fecharDesenhosCard()">
+        <div class="w-full max-w-xl max-h-[90dvh] overflow-y-auto custom-scroll rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
+                <div class="flex min-w-0 items-center gap-2">
+                    <i data-lucide="file-text" class="h-5 w-5 text-red-600 shrink-0"></i>
+                    <div class="min-w-0">
+                        <h3 id="anexosOSDialogTitle" class="text-sm font-black text-slate-900 dark:text-white">Desenhos PDF</h3>
+                        <span id="mAnexosProdOS" class="text-[11px] text-slate-500 dark:text-slate-400"></span>
+                    </div>
+                </div>
+                <button type="button" onclick="fecharDesenhosCard()" aria-label="Fechar desenhos" class="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+            <div class="px-3 py-3 sm:px-4">
+                <!-- ANEXOS DA OS/SUB-OS: LISTAGEM LEVE; BYTEA SOMENTE SOB DEMANDA -->
+                <section id="mAnexosProdSection" class="rounded-xl border border-sky-500/25 bg-sky-500/5 overflow-hidden">
+                    <div class="w-full px-3 py-2 flex items-center justify-between gap-3">
+                        <span class="flex items-center gap-2 min-w-0">
+                            <i data-lucide="paperclip" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"></i>
+                            <span class="text-[10px] font-black uppercase tracking-wide">Desenhos técnicos (PDF)</span>
+                            <span id="mAnexosProdCount" class="text-[9px] font-black text-slate-400"></span>
+                        </span>
+                    </div>
+                    <div id="mAnexosProdBody" class="border-t border-sky-500/15 px-3 py-3 space-y-2.5">
+                        <div id="mAnexosProdLogin" class="hidden flex-col gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 p-3">
+                            <label for="mAnexosProdSenha" class="text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                                Confirme sua senha CPS para acessar os desenhos
+                            </label>
+                            <form onsubmit="autenticarAnexosOS(event)" class="flex flex-col sm:flex-row gap-2 min-w-0">
+                                <input id="mAnexosProdSenha" type="password" autocomplete="current-password" required
+                                       placeholder="Sua senha CPS" class="min-w-0 flex-1 rounded-lg px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700">
+                                <button id="mAnexosProdAuthBtn" type="submit" class="shrink-0 rounded-lg bg-sky-600 hover:bg-sky-500 px-3 py-2 text-xs font-black text-white">Acessar</button>
+                            </form>
+                        </div>
+                        <div id="mAnexosProdList" class="text-xs text-slate-500 dark:text-slate-400">Abra para carregar os anexos.</div>
+                    </div>
+                </section>
+
+
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL DE DETALHES DA OS - VISÃO OPERACIONAL COMPACTA -->
     <div id="osModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 z-50">
         <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[92vh] flex flex-col">
@@ -436,31 +484,6 @@
                         <div id="mAuxProgress" class="space-y-2">
                             <div class="text-xs text-slate-400">Carregando processos...</div>
                         </div>
-                    </div>
-                </section>
-
-                <!-- ANEXOS DA OS/SUB-OS: LISTAGEM LEVE; BYTEA SOMENTE SOB DEMANDA -->
-                <section id="mAnexosProdSection" class="rounded-xl border border-sky-500/25 bg-sky-500/5 overflow-hidden">
-                    <button type="button" onclick="alternarAnexosOS()" class="w-full px-3 py-2 flex items-center justify-between gap-3 hover:bg-sky-500/10 transition">
-                        <span class="flex items-center gap-2 min-w-0">
-                            <i data-lucide="paperclip" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"></i>
-                            <span class="text-[10px] font-black uppercase tracking-wide">Desenhos técnicos (PDF)</span>
-                            <span id="mAnexosProdCount" class="text-[9px] font-black text-slate-400"></span>
-                        </span>
-                        <i id="mAnexosProdChevron" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform"></i>
-                    </button>
-                    <div id="mAnexosProdBody" class="hidden border-t border-sky-500/15 px-3 py-3 space-y-2.5">
-                        <div id="mAnexosProdLogin" class="hidden flex-col gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 p-3">
-                            <label for="mAnexosProdSenha" class="text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                                Confirme sua senha CPS para acessar os desenhos
-                            </label>
-                            <form onsubmit="autenticarAnexosOS(event)" class="flex flex-col sm:flex-row gap-2 min-w-0">
-                                <input id="mAnexosProdSenha" type="password" autocomplete="current-password" required
-                                       placeholder="Sua senha CPS" class="min-w-0 flex-1 rounded-lg px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700">
-                                <button id="mAnexosProdAuthBtn" type="submit" class="shrink-0 rounded-lg bg-sky-600 hover:bg-sky-500 px-3 py-2 text-xs font-black text-white">Acessar</button>
-                            </form>
-                        </div>
-                        <div id="mAnexosProdList" class="text-xs text-slate-500 dark:text-slate-400">Abra para carregar os anexos.</div>
                     </div>
                 </section>
 
@@ -1729,6 +1752,7 @@
 
             populateDropdowns();
             renderCalendar();
+            void atualizarPresencaDesenhosOS();
             updateProductionDataStatus(source === 'cache' ? 'cache' : 'api', savedAt);
         }
 
@@ -3240,6 +3264,79 @@
         let anexosProdRows = [];
         let anexosProdRequestId = 0;
 
+        let anexosOSContext = null;
+        let pdfPresenceOS = new Set();
+        let pdfPresenceCheckedAt = 0;
+        let pdfPresenceSignature = '';
+        let pdfPresenceLoading = false;
+
+        async function atualizarPresencaDesenhosOS() {
+            if (pdfPresenceLoading || !rawData.length) return;
+            const empresas = new Map();
+            rawData.forEach(item => {
+                const empresa = Number(item.cod_empresa || 1);
+                const os = Number(item.codigo_os);
+                if (Number.isInteger(os) && os > 0) {
+                    if (!empresas.has(empresa)) empresas.set(empresa, new Set());
+                    empresas.get(empresa).add(os);
+                }
+            });
+            const ids = Array.from(empresas.entries()).map(([empresa, codigos]) => [
+                empresa, Array.from(codigos).sort((a, b) => a - b)
+            ]);
+            const assinatura = ids.map(([empresa, codigos]) => String(empresa) + ':' + codigos.join(',')).join('|');
+            if (assinatura === pdfPresenceSignature && Date.now() - pdfPresenceCheckedAt < 90000) return;
+            pdfPresenceLoading = true;
+            try {
+                const encontrados = new Set();
+                for (const [empresa, codigos] of ids) {
+                    for (let i = 0; i < codigos.length; i += 500) {
+                        const response = await fetch(ANEXOS_API_URL + '/presenca', {
+                            method: 'POST', cache: 'no-store',
+                            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '69420' },
+                            body: JSON.stringify({ cod_empresa: empresa, cod_os: codigos.slice(i, i + 500) })
+                        });
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        const dados = await response.json();
+                        if (!Array.isArray(dados.cod_os_com_pdf)) throw new Error('Resposta de PDFs invalida.');
+                        dados.cod_os_com_pdf.forEach(codigo => encontrados.add(String(empresa) + ':' + String(codigo)));
+                    }
+                }
+                const mudou = encontrados.size !== pdfPresenceOS.size ||
+                    Array.from(encontrados).some(key => !pdfPresenceOS.has(key));
+                pdfPresenceOS = encontrados;
+                pdfPresenceSignature = assinatura;
+                pdfPresenceCheckedAt = Date.now();
+                if (mudou) renderCalendar();
+            } catch (erro) {
+                console.warn('Falha ao identificar OS com PDFs:', erro);
+            } finally {
+                pdfPresenceLoading = false;
+            }
+        }
+
+        function abrirDesenhosCard(event, codEmpresa, codigoOs, numeroOs) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            if (!codigoOs) return;
+            resetAnexosOS();
+            anexosOSContext = { cod_empresa: Number(codEmpresa), codigo_os: Number(codigoOs) };
+            document.getElementById('mAnexosProdOS').textContent = 'OS ' + decodeURIComponent(numeroOs || '');
+            const dialog = document.getElementById('anexosOSDialog');
+            dialog.classList.remove('hidden');
+            dialog.classList.add('flex');
+            carregarAnexosOS();
+            lucide.createIcons();
+        }
+
+        function fecharDesenhosCard() {
+            resetAnexosOS();
+            anexosOSContext = null;
+            const dialog = document.getElementById('anexosOSDialog');
+            dialog.classList.add('hidden');
+            dialog.classList.remove('flex');
+        }
+
+
         function anexosProdTokenKey() {
             return 'sintercan_anexos_sessao_' + String(currentUser.nome || '').toUpperCase();
         }
@@ -3247,21 +3344,12 @@
         function resetAnexosOS() {
             ++anexosProdRequestId;
             anexosProdRows = [];
-            document.getElementById('mAnexosProdBody').classList.add('hidden');
-            document.getElementById('mAnexosProdChevron').classList.remove('rotate-180');
+            document.getElementById('mAnexosProdBody').classList.remove('hidden');
+            
             document.getElementById('mAnexosProdLogin').classList.add('hidden');
             document.getElementById('mAnexosProdList').textContent = 'Abra para carregar os anexos.';
             document.getElementById('mAnexosProdCount').textContent = '';
             document.getElementById('mAnexosProdSenha').value = '';
-        }
-
-        function alternarAnexosOS() {
-            if (!currentOSItem) return;
-            const body = document.getElementById('mAnexosProdBody');
-            const abrir = body.classList.contains('hidden');
-            body.classList.toggle('hidden', !abrir);
-            document.getElementById('mAnexosProdChevron').classList.toggle('rotate-180', abrir);
-            if (abrir) carregarAnexosOS();
         }
 
         function mostrarLoginAnexos(msg) {
@@ -3304,14 +3392,14 @@
         }
 
         async function carregarAnexosOS() {
-            if (!currentOSItem) return;
+            if (!anexosOSContext) return;
             const token = sessionStorage.getItem(anexosProdTokenKey());
             if (!token) {
                 mostrarLoginAnexos();
                 return;
             }
-            const os = String(currentOSItem.codigo_os);
-            const empresa = String(currentOSItem.cod_empresa || 1);
+            const os = String(anexosOSContext.codigo_os);
+            const empresa = String(anexosOSContext.cod_empresa || 1);
             const requestId = ++anexosProdRequestId;
             const lista = document.getElementById('mAnexosProdList');
             lista.textContent = 'Buscando desenhos PDF da OS e das sub-OS...';
@@ -3331,8 +3419,8 @@
                     throw new Error(err.detail || 'Falha HTTP ' + res.status);
                 }
                 const rows = await res.json();
-                if (requestId !== anexosProdRequestId || !currentOSItem ||
-                    String(currentOSItem.codigo_os) !== os || String(currentOSItem.cod_empresa || 1) !== empresa) return;
+                if (requestId !== anexosProdRequestId || !anexosOSContext ||
+                    String(anexosOSContext.codigo_os) !== os || String(anexosOSContext.cod_empresa || 1) !== empresa) return;
                 if (!Array.isArray(rows)) throw new Error('Retorno de anexos invalido');
                 anexosProdRows = rows;
                 document.getElementById('mAnexosProdCount').textContent =
@@ -3368,10 +3456,10 @@
 
         async function acaoAnexoOS(index, acao, button) {
             const arquivo = anexosProdRows[index];
-            if (!arquivo || !currentOSItem || button.disabled) return;
+            if (!arquivo || !anexosOSContext || button.disabled) return;
             const token = sessionStorage.getItem(anexosProdTokenKey());
             if (!token) { mostrarLoginAnexos(); return; }
-            const os = String(currentOSItem.codigo_os);
+            const os = String(anexosOSContext.codigo_os);
             const params = new URLSearchParams({
                 cod_empresa: String(arquivo.cod_empresa),
                 cod_os: String(arquivo.cod_os),
@@ -3397,7 +3485,7 @@
                     const err = await res.json().catch(() => ({}));
                     throw new Error(err.detail || 'HTTP ' + res.status);
                 }
-                if (!currentOSItem || String(currentOSItem.codigo_os) !== os) throw new Error('OS alterada');
+                if (!anexosOSContext || String(anexosOSContext.codigo_os) !== os) throw new Error('OS alterada');
                 const blob = await res.blob();
                 const url = URL.createObjectURL(blob);
                 if (acao === 'abrir') {
@@ -3425,7 +3513,6 @@
         }
 
         function openModal(item, preserveHistory = false) {
-            resetAnexosOS();
             fecharHistoricoHover();
             if (!preserveHistory) osNavigationHistory = [];
             currentOSItem = item;
