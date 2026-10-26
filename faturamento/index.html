@@ -65,6 +65,19 @@
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: #e2e8f0; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        /* Interruptor ON/OFF: mesmo padrao do controle de producao. */
+        .fat-month-switch { display: inline-flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; min-height: 38px; border: 1px solid #cbd5e1; border-radius: 12px; background: #f1f5f9; color: #334155; font-size: 12px; font-weight: 600; cursor: pointer; transition: background-color .2s; }
+        .fat-month-switch:hover { background: #e2e8f0; }
+        .fat-month-switch:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }
+        .fat-month-switch__text { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .fat-month-switch__track { position: relative; display: inline-flex; flex: 0 0 36px; height: 20px; border-radius: 9999px; background: #94a3b8; transition: background-color .2s; }
+        .fat-month-switch__thumb { position: absolute; width: 14px; height: 14px; top: 3px; left: 3px; border-radius: 50%; background: white; box-shadow: 0 1px 3px #0003; transition: transform .2s; }
+        .fat-month-switch[aria-checked="true"] .fat-month-switch__track { background: #10b981; }
+        .fat-month-switch[aria-checked="true"] .fat-month-switch__thumb { transform: translateX(16px); }
+        .dark .fat-month-switch { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+        .dark .fat-month-switch:hover { background: #334155; }
+        .dark .fat-month-switch__track { background: #64748b; }
+        .dark .fat-month-switch[aria-checked="true"] .fat-month-switch__track { background: #10b981; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-200">
@@ -215,6 +228,17 @@
                     <option value="" class="bg-white dark:bg-slate-900">Todos os Clientes</option>
                 </select>
             </div>
+
+            <!-- Limitar datas ao mes selecionado (igual ao controle de producao) -->
+            <button id="btnToggleFatMonth" type="button" role="switch" aria-checked="true"
+                    onclick="toggleFaturamentoMonthFilter()" class="fat-month-switch"
+                    title="Ligado: somente o mes selecionado">
+                <span class="fat-month-switch__text">
+                    <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" aria-hidden="true"></i>
+                    <span>Apenas Mês Selecionado</span>
+                </span>
+                <span class="fat-month-switch__track" aria-hidden="true"><span class="fat-month-switch__thumb"></span></span>
+            </button>
 
             <!-- Botão Limpar Filtros -->
             <button onclick="clearAllFilters()" title="Limpar todos os filtros" class="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
@@ -694,6 +718,7 @@
                     versao: 1,
                     ano: currentDate.getFullYear(),
                     mes: currentDate.getMonth(),
+                    apenasMesSelecionado: onlyCurrentMonth,
                     pesquisa: document.getElementById('searchInput')?.value || '',
                     cliente: document.getElementById('clientFilter')?.value || '',
                     semana: document.getElementById('weekFilter')?.value || '',
@@ -711,6 +736,7 @@
                     Number.isInteger(saved.mes) && saved.mes >= 0 && saved.mes <= 11) {
                     currentDate = new Date(saved.ano, saved.mes, 1);
                 }
+                onlyCurrentMonth = saved.apenasMesSelecionado !== false;
                 document.getElementById('searchInput').value = String(saved.pesquisa || '');
                 // Seletores sao montados com os dados do cache/API; os valores persistem
                 // enquanto as opcoes sao reconstruidas.
@@ -734,6 +760,7 @@
         }
         let rawData = [];
         let currentDate = new Date();
+        let onlyCurrentMonth = true;
         let selectedItemModal = null;
         let editTargets = [];
         let isSavingRenegociacao = false;
@@ -755,6 +782,7 @@
             lucide.createIcons();
             ativarHoverFaturamento();
             restaurarFiltrosFaturamento();
+            syncFaturamentoMonthSwitch();
             loadFaturamento();
 
             function sincronizarSeNecessario(intervalo) {
@@ -1067,20 +1095,24 @@
             rawData.forEach(item => {
                 const date = getCalendarReferenceDate(item);
                 if (!date) return;
-                if (date.getMonth() !== selectedMonth || date.getFullYear() !== selectedYear) return;
+                if (onlyCurrentMonth &&
+                    (date.getMonth() !== selectedMonth || date.getFullYear() !== selectedYear)) return;
 
                 const weekNo = getISOWeekNumber(date);
-                if (!weeks.has(weekNo)) {
-                    weeks.set(weekNo, getWeekDateRangeStr(date));
+                const weekKey = onlyCurrentMonth ? String(weekNo) : getFaturamentoWeekKey(date);
+                if (!weeks.has(weekKey)) {
+                    const ano = onlyCurrentMonth ? '' : '/' + getFaturamentoISOWeekYear(date);
+                    weeks.set(weekKey, {label: 'Semana ' + weekNo + ano +
+                        ' (' + getWeekDateRangeStr(date) + ')', data: date.getTime()});
                 }
             });
 
             weekSelect.innerHTML = '<option value="" class="bg-white dark:bg-slate-900">Todas as Semanas</option>';
 
             Array.from(weeks.entries())
-                .sort((a, b) => a[0] - b[0])
-                .forEach(([weekNo, rangeStr]) => {
-                    const option = new Option(`Semana ${weekNo} (${rangeStr})`, String(weekNo), false, false);
+                .sort((a, b) => onlyCurrentMonth ? Number(a[0]) - Number(b[0]) : a[1].data - b[1].data)
+                .forEach(([weekKey, details]) => {
+                    const option = new Option(details.label, String(weekKey), false, false);
                     option.className = 'bg-white dark:bg-slate-900';
                     weekSelect.appendChild(option);
                 });
@@ -1146,10 +1178,30 @@
         }
 
         function clearAllFilters() {
+            onlyCurrentMonth = true;
+            syncFaturamentoMonthSwitch();
             document.getElementById('searchInput').value = '';
             document.getElementById('clientFilter').value = '';
             resetStatusFilterSelection();
             document.getElementById('weekFilter').value = '';
+            salvarFiltrosFaturamento();
+            renderCalendar();
+        }
+
+        function syncFaturamentoMonthSwitch() {
+            const botao = document.getElementById('btnToggleFatMonth');
+            if (!botao) return;
+            botao.setAttribute('aria-checked', String(onlyCurrentMonth));
+            botao.title = onlyCurrentMonth
+                ? 'Ligado: somente o mes selecionado'
+                : 'Desligado: exibir todos os meses';
+        }
+
+        function toggleFaturamentoMonthFilter() {
+            onlyCurrentMonth = !onlyCurrentMonth;
+            // Valor de semana difere entre os modos: numero vs. ano + numero.
+            document.getElementById('weekFilter').value = '';
+            syncFaturamentoMonthSwitch();
             salvarFiltrosFaturamento();
             renderCalendar();
         }
@@ -1388,6 +1440,17 @@
             return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
         }
 
+        function getFaturamentoISOWeekYear(itemDate) {
+            const d = new Date(Date.UTC(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+            return d.getUTCFullYear();
+        }
+
+        function getFaturamentoWeekKey(itemDate) {
+            const semana = getISOWeekNumber(itemDate);
+            return onlyCurrentMonth ? 'W' + semana : getFaturamentoISOWeekYear(itemDate) + '-W' + semana;
+        }
+
         function getWeekDateRangeStr(itemDate) {
             const monday = new Date(itemDate);
             monday.setDate(itemDate.getDate() - (itemDate.getDay() === 0 ? 6 : itemDate.getDay() - 1));
@@ -1404,6 +1467,9 @@
         // Ex.: Semana 36/2026 = 31/08 a 06/09. Ao visualizar setembro,
         // o dia 31/08 também precisa fazer parte da Semana 36.
         function dateBelongsToSelectedPeriod(date, selectedYear, selectedMonth, selectedWeek) {
+            if (!onlyCurrentMonth) {
+                return !selectedWeek || getFaturamentoWeekKey(date) === selectedWeek;
+            }
             if (selectedWeek) {
                 if (String(getISOWeekNumber(date)) !== String(selectedWeek)) return false;
 
@@ -1478,7 +1544,8 @@
             const selectedMonth = currentDate.getMonth();
 
             const now = new Date();
-            const isMesPassado = (selectedYear < now.getFullYear()) || (selectedYear === now.getFullYear() && selectedMonth < now.getMonth());
+            const isMesPassado = onlyCurrentMonth &&
+                ((selectedYear < now.getFullYear()) || (selectedYear === now.getFullYear() && selectedMonth < now.getMonth()));
 
             let filtered = rawData.filter(item => {
                 const fat = parseValue(item.vl_faturado);
@@ -1574,24 +1641,26 @@
 
                 const weekNo = getISOWeekNumber(date);
                 const rangeStr = getWeekDateRangeStr(date);
-                const groupKey = `W${weekNo}`;
-
+                const groupKey = getFaturamentoWeekKey(date);
                 if (!weeksMap[groupKey]) {
                     weeksMap[groupKey] = {
+                        key: groupKey,
                         weekNum: weekNo,
-                        label: `SEMANA ${weekNo} (${rangeStr})`,
+                        sortDate: date.getTime(),
+                        label: `SEMANA ${weekNo}${onlyCurrentMonth ? '' : '/' + getFaturamentoISOWeekYear(date)} (${rangeStr})`,
                         items: []
                     };
                 }
                 weeksMap[groupKey].items.push(item);
             });
 
-            const sortedWeeks = Object.values(weeksMap).sort((a, b) => a.weekNum - b.weekNum);
+            const sortedWeeks = Object.values(weeksMap).sort((a, b) =>
+                onlyCurrentMonth ? a.weekNum - b.weekNum : a.sortDate - b.sortDate);
 
             // Apenas os registros visíveis e ainda não faturados podem entrar no lote.
             visibleSelectableKeys = filtered.filter(canSelectFaturamento).map(item => rowKeys.get(item));
             visibleWeekKeys = new Map(sortedWeeks.map(week => [
-                `W${week.weekNum}`, week.items.filter(canSelectFaturamento).map(item => rowKeys.get(item))
+                week.key, week.items.filter(canSelectFaturamento).map(item => rowKeys.get(item))
             ]));
             const visibleSet = new Set(visibleSelectableKeys);
             selectedRows = new Set([...selectedRows].filter(key => visibleSet.has(key)));
@@ -1676,7 +1745,7 @@
                 const qtdNotas = notasSet.size;
 
                 const card = document.createElement('div');
-                card.dataset.fatWeek = String(week.weekNum);
+                card.dataset.fatWeek = week.key;
                 card.className = 'bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm';
 
                 card.innerHTML = `
@@ -1713,7 +1782,7 @@
                             <thead>
                                 <tr class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800 uppercase text-[10px]">
                                     <th class="p-3 w-10 text-center">
-                                        <input type="checkbox" data-week-key="W${week.weekNum}" onchange="toggleWeekSelection(this.dataset.weekKey, this.checked)"
+                                        <input type="checkbox" data-week-key="${week.key}" onchange="toggleWeekSelection(this.dataset.weekKey, this.checked)"
                                             class="w-4 h-4 accent-blue-600 cursor-pointer" title="Selecionar todos os itens a faturar desta semana" aria-label="Selecionar itens da semana ${week.weekNum}">
                                     </th>
                                     <th class="p-3">Orçamento / Pedido</th>
@@ -2083,7 +2152,8 @@
             const selectedMonth = currentDate.getMonth();
 
             const now = new Date();
-            const isMesPassado = (selectedYear < now.getFullYear()) || (selectedYear === now.getFullYear() && selectedMonth < now.getMonth());
+            const isMesPassado = onlyCurrentMonth &&
+                ((selectedYear < now.getFullYear()) || (selectedYear === now.getFullYear() && selectedMonth < now.getMonth()));
 
             let items = rawData.filter(item => {
                 const fat = parseValue(item.vl_faturado);
