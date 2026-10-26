@@ -174,6 +174,7 @@
                         <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="faturado" onchange="onStatusFilterChange()"> Faturado</label>
                         <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="a_faturar" onchange="onStatusFilterChange()"> A faturar (todos)</label>
                         <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="pendente" onchange="onStatusFilterChange()"> Pendente (sem reserva)</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="pendente_parcial" onchange="onStatusFilterChange()"> Pendente parcial (reserva já faturada)</label>
                         <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="disponivel" onchange="onStatusFilterChange()"> Disponível (reserva total)</label>
                         <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="disponivel_parcial" onchange="onStatusFilterChange()"> Disponível parcial</label>
                     </div>
@@ -357,6 +358,7 @@
         let selectedRows = new Set();
         let visibleSelectableKeys = [];
         let visibleWeekKeys = new Map();
+        let qtdFaturadaPorItem = new Map();
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
@@ -470,6 +472,7 @@
                 newLookup.set(key, item);
             });
             rawData = data; rowKeys = newKeys; rowByKey = newLookup;
+            atualizarIndiceFaturado(data);
             selectedRows = new Set([...selectedRows].filter(key => newLookup.has(key) && canRenegotiate(newLookup.get(key))));
             dataReady = true;
             populateDropdowns();
@@ -672,6 +675,7 @@
                 faturado: 'Faturado',
                 a_faturar: 'A faturar (todos)',
                 pendente: 'Pendente (sem reserva)',
+                pendente_parcial: 'Pendente parcial (reserva já faturada)',
                 disponivel: 'Disponível (reserva total)',
                 disponivel_parcial: 'Disponível parcial'
             };
@@ -741,26 +745,83 @@
         }
 
 
-        // Status da NF prevalece sobre a reserva. Para não faturados, usa o campo novo da API.
+        // Correlaciona notas e saldos por empresa, OS, orcamento e produto.
+        function chaveFaturamentoItem(item) {
+            const os = String(item.n_os ?? item.N_OS ?? '').trim();
+            const codigo = String(item.cod_interno ?? item.COD_INTERNO ?? '').trim().toUpperCase();
+            if (!os || !codigo) return null;
+            const orc = String(item.n_orcamento ?? item.N_ORCAMENTO ?? '').trim();
+            return JSON.stringify([empresaFaturamentoOS(item), os, orc, codigo]);
+        }
+
+        function atualizarIndiceFaturado(dados) {
+            const porItem = new Map();
+            dados.forEach(item => {
+                const chave = chaveFaturamentoItem(item);
+                const nf = String(item.numero_nf ?? item.NUMERO_NF ?? '').trim();
+                const qtd = Math.max(0, parseValue(item.qtde_faturada ?? item.QTDE_FATURADA));
+                if (!chave || !nf || nf === 'None' || parseValue(item.vl_faturado) <= 0 || qtd <= 0) return;
+                if (!porItem.has(chave)) porItem.set(chave, new Map());
+                const notas = porItem.get(chave);
+                // Mesmo numero de NF pode aparecer em linhas duplicadas da API.
+                notas.set(nf, Math.max(notas.get(nf) || 0, qtd));
+            });
+            qtdFaturadaPorItem = new Map();
+            porItem.forEach((notas, chave) => {
+                qtdFaturadaPorItem.set(chave, [...notas.values()].reduce((soma, qtd) => soma + qtd, 0));
+            });
+        }
+
+        function getSaldoFaturamento(item) {
+            const qtde = Math.max(0, parseValue(item.qtde ?? item.QTDE));
+            const campoReserva = item.qtde_reservada ?? item.QTDE_RESERVADA;
+            const temReserva = campoReserva !== null && campoReserva !== undefined && campoReserva !== '';
+            const reservada = Math.max(0, parseValue(campoReserva));
+            const informada = Math.max(0, parseValue(item.qtde_faturada ?? item.QTDE_FATURADA));
+            const chave = chaveFaturamentoItem(item);
+            const pelasNotas = chave ? (qtdFaturadaPorItem.get(chave) || 0) : 0;
+            const campoPendente = item.qtde_a_faturar ?? item.QTDE_A_FATURAR;
+            const temPendente = campoPendente !== null && campoPendente !== undefined && campoPendente !== '';
+            // Saldo a faturar identifica o que foi faturado caso a API so informe
+            // qtde_faturada no registro da nota, e nao no registro em aberto.
+            const deduzida = temPendente && parseValue(item.vl_faturado) <= 0
+                ? Math.max(0, qtde - Math.max(0, parseValue(campoPendente))) : 0;
+            const faturada = Math.min(qtde, Math.max(informada, pelasNotas, deduzida));
+            const aFaturar = Math.max(0, qtde - faturada);
+            const disponivel = Math.max(0, Math.min(aFaturar, reservada - faturada));
+            return { qtde, reservada, faturada, aFaturar, disponivel, temReserva };
+        }
+
+        // Registro de NF permanece faturado; para o saldo, desconta-se o
+        // ja faturado antes de avaliar o que realmente esta disponivel.
         function getFaturamentoStatus(item) {
             if (parseValue(item.vl_faturado) > 0) {
                 return { key: 'faturado', label: 'FATURADO', css: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' };
             }
+            const saldo = getSaldoFaturamento(item);
             const apiStatus = normalizeSearchText(
                 item.status_disponibilidade ?? item.STATUS_DISPONIBILIDADE ??
                 item.status_reserva ?? item.disponibilidade ?? ''
             ).toUpperCase();
             let key = 'pendente';
-            if (apiStatus.includes('PARCIAL')) key = 'disponivel_parcial';
-            else if (apiStatus.includes('DISPONIVEL') || apiStatus.includes('DISPOIVEL')) key = 'disponivel';
-            else if (!apiStatus || !apiStatus.includes('PENDENTE')) {
-                const reservada = parseValue(item.qtde_reservada ?? item.QTDE_RESERVADA);
-                const quantidade = parseValue(item.qtde ?? item.QTDE);
-                key = reservada <= 0 ? 'pendente'
-                    : quantidade > 0 && reservada < quantidade ? 'disponivel_parcial' : 'disponivel';
+            if (saldo.qtde > 0 && saldo.temReserva) {
+                if (saldo.disponivel <= 0) {
+                    key = saldo.faturada > 0 && saldo.aFaturar > 0 ? 'pendente_parcial' : 'pendente';
+                } else {
+                    key = saldo.disponivel >= saldo.aFaturar ? 'disponivel' : 'disponivel_parcial';
+                }
+            } else if (apiStatus.includes('PENDENTE') && apiStatus.includes('PARCIAL')) {
+                key = 'pendente_parcial';
+            } else if (apiStatus.includes('PENDENTE')) {
+                key = 'pendente';
+            } else if (apiStatus.includes('PARCIAL')) {
+                key = 'disponivel_parcial';
+            } else if (apiStatus.includes('DISPONIVEL') || apiStatus.includes('DISPOIVEL')) {
+                key = 'disponivel';
             }
             const statuses = {
                 pendente: ['PENDENTE', 'bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30'],
+                pendente_parcial: ['PENDENTE PARCIAL', 'bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/30'],
                 disponivel: ['DISPONÍVEL', 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/30'],
                 disponivel_parcial: ['DISPONÍVEL PARCIAL', 'bg-violet-500/20 text-violet-700 dark:text-violet-300 border-violet-500/30']
             };
@@ -1128,10 +1189,9 @@
 
                                     const rowKey = rowKeys.get(item);
                                     const status = getFaturamentoStatus(item);
-                                    const reserved = item.qtde_reservada ?? item.QTDE_RESERVADA;
-                                    const qtdTotal = item.qtde ?? item.QTDE;
-                                    const hasReserved = reserved !== null && reserved !== undefined && reserved !== '';
-                                    const reservaTexto = hasReserved ? `Reservado: ${reserved} / ${qtdTotal ?? '?'}` : '';
+                                    const saldo = getSaldoFaturamento(item);
+                                    const hasReserved = saldo.temReserva;
+                                    const reservaTexto = hasReserved ? `Reservadas: ${saldo.reservada} / ${saldo.qtde}; faturadas: ${saldo.faturada}; em aberto: ${saldo.aFaturar}; disponiveis: ${saldo.disponivel}` : '';
 
                                     return `
                                         <tr class="${isFaturado ? 'bg-emerald-500/10 dark:bg-emerald-950/20 hover:bg-emerald-500/20 dark:hover:bg-emerald-900/30' : 'hover:bg-slate-100 dark:hover:bg-slate-800/40'} transition">
@@ -1150,7 +1210,7 @@
                                                 <span class="inline-block px-2 py-0.5 rounded border text-[10px] font-black uppercase ${status.css}" title="${reservaTexto}">
                                                     ${status.label}${isFaturado && item.numero_nf ? ` (NF ${item.numero_nf})` : ''}
                                                 </span>
-                                                ${!isFaturado && hasReserved ? `<span class="block mt-1 text-[10px] font-mono text-slate-500 dark:text-slate-400">${reserved} / ${qtdTotal ?? '?'} reservado</span>` : ''}
+                                                ${!isFaturado && hasReserved ? `<span class="block mt-1 text-[10px] font-mono text-slate-500 dark:text-slate-400">${saldo.disponivel} / ${saldo.aFaturar} disponível para faturar</span>` : ''}
                                             </td>
                                             <td class="p-3 text-center font-bold ${isFaturado ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}">${formatDateOnly(isFaturado ? item.dt_emissao : item.entrega_normalizada)}</td>
                                             <td class="p-3 text-right font-mono font-bold ${isFaturado ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}">${formatBRL(valorExibir)}</td>
