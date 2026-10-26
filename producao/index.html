@@ -46,6 +46,19 @@
         .custom-scroll::-webkit-scrollbar-track { background: #e2e8f0; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         #osHistoricoHover { z-index: 49; width: min(420px, calc(100vw - 24px)); max-height: min(430px, calc(100vh - 24px)); overflow-y: auto; }
+        /* Filtros ON/OFF do controle de producao */
+        .production-switch { display: inline-flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; min-height: 38px; border: 1px solid #cbd5e1; border-radius: 12px; background: #f1f5f9; color: #334155; font-size: 12px; font-weight: 600; cursor: pointer; transition: background-color .2s; }
+        .production-switch:hover { background: #e2e8f0; }
+        .production-switch:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }
+        .production-switch__text { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .production-switch__track { position: relative; display: inline-flex; flex: 0 0 36px; height: 20px; border-radius: 9999px; background: #94a3b8; transition: background-color .2s; }
+        .production-switch__thumb { position: absolute; width: 14px; height: 14px; top: 3px; left: 3px; border-radius: 50%; background: white; box-shadow: 0 1px 3px #0003; transition: transform .2s; }
+        .production-switch[aria-checked="true"] .production-switch__track { background: #10b981; }
+        .production-switch[aria-checked="true"] .production-switch__thumb { transform: translateX(16px); }
+        .dark .production-switch { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+        .dark .production-switch:hover { background: #334155; }
+        .dark .production-switch__track { background: #64748b; }
+        .dark .production-switch[aria-checked="true"] .production-switch__track { background: #10b981; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-200">
@@ -234,14 +247,20 @@
                     <span id="txtToggleSort">Ord.: Cliente</span>
                 </button>
 
-                <button id="btnToggleMonth" onclick="toggleMonthFilter()" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
-                    <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400"></i>
-                    <span id="txtToggleMonth">Apenas Mês Selecionado</span>
+                <button id="btnToggleMonth" type="button" role="switch" aria-checked="true" onclick="toggleMonthFilter()" class="production-switch" title="Filtrar somente o mes selecionado">
+                    <span class="production-switch__text">
+                        <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" aria-hidden="true"></i>
+                        <span>Apenas Mês Selecionado</span>
+                    </span>
+                    <span class="production-switch__track" aria-hidden="true"><span class="production-switch__thumb"></span></span>
                 </button>
 
-                <button id="btnToggleOrcamento" onclick="toggleOrcamentoFilter()" class="px-3 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 border border-emerald-600 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-                    <i data-lucide="dollar-sign" class="w-3.5 h-3.5 text-slate-950"></i>
-                    <span id="txtToggleOrcamento">Exibindo Sem Orçamento</span>
+                <button id="btnToggleOrcamento" type="button" role="switch" aria-checked="false" onclick="toggleOrcamentoFilter()" class="production-switch" title="Filtrar somente OS com orcamento">
+                    <span class="production-switch__text">
+                        <i data-lucide="dollar-sign" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true"></i>
+                        <span>Apenas Com Orçamento</span>
+                    </span>
+                    <span class="production-switch__track" aria-hidden="true"><span class="production-switch__thumb"></span></span>
                 </button>
 
                 <!-- BOTÃO LIMPAR FILTROS -->
@@ -1850,11 +1869,7 @@
             document.getElementById('txtToggleSort').textContent = "Ord.: Cliente";
             document.getElementById('btnToggleSort').className = "px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
 
-            document.getElementById('txtToggleMonth').textContent = "Apenas Mês Selecionado";
-            document.getElementById('btnToggleMonth').className = "px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
-
-            document.getElementById('txtToggleOrcamento').textContent = "Exibindo Sem Orçamento";
-            document.getElementById('btnToggleOrcamento').className = "px-3 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 border border-emerald-600 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm";
+            syncProductionFilterSwitches();
 
             renderCalendar();
         }
@@ -1943,33 +1958,29 @@
             renderCalendar();
         }
 
+        // Mantem os interruptores visuais sincronizados com os filtros aplicados.
+        function syncProductionFilterSwitches() {
+            const monthButton = document.getElementById('btnToggleMonth');
+            const budgetButton = document.getElementById('btnToggleOrcamento');
+            if (monthButton) {
+                monthButton.setAttribute('aria-checked', String(onlyCurrentMonth));
+                monthButton.title = onlyCurrentMonth ? 'Ligado: somente o mes selecionado' : 'Desligado: todos os meses';
+            }
+            if (budgetButton) {
+                budgetButton.setAttribute('aria-checked', String(onlyWithBudget));
+                budgetButton.title = onlyWithBudget ? 'Ligado: apenas OS com orcamento' : 'Desligado: todas as OS, inclusive sem orcamento';
+            }
+        }
+
         function toggleMonthFilter() {
             onlyCurrentMonth = !onlyCurrentMonth;
-            const btn = document.getElementById('btnToggleMonth');
-            const txt = document.getElementById('txtToggleMonth');
-
-            if (onlyCurrentMonth) {
-                txt.textContent = "Apenas Mês Selecionado";
-                btn.className = "px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
-            } else {
-                txt.textContent = "Exibindo Toda Semana";
-                btn.className = "px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm";
-            }
+            syncProductionFilterSwitches();
             renderCalendar();
         }
 
         function toggleOrcamentoFilter() {
             onlyWithBudget = !onlyWithBudget;
-            const btn = document.getElementById('btnToggleOrcamento');
-            const txt = document.getElementById('txtToggleOrcamento');
-
-            if (onlyWithBudget) {
-                txt.textContent = "Apenas Com Orçamento";
-                btn.className = "px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5";
-            } else {
-                txt.textContent = "Exibindo Sem Orçamento";
-                btn.className = "px-3 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 border border-emerald-600 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm";
-            }
+            syncProductionFilterSwitches();
             renderCalendar();
         }
 
