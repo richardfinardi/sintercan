@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.9.0</title>
+    <title>Sintercan - Controle de Faturamento V1.9.1</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -79,7 +79,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.9.0</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.9.1</span></p>
                 </div>
             </div>
 
@@ -177,6 +177,7 @@
                         <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="pendente_parcial" onchange="onStatusFilterChange()"> Pendente parcial (reserva já faturada)</label>
                         <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="disponivel" onchange="onStatusFilterChange()"> Disponível (reserva total)</label>
                         <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="disponivel_parcial" onchange="onStatusFilterChange()"> Disponível parcial</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-emerald-600" value="liberado" onchange="onStatusFilterChange()"> Liberado para faturar</label>
                     </div>
                 </div>
             </div>
@@ -214,6 +215,8 @@
                 <button id="btnBulkRenegociar" onclick="openBulkEditModal()" disabled class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed transition">
                     <i data-lucide="calendar-cog" class="w-4 h-4"></i> Renegociar selecionados
                 </button>
+                <button id="btnBulkLiberar" onclick="alterarLiberacaoSelecionados(1)" disabled class="flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed transition"><i data-lucide="check-check" class="w-4 h-4"></i> Liberar para faturar</button>
+                <button id="btnBulkDesliberar" onclick="alterarLiberacaoSelecionados(0)" disabled class="flex items-center gap-2 px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-xl font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed transition"><i data-lucide="undo-2" class="w-4 h-4"></i> Cancelar liberação</button>
             </div>
         </div>
         <!-- CONTEÚDO PRINCIPAL DAS SEMANAS -->
@@ -347,6 +350,7 @@
         let selectedItemModal = null;
         let editTargets = [];
         let isSavingRenegociacao = false;
+        let isSavingLiberacao = false;
         let isRefreshingData = false;
         let dataReady = false;
         let cacheSavedAt = null;
@@ -364,12 +368,12 @@
             lucide.createIcons();
             loadFaturamento();
             setInterval(() => {
-                if (document.visibilityState === 'visible' && !isSavingRenegociacao && !isModalOpen()
+                if (document.visibilityState === 'visible' && !isSavingRenegociacao && !isSavingLiberacao && !isModalOpen()
                     && Date.now() - Math.max(lastApiSyncMs, lastApiAttemptMs) >= FAT_REFRESH_MS) fetchData(false, true);
             }, 60 * 1000);
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'visible' && Date.now() - Math.max(lastApiSyncMs, lastApiAttemptMs) >= FAT_REFRESH_MS
-                    && !isSavingRenegociacao && !isModalOpen()) fetchData(false, true);
+                    && !isSavingRenegociacao && !isSavingLiberacao && !isModalOpen()) fetchData(false, true);
             });
             window.addEventListener('focus', () => {
                 if (Date.now() - Math.max(lastApiSyncMs, lastApiAttemptMs) >= FAT_REFRESH_MS && !isSavingRenegociacao
@@ -473,7 +477,7 @@
             });
             rawData = data; rowKeys = newKeys; rowByKey = newLookup;
             atualizarIndiceFaturado(data);
-            selectedRows = new Set([...selectedRows].filter(key => newLookup.has(key) && canRenegotiate(newLookup.get(key))));
+            selectedRows = new Set([...selectedRows].filter(key => newLookup.has(key) && canSelectFaturamento(newLookup.get(key))));
             dataReady = true;
             populateDropdowns();
             renderCalendar();
@@ -494,7 +498,7 @@
         }
 
         async function fetchData(manual = false, quiet = false) {
-            if (isRefreshingData || isSavingRenegociacao || (isModalOpen() && !manual)) return;
+            if (isRefreshingData || isSavingRenegociacao || isSavingLiberacao || (isModalOpen() && !manual)) return;
             isRefreshingData = true;
             lastApiAttemptMs = Date.now();
             const icon = document.getElementById('refreshIcon');
@@ -677,7 +681,8 @@
                 pendente: 'Pendente (sem reserva)',
                 pendente_parcial: 'Pendente parcial (reserva já faturada)',
                 disponivel: 'Disponível (reserva total)',
-                disponivel_parcial: 'Disponível parcial'
+                disponivel_parcial: 'Disponível parcial',
+                liberado: 'Liberado para faturar'
             };
             const selected = getSelectedStatusFilters();
             const label = selected.length === 0 ? 'Todos os Status'
@@ -747,6 +752,9 @@
 
         // Correlaciona notas e saldos por empresa, OS, orcamento e produto.
         function chaveFaturamentoItem(item) {
+            const guid = String(item.guid_linha ?? item.GUID_LINHA ?? '').trim();
+            const orcId = Number(item.cod_orcamento ?? item.COD_ORCAMENTO ?? 0);
+            if (guid && orcId > 0) return JSON.stringify([empresaFaturamentoOS(item), orcId, guid]);
             const os = String(item.n_os ?? item.N_OS ?? '').trim();
             const codigo = String(item.cod_interno ?? item.COD_INTERNO ?? '').trim().toUpperCase();
             if (!os || !codigo) return null;
@@ -768,7 +776,11 @@
             });
             qtdFaturadaPorItem = new Map();
             porItem.forEach((notas, chave) => {
-                qtdFaturadaPorItem.set(chave, [...notas.values()].reduce((soma, qtd) => soma + qtd, 0));
+                const id = JSON.parse(chave);
+                // QTDE_FATURADA da linha com GUID ja e acumulada por item.
+                qtdFaturadaPorItem.set(chave, typeof id[1] === 'number'
+                    ? Math.max(0, ...notas.values())
+                    : [...notas.values()].reduce((soma, qtd) => soma + qtd, 0));
             });
         }
 
@@ -787,8 +799,12 @@
             const deduzida = temPendente && parseValue(item.vl_faturado) <= 0
                 ? Math.max(0, qtde - Math.max(0, parseValue(campoPendente))) : 0;
             const faturada = Math.min(qtde, Math.max(informada, pelasNotas, deduzida));
-            const aFaturar = Math.max(0, qtde - faturada);
-            const disponivel = Math.max(0, Math.min(aFaturar, reservada - faturada));
+            const aFaturar = temPendente && parseValue(item.vl_faturado) <= 0
+                ? Math.max(0, parseValue(campoPendente)) : Math.max(0, qtde - faturada);
+            const qtdApi = item.qtde_disponivel_fat ?? item.QTDE_DISPONIVEL_FAT;
+            const disponivel = qtdApi === null || qtdApi === undefined
+                ? Math.max(0, Math.min(aFaturar, reservada - faturada))
+                : Math.max(0, Math.min(aFaturar, parseValue(qtdApi)));
             return { qtde, reservada, faturada, aFaturar, disponivel, temReserva };
         }
 
@@ -797,6 +813,9 @@
         function getFaturamentoStatus(item) {
             if (parseValue(item.vl_faturado) > 0) {
                 return { key: 'faturado', label: 'FATURADO', css: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' };
+            }
+            if (Number(item.liberado_faturamento ?? item.LIBERADO_FATURAMENTO ?? 0) === 1) {
+                return { key: 'liberado', label: 'LIBERADO PARA FATURAR', css: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40' };
             }
             const saldo = getSaldoFaturamento(item);
             const apiStatus = normalizeSearchText(
@@ -841,9 +860,24 @@
                 && String(os).trim().toLowerCase() !== 'none';
         }
 
+        function isBudgetPendingItem(item) {
+            return !!item && parseValue(item.vl_faturado) <= 0 &&
+                Number(item.cod_orcamento ?? item.COD_ORCAMENTO ?? 0) > 0 &&
+                !!String(item.guid_linha ?? item.GUID_LINHA ?? '').trim();
+        }
+        function canSelectFaturamento(item) { return canRenegotiate(item) || isBudgetPendingItem(item); }
+        function podeLiberar(item) {
+            return isBudgetPendingItem(item) &&
+                Number(item.liberado_faturamento ?? item.LIBERADO_FATURAMENTO ?? 0) !== 1 &&
+                getSaldoFaturamento(item).disponivel > 0;
+        }
+        function podeDesliberar(item) {
+            return isBudgetPendingItem(item) &&
+                Number(item.liberado_faturamento ?? item.LIBERADO_FATURAMENTO ?? 0) === 1;
+        }
         function toggleItemSelection(key, selected) {
             const item = rowByKey.get(Number(key));
-            if (!item || !canRenegotiate(item)) return;
+            if (!item || !canSelectFaturamento(item)) return;
             if (selected) selectedRows.add(Number(key)); else selectedRows.delete(Number(key));
             updateSelectionUi();
         }
@@ -860,10 +894,12 @@
 
         function updateSelectionUi() {
             const total = visibleSelectableKeys.length;
-            const marked = visibleSelectableKeys.filter(key => selectedRows.has(key)).length;
+            const selecionados = visibleSelectableKeys.filter(key => selectedRows.has(key)).map(key => rowByKey.get(key));
+            const marked = selecionados.length;
+            const saving = isSavingRenegociacao || isSavingLiberacao;
             const all = document.getElementById('selectAllVisible');
             if (all) {
-                all.disabled = total === 0 || isSavingRenegociacao;
+                all.disabled = total === 0 || saving;
                 all.checked = total > 0 && marked === total;
                 all.indeterminate = marked > 0 && marked < total;
             }
@@ -875,12 +911,20 @@
                 const selected = keys.filter(key => selectedRows.has(key)).length;
                 input.checked = keys.length > 0 && selected === keys.length;
                 input.indeterminate = selected > 0 && selected < keys.length;
-                input.disabled = keys.length === 0 || isSavingRenegociacao;
+                input.disabled = keys.length === 0 || saving;
             });
             const text = document.getElementById('selectionCount');
             if (text) text.textContent = `${marked} de ${total} selecionados`;
             const btn = document.getElementById('btnBulkRenegociar');
-            if (btn) btn.disabled = marked === 0 || isSavingRenegociacao;
+            if (btn) btn.disabled = marked === 0 || saving || !selecionados.every(canRenegotiate);
+            const btnLiberar = document.getElementById('btnBulkLiberar');
+            const btnCancelar = document.getElementById('btnBulkDesliberar');
+            if (btnLiberar) {
+                btnLiberar.disabled = marked === 0 || saving || !selecionados.every(podeLiberar);
+                btnLiberar.title = marked && !selecionados.every(podeLiberar)
+                    ? 'A liberacao exige quantidade disponivel e item ainda nao liberado.' : '';
+            }
+            if (btnCancelar) btnCancelar.disabled = marked === 0 || saving || !selecionados.every(podeDesliberar);
         }
 
         function formatBRL(val) {
@@ -1056,9 +1100,9 @@
             const sortedWeeks = Object.values(weeksMap).sort((a, b) => a.weekNum - b.weekNum);
 
             // Apenas os registros visíveis e ainda não faturados podem entrar no lote.
-            visibleSelectableKeys = filtered.filter(canRenegotiate).map(item => rowKeys.get(item));
+            visibleSelectableKeys = filtered.filter(canSelectFaturamento).map(item => rowKeys.get(item));
             visibleWeekKeys = new Map(sortedWeeks.map(week => [
-                `W${week.weekNum}`, week.items.filter(canRenegotiate).map(item => rowKeys.get(item))
+                `W${week.weekNum}`, week.items.filter(canSelectFaturamento).map(item => rowKeys.get(item))
             ]));
             const visibleSet = new Set(visibleSelectableKeys);
             selectedRows = new Set([...selectedRows].filter(key => visibleSet.has(key)));
@@ -1196,8 +1240,8 @@
                                     return `
                                         <tr class="${isFaturado ? 'bg-emerald-500/10 dark:bg-emerald-950/20 hover:bg-emerald-500/20 dark:hover:bg-emerald-900/30' : 'hover:bg-slate-100 dark:hover:bg-slate-800/40'} transition">
                                             <td class="p-3 text-center">
-                                                ${canRenegotiate(item)
-                                                    ? `<input type="checkbox" data-row-key="${rowKey}" onchange="toggleItemSelection(${rowKey}, this.checked)" class="w-4 h-4 accent-blue-600 cursor-pointer" aria-label="Selecionar item ${rowKey} para renegociação">`
+                                                ${canSelectFaturamento(item)
+                                                    ? `<input type="checkbox" data-row-key="${rowKey}" onchange="toggleItemSelection(${rowKey}, this.checked)" class="w-4 h-4 accent-blue-600 cursor-pointer" aria-label="Selecionar item ${rowKey} para ações em lote">`
                                                     : '<span class="text-slate-400 dark:text-slate-600">-</span>'}
                                             </td>
                                             <td class="p-3 font-bold font-mono text-amber-600 dark:text-amber-400">${item.n_orcamento || '-'}</td>
@@ -1236,6 +1280,62 @@
             updateSelectionUi();
         }
 
+        // Alteracao por GUID, validada pelo banco, toda a selecao em uma transacao.
+        async function alterarLiberacaoSelecionados(liberar) {
+            if (isSavingLiberacao || isSavingRenegociacao || isRefreshingData) return;
+            const rows = visibleSelectableKeys.filter(key => selectedRows.has(key)).map(key => rowByKey.get(key));
+            if (!rows.length) return;
+            if (!rows.every(liberar === 1 ? podeLiberar : podeDesliberar)) {
+                alert(liberar === 1 ? 'Somente itens com quantidade disponivel podem ser liberados.'
+                                   : 'Somente itens ja liberados podem ter liberacao cancelada.');
+                return;
+            }
+            const itens = [...new Map(rows.map(item => {
+                const obj = {cod_empresa: empresaFaturamentoOS(item),
+                    cod_orcamento: Number(item.cod_orcamento ?? item.COD_ORCAMENTO),
+                    guid_linha: String(item.guid_linha ?? item.GUID_LINHA).trim()};
+                return [JSON.stringify([obj.cod_empresa, obj.cod_orcamento, obj.guid_linha]), obj];
+            })).values()];
+            const verbo = liberar === 1 ? 'liberar' : 'cancelar a liberacao de';
+            if (!confirm(`Confirma ${verbo} ${itens.length} item(ns)?`)) return;
+            isSavingLiberacao = true;
+            updateSelectionUi();
+            let confirmou = false;
+            try {
+                const response = await fetch(`${API_PATCH_URL}/liberar-itens`, {
+                    method: 'POST',
+                    headers: {...headersFaturamentoHist(), 'X-Idempotency-Key': uuidFaturamento()},
+                    body: JSON.stringify({itens, liberar, usuario: getUsuarioLogado()})
+                });
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(typeof data.detail === 'string' ? data.detail : `HTTP ${response.status}`);
+                }
+                const chaves = new Set(itens.map(o => JSON.stringify([o.cod_empresa, o.cod_orcamento, o.guid_linha])));
+                rawData.forEach(item => {
+                    const chave = JSON.stringify([empresaFaturamentoOS(item),
+                        Number(item.cod_orcamento ?? item.COD_ORCAMENTO ?? 0),
+                        String(item.guid_linha ?? item.GUID_LINHA ?? '').trim()]);
+                    if (chaves.has(chave)) item.liberado_faturamento = liberar;
+                });
+                selectedRows.clear();
+                applyDataset(rawData);
+                const savedAt = new Date().toISOString();
+                cacheSavedAt = savedAt;
+                try { await writeFaturamentoCache(rawData, savedAt); }
+                catch (e) { console.warn('Cache indisponivel:', e); }
+                confirmou = true;
+            } catch (e) {
+                alert('Falha na liberacao: ' + e.message);
+            } finally {
+                isSavingLiberacao = false;
+                updateSelectionUi();
+            }
+            if (confirmou) {
+                await fetchData(false, true);
+                alert(`${itens.length} item(ns) ${liberar === 1 ? 'liberado(s)' : 'desliberado(s)'} com sucesso.`);
+            }
+        }
         function openEditModalByKey(key) {
             const item = rowByKey.get(Number(key));
             if (item && canRenegotiate(item)) openEditModal(item);
