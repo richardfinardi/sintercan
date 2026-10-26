@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.9.4</title>
+    <title>Sintercan - Controle de Faturamento V1.9.5</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -79,7 +79,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.9.4</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.9.5</span></p>
                 </div>
             </div>
 
@@ -330,6 +330,32 @@
                 </div>
             </div>
             <div id="fatHistList" class="custom-scroll min-h-[120px] overflow-y-auto p-3 sm:p-4 space-y-2 text-xs" aria-live="polite"></div>
+            <section class="border-t border-slate-200 dark:border-slate-700 px-4 py-3 space-y-2 bg-slate-50 dark:bg-slate-950/60">
+                <label for="fatHistNewObs" class="block text-xs font-black text-slate-700 dark:text-slate-300">Nova observação</label>
+                <textarea id="fatHistNewObs" rows="2" maxlength="2000" placeholder="Digite uma observação a qualquer momento..." class="w-full resize-y rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                <div class="flex justify-end gap-2 items-center">
+                    <span id="fatHistObsAviso" class="text-xs text-slate-500 dark:text-slate-400 mr-auto" aria-live="polite"></span>
+                    <button id="btnSalvarFatHistObs" type="button" onclick="salvarObservacaoFaturamento()" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50"><i data-lucide="save" class="h-4 w-4"></i> Registrar observação</button>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- MODAL PARA LIBERACAO / CANCELAMENTO -->
+    <div id="fatLiberacaoModal" class="hidden fixed inset-0 z-[1001] items-center justify-center bg-slate-950/70 p-3" role="dialog" aria-modal="true" aria-labelledby="fatLiberacaoTitulo" onclick="if(event.target===this) fecharModalLiberacao()">
+        <div class="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden">
+            <div class="border-b border-slate-200 dark:border-slate-700 px-5 py-4">
+                <h3 id="fatLiberacaoTitulo" class="text-base font-black text-slate-900 dark:text-white">Liberar para faturar</h3>
+                <p id="fatLiberacaoResumo" class="text-xs text-slate-500 dark:text-slate-400 mt-1"></p>
+            </div>
+            <div class="px-5 py-4">
+                <label for="fatLiberacaoObs" class="mb-2 block text-xs font-bold text-slate-700 dark:text-slate-300">Observação (opcional)</label>
+                <textarea id="fatLiberacaoObs" rows="3" maxlength="2000" placeholder="Registre uma observação junto da liberação..." class="w-full resize-y rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-slate-200 dark:border-slate-700 px-5 py-4">
+                <button type="button" onclick="fecharModalLiberacao()" class="rounded-xl px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Voltar</button>
+                <button type="button" id="fatBtnConfirmarLiberacao" onclick="confirmarLiberacaoSelecionados()" class="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-bold text-white disabled:opacity-50">Confirmar liberação</button>
+            </div>
         </div>
     </div>
 
