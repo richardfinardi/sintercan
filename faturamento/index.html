@@ -1397,13 +1397,22 @@
                 // mas esse valor não deve entrar no KPI.
                 if (!isMesPassado && !isFaturado) {
                     totalAFaturar += aFat;
-                    // Tres faixas exclusivas: a soma deve ser sempre igual ao total A FATURAR.
+                    // Rateia valores por QUANTIDADE, nao pelo status integral da linha.
+                    // Ex.: 10 pecas a faturar, 3 disponiveis -> valor de 3 em
+                    // DISPONIVEL/LIBERADO e valor das 7 restantes em PENDENTE.
+                    const saldo = getSaldoFaturamento(item);
+                    const qtdePendente = Math.max(0, parseValue(item.qtde_a_faturar));
+                    const fracaoComReserva = qtdePendente > 0
+                        ? Math.max(0, Math.min(1, saldo.disponivel / qtdePendente)) : 0;
+                    const centavos = Math.round(aFat * 100);
+                    const centavosDisponiveis = Math.round(centavos * fracaoComReserva);
+                    const valorDisponivel = centavosDisponiveis / 100;
+                    const valorPendente = (centavos - centavosDisponiveis) / 100;
+                    totalPendente += valorPendente;
                     if (Number(item.liberado_faturamento ?? item.LIBERADO_FATURAMENTO ?? 0) === 1) {
-                        totalLiberado += aFat;
-                    } else if (getSaldoFaturamento(item).disponivel > 0) {
-                        totalDisponivel += aFat;
+                        totalLiberado += valorDisponivel;
                     } else {
-                        totalPendente += aFat;
+                        totalDisponivel += valorDisponivel;
                     }
                 }
             });
