@@ -487,6 +487,34 @@
             #tableNotasFiscais th, #tableNotasFiscais td { padding: .42rem .38rem !important; }
             #notaFiscalTableScroll { -webkit-overflow-scrolling: touch; }
         }
+
+        /* Detalhamento da matriz por cliente/mes, como o tooltip do Power BI. */
+        .rs-prazo-detail-target { cursor: help; }
+        .rs-prazo-detail-target:hover, .rs-prazo-detail-target:focus-visible {
+            background: #fef3c7 !important;
+            color: #78350f !important;
+            outline: 2px solid #f59e0b;
+            outline-offset: -2px;
+        }
+        .dark .rs-prazo-detail-target:hover, .dark .rs-prazo-detail-target:focus-visible {
+            background: #78350f !important;
+            color: #fff7ed !important;
+        }
+        #prazoEntregaDetalhePopup {
+            position: fixed; z-index: 230;
+            width: min(570px, calc(100vw - 20px));
+            max-height: min(510px, calc(100dvh - 20px));
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        #prazoEntregaDetalhePopup.hidden { display: none; }
+        #prazoEntregaDetalhePopup .prazo-popup-scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+        #prazoEntregaDetalhePopup table { border-collapse: collapse; width: 100%; }
+        #prazoEntregaDetalhePopup th, #prazoEntregaDetalhePopup td {
+            padding: 7px 9px; border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        .dark #prazoEntregaDetalhePopup th, .dark #prazoEntregaDetalhePopup td { border-bottom-color: #334155; }
+        #prazoEntregaDetalhePopup tbody tr:nth-child(even) { background: rgba(148,163,184,.10); }
     </style>
 </head>
 <body class="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-hidden transition-colors duration-200">
@@ -3084,9 +3112,14 @@
                 const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
                 if (!periods.has(key)) periods.set(key,{key, label:`${monthNames[d.getMonth()]}/${d.getFullYear()}`, fullLabel:`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`});
                 const cliente = String(item.cliente || 'SEM CLIENTE').trim() || 'SEM CLIENTE';
-                if (!clients.has(cliente)) clients.set(cliente,{cliente,months:{},total:0});
+                if (!clients.has(cliente)) clients.set(cliente,{cliente,months:{},total:0,detalhes:{},todosDetalhes:[]});
                 const row=clients.get(cliente); const val=parseFloat(item.vl_a_faturar||0)||0;
                 row.months[key]=(row.months[key]||0)+val; row.total+=val;
+                // Mantem o item original da API /pedido, sem agrupar itens iguais.
+                const detalhe = {orcamento:item.orcamento, pedido:item.pedido, item:item.item, valor:val};
+                if (!row.detalhes[key]) row.detalhes[key]=[];
+                row.detalhes[key].push(detalhe);
+                row.todosDetalhes.push(detalhe);
             });
             const periodInfo=[...periods.values()].sort((a,b)=>a.key.localeCompare(b.key));
             const rows=[...clients.values()];
@@ -3109,9 +3142,168 @@
         }
         function resetPrazoEntregaSort() { prazoEntregaSortColumn='cliente'; prazoEntregaSortAsc=true; renderPrazoEntregaView(); }
 
+
+        // Drill-down da matriz: mesmos itens e filtros do valor exibido, sem nova consulta à API.
+        let prazoEntregaDetalheRows = [];
+        let prazoEntregaDetalheCell = null;
+        let prazoEntregaDetalheFixo = false;
+        let prazoEntregaDetalheTimer = null;
+        let prazoEntregaDetalhePopup = null;
+
+        function encerrarPrazoEntregaDetalhe(forcar = false) {
+            if (prazoEntregaDetalheFixo && !forcar) return;
+            clearTimeout(prazoEntregaDetalheTimer);
+            prazoEntregaDetalheCell = null;
+            prazoEntregaDetalheFixo = false;
+            if (prazoEntregaDetalhePopup) prazoEntregaDetalhePopup.classList.add('hidden');
+        }
+
+        function agendarEncerramentoPrazoEntregaDetalhe() {
+            clearTimeout(prazoEntregaDetalheTimer);
+            if (prazoEntregaDetalheFixo) return;
+            prazoEntregaDetalheTimer = setTimeout(() => {
+                if (prazoEntregaDetalheCell?.matches(':hover') ||
+                    prazoEntregaDetalhePopup?.matches(':hover')) return;
+                encerrarPrazoEntregaDetalhe();
+            }, 300);
+        }
+
+        function criarPrazoEntregaDetalhePopup() {
+            if (prazoEntregaDetalhePopup) return prazoEntregaDetalhePopup;
+            const popup = document.createElement('section');
+            popup.id = 'prazoEntregaDetalhePopup';
+            popup.className = 'hidden rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-2xl text-xs';
+            popup.setAttribute('role', 'region');
+            popup.setAttribute('aria-label', 'Detalhamento dos valores a faturar');
+            popup.addEventListener('mouseenter', () => clearTimeout(prazoEntregaDetalheTimer));
+            popup.addEventListener('mouseleave', agendarEncerramentoPrazoEntregaDetalhe);
+            document.body.appendChild(popup);
+            prazoEntregaDetalhePopup = popup;
+            return popup;
+        }
+
+        function posicionarPrazoEntregaDetalhe() {
+            const popup = prazoEntregaDetalhePopup;
+            const cell = prazoEntregaDetalheCell;
+            if (!popup || popup.classList.contains('hidden') || !cell?.isConnected) return;
+            const rect = cell.getBoundingClientRect();
+            const width = popup.offsetWidth, height = popup.offsetHeight, gap = 10;
+            let left = rect.right + gap;
+            if (left + width > window.innerWidth - gap) left = rect.left - width - gap;
+            if (left < gap) left = Math.max(gap, Math.min(rect.left, window.innerWidth - width - gap));
+            let top = rect.top - 12;
+            top = Math.max(gap, Math.min(top, window.innerHeight - height - gap));
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+        }
+
+        function mostrarPrazoEntregaDetalhe(cell, fixar = false) {
+            if (!cell || !cell.isConnected || (prazoEntregaDetalheFixo && !fixar)) return;
+            const row = prazoEntregaDetalheRows[Number(cell.dataset.prazoDetalheRow)];
+            const period = cell.dataset.prazoDetalhePeriod;
+            if (!row || !period) return;
+            const itens = period === 'total' ? row.todosDetalhes : row.detalhes[period];
+            if (!itens?.length) return;
+
+            if (fixar && prazoEntregaDetalheFixo && prazoEntregaDetalheCell === cell) {
+                encerrarPrazoEntregaDetalhe(true);
+                return;
+            }
+
+            clearTimeout(prazoEntregaDetalheTimer);
+            prazoEntregaDetalheCell = cell;
+            prazoEntregaDetalheFixo = fixar;
+            const popup = criarPrazoEntregaDetalhePopup();
+            const periodoLabel = period === 'total' ? 'Todos os meses' :
+                period.split('-').reverse().join('/');
+            const total = itens.reduce((s, i) => s + i.valor, 0);
+
+            // Exibe cada item de orcamento separadamente, mesmo com pedido/orcamento repetidos.
+            const detalheRows = itens.map(i => `<tr>
+                <td class="font-mono text-left">${escapeHtml(i.orcamento ?? '-')}</td>
+                <td class="font-mono text-left">${escapeHtml(i.pedido ?? '-')}</td>
+                <td class="font-mono text-left">${escapeHtml(i.item ?? '-')}</td>
+                <td class="font-mono text-right">${formatCurrency(i.valor)}</td>
+            </tr>`).join('');
+
+            popup.innerHTML = `
+                <div class="px-3 py-2 bg-slate-100 dark:bg-slate-950 border-b border-slate-300 dark:border-slate-700 flex items-start gap-3 justify-between flex-shrink-0">
+                    <div class="min-w-0">
+                        <div class="font-black text-[12px]">Detalhamento • ${escapeHtml(periodoLabel)}</div>
+                        <div class="text-[11px] text-slate-600 dark:text-slate-400 break-words mt-0.5">${escapeHtml(row.cliente)} · ${itens.length.toLocaleString('pt-BR')} itens</div>
+                    </div>
+                    <button type="button" id="prazoEntregaDetalheFechar" aria-label="Fechar detalhamento" class="shrink-0 rounded-md px-2 py-1 font-black text-slate-600 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 text-base">×</button>
+                </div>
+                <div class="prazo-popup-scroll">
+                    <table>
+                        <thead class="sticky top-0 bg-white dark:bg-slate-900 z-10 border-b border-amber-500">
+                            <tr class="text-[11px] text-slate-700 dark:text-slate-200">
+                                <th class="text-left">Orç.</th>
+                                <th class="text-left">Pedido</th>
+                                <th class="text-left">Item</th>
+                                <th class="text-right">Valor a Faturar</th>
+                            </tr>
+                        </thead>
+                        <tbody>${detalheRows}</tbody>
+                    </table>
+                </div>
+                <div class="shrink-0 flex items-center justify-between px-3 py-2 border-t-2 border-slate-300 dark:border-slate-600 bg-amber-50 dark:bg-amber-950/35 text-[12px] font-black">
+                    <span>Total</span><span>${formatCurrency(total)}</span>
+                </div>`;
+            popup.querySelector('#prazoEntregaDetalheFechar').addEventListener('click', e => {
+                e.stopPropagation();
+                encerrarPrazoEntregaDetalhe(true);
+            });
+            popup.classList.remove('hidden');
+            posicionarPrazoEntregaDetalhe();
+        }
+
+        // Event delegation: suporta sort, filtros, atualizacao em segundo plano e navegacao mobile.
+        const prazoEntregaTableBody = document.getElementById('tableBodyPrazoEntrega');
+        prazoEntregaTableBody.addEventListener('mouseover', event => {
+            const cell = event.target.closest?.('[data-prazo-detalhe-row]');
+            if (!cell || !prazoEntregaTableBody.contains(cell) || prazoEntregaDetalheFixo) return;
+            if (cell.contains(event.relatedTarget) && prazoEntregaDetalheCell === cell) return;
+            mostrarPrazoEntregaDetalhe(cell);
+        });
+        prazoEntregaTableBody.addEventListener('mouseout', event => {
+            const cell = event.target.closest?.('[data-prazo-detalhe-row]');
+            if (cell && cell === prazoEntregaDetalheCell && !cell.contains(event.relatedTarget)) {
+                agendarEncerramentoPrazoEntregaDetalhe();
+            }
+        });
+        prazoEntregaTableBody.addEventListener('click', event => {
+            const cell = event.target.closest?.('[data-prazo-detalhe-row]');
+            if (cell && prazoEntregaTableBody.contains(cell)) mostrarPrazoEntregaDetalhe(cell, true);
+        });
+        prazoEntregaTableBody.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            const cell = event.target.closest?.('[data-prazo-detalhe-row]');
+            if (!cell || !prazoEntregaTableBody.contains(cell)) return;
+            event.preventDefault();
+            mostrarPrazoEntregaDetalhe(cell, true);
+        });
+        prazoEntregaTableBody.addEventListener('focusin', event => {
+            const cell = event.target.closest?.('[data-prazo-detalhe-row]');
+            if (cell && !prazoEntregaDetalheFixo) mostrarPrazoEntregaDetalhe(cell);
+        });
+        document.addEventListener('mousedown', event => {
+            if (!prazoEntregaDetalheFixo) return;
+            if (prazoEntregaDetalhePopup?.contains(event.target)) return;
+            if (event.target.closest?.('[data-prazo-detalhe-row]')) return;
+            encerrarPrazoEntregaDetalhe(true);
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') encerrarPrazoEntregaDetalhe(true);
+        });
+        window.addEventListener('resize', posicionarPrazoEntregaDetalhe);
+        window.addEventListener('scroll', posicionarPrazoEntregaDetalhe, true);
+
         function renderPrazoEntregaView() {
+            encerrarPrazoEntregaDetalhe(true);
             if (!pedidoDataReady) return;
             const {periodInfo,rows}=getPrazoEntregaMatrix();
+            prazoEntregaDetalheRows = rows;
             const head=document.getElementById('tableHeadPrazoEntrega');
             const body=document.getElementById('tableBodyPrazoEntrega');
             const foot=document.getElementById('tableFootPrazoEntrega');
@@ -3123,7 +3315,7 @@
             const arrow=k=>prazoEntregaSortColumn===k?`<span class="pedido-summary-arrow">${prazoEntregaSortAsc?'▲':'▼'}</span>`:'';
             head.innerHTML=`<tr><th onclick="sortPrazoEntrega('cliente')" class="pedido-summary-head sticky left-0 z-30 min-w-[240px] px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 bg-slate-200 dark:bg-slate-900">Cliente ${arrow('cliente')}</th>${periodInfo.map(p=>`<th onclick="sortPrazoEntrega('${p.key}')" class="pedido-summary-head min-w-[125px] px-2 py-2 border-b border-r border-slate-300 dark:border-slate-800 text-right whitespace-nowrap">${p.label} ${arrow(p.key)}</th>`).join('')}<th onclick="sortPrazoEntrega('total')" class="pedido-summary-head sticky right-0 z-30 min-w-[145px] px-2 py-2 border-b border-slate-300 dark:border-slate-800 text-right bg-amber-100 dark:bg-amber-950/50">Total ${arrow('total')}</th></tr>`;
             if (!rows.length) body.innerHTML=`<tr><td colspan="${periodInfo.length+2}" class="p-6 text-center text-slate-500">Nenhum registro encontrado.</td></tr>`;
-            else body.innerHTML=rows.map((r,i)=>`<tr class="${i%2?'bg-white dark:bg-slate-950/30':'bg-slate-50/70 dark:bg-slate-900/30'} hover:bg-amber-50 dark:hover:bg-slate-800/60 transition"><td class="sticky left-0 z-10 px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 font-medium bg-inherit whitespace-nowrap">${escapeHtml(r.cliente)}</td>${periodInfo.map(p=>`<td class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono whitespace-nowrap">${r.months[p.key]?formatCurrency(r.months[p.key]):''}</td>`).join('')}<td class="sticky right-0 z-10 px-2 py-1.5 border-b border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-amber-50 dark:bg-amber-950/30 whitespace-nowrap">${formatCurrency(r.total)}</td></tr>`).join('');
+            else body.innerHTML=rows.map((r,i)=>`<tr class="${i%2?'bg-white dark:bg-slate-950/30':'bg-slate-50/70 dark:bg-slate-900/30'} hover:bg-amber-50 dark:hover:bg-slate-800/60 transition"><td class="sticky left-0 z-10 px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 font-medium bg-inherit whitespace-nowrap">${escapeHtml(r.cliente)}</td>${periodInfo.map(p=>`<td ${r.months[p.key] ? `data-prazo-detalhe-row="${i}" data-prazo-detalhe-period="${p.key}" tabindex="0" role="button" aria-label="Detalhar ${escapeHtml(r.cliente)} em ${p.label}"` : ''} class="px-2 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 text-right font-mono whitespace-nowrap ${r.months[p.key] ? 'rs-prazo-detail-target' : ''}">${r.months[p.key]?formatCurrency(r.months[p.key]):''}</td>`).join('')}<td data-prazo-detalhe-row="${i}" data-prazo-detalhe-period="total" tabindex="0" role="button" aria-label="Detalhar total de ${escapeHtml(r.cliente)}" class="rs-prazo-detail-target sticky right-0 z-10 px-2 py-1.5 border-b border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-amber-50 dark:bg-amber-950/30 whitespace-nowrap">${formatCurrency(r.total)}</td></tr>`).join('');
             const totalsByPeriod={}; periodInfo.forEach(p=>totalsByPeriod[p.key]=rows.reduce((s,r)=>s+(r.months[p.key]||0),0));
             foot.innerHTML=`<tr><td class="sticky left-0 z-30 px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-900">Total</td>${periodInfo.map(p=>`<td class="px-2 py-2 border-t border-r border-slate-300 dark:border-slate-700 text-right font-mono whitespace-nowrap">${formatCurrency(totalsByPeriod[p.key])}</td>`).join('')}<td class="sticky right-0 z-30 px-2 py-2 border-t border-slate-300 dark:border-slate-700 text-right font-mono bg-amber-100 dark:bg-amber-950/50 whitespace-nowrap">${formatCurrency(grandTotal)}</td></tr>`;
         }
@@ -3315,6 +3507,7 @@
                 if (tab) tab.classList.add('hidden');
             });
 
+            encerrarPrazoEntregaDetalhe(true);
             if (isPedidoBasedTab(tabName) && pedidoDataReady) setupPedidoPeriodoFilter();
 
             if (tabName === 'RS') {
