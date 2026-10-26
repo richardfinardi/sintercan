@@ -50,7 +50,17 @@
     
     <style>
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 10px; }
+        /* Barras horizontais visiveis e acessiveis na tabela de faturamento. */
+        .fat-scroll-top, .fat-table-scroll { scrollbar-width: auto; scrollbar-color: #64748b #e2e8f0; }
+        .dark .fat-scroll-top, .dark .fat-table-scroll { scrollbar-color: #94a3b8 #1e293b; }
+        .fat-scroll-top::-webkit-scrollbar, .fat-table-scroll::-webkit-scrollbar { height: 12px; }
+        .fat-scroll-top::-webkit-scrollbar-track, .fat-table-scroll::-webkit-scrollbar-track { background: #e2e8f0; }
+        .dark .fat-scroll-top::-webkit-scrollbar-track, .dark .fat-table-scroll::-webkit-scrollbar-track { background: #1e293b; }
+        .fat-scroll-top::-webkit-scrollbar-thumb, .fat-table-scroll::-webkit-scrollbar-thumb { background: #64748b; border: 2px solid #e2e8f0; border-radius: 8px; }
+        .dark .fat-scroll-top::-webkit-scrollbar-thumb, .dark .fat-table-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-color: #1e293b; }
+        .fat-table-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
+        .fat-scroll-top { overflow-x: scroll; overflow-y: hidden; min-width: 0; }
         .dark .custom-scroll::-webkit-scrollbar-track { background: #1e293b; }
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: #e2e8f0; }
@@ -1416,6 +1426,42 @@
             return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
         }
 
+        // Sincroniza a barra horizontal superior com a tabela, inclusive em telas pequenas.
+        function configurarRolagemFaturamento(card) {
+            const tabela = card.querySelector('.fat-table-scroll');
+            const navegacao = card.querySelector('.fat-scroll-navigation');
+            const topo = card.querySelector('.fat-scroll-top');
+            const largura = card.querySelector('.fat-scroll-spacer');
+            if (!tabela || !navegacao || !topo || !largura) return;
+            const atualizar = () => {
+                largura.style.width = tabela.scrollWidth + 'px';
+                navegacao.classList.toggle('hidden', tabela.scrollWidth <= tabela.clientWidth + 1);
+            };
+            const sincronizar = (origem, destino) => {
+                const maxOrigem = Math.max(0, origem.scrollWidth - origem.clientWidth);
+                const maxDestino = Math.max(0, destino.scrollWidth - destino.clientWidth);
+                const alvo = maxOrigem ? (origem.scrollLeft / maxOrigem) * maxDestino : 0;
+                if (Math.abs(destino.scrollLeft - alvo) > 1) destino.scrollLeft = alvo;
+            };
+            tabela.addEventListener('scroll', () => sincronizar(tabela, topo), {passive:true});
+            topo.addEventListener('scroll', () => sincronizar(topo, tabela), {passive:true});
+            card.querySelectorAll('[data-fat-scroll-direction]').forEach(botao => {
+                botao.addEventListener('click', () => tabela.scrollBy({
+                    left: Number(botao.dataset.fatScrollDirection) * Math.max(220, tabela.clientWidth * 0.7),
+                    behavior: 'smooth'
+                }));
+            });
+            atualizar();
+            // Mantem as dimensoes corretas quando o navegador muda de tamanho.
+            if (window.ResizeObserver) {
+                const observer = new ResizeObserver(atualizar);
+                observer.observe(tabela);
+                observer.observe(tabela.querySelector('table'));
+                // O observador e desconectado automaticamente quando o card e recriado.
+                card._fatScrollObserver = observer;
+            }
+        }
+
         function renderCalendar() {
             const monthStr = currentDate.toLocaleDateString('pt-BR', { month: 'long' });
             const capitalizedMonth = monthStr.charAt(0).toUpperCase() + monthStr.slice(1);
@@ -1551,6 +1597,12 @@
             selectedRows = new Set([...selectedRows].filter(key => visibleSet.has(key)));
 
             const grid = document.getElementById('faturamentoGrid');
+            // Guarda a posicao horizontal para nao voltar ao inicio a cada sincronizacao.
+            const rolamentoAnterior = new Map();
+            grid.querySelectorAll('[data-fat-week]').forEach(card => {
+                rolamentoAnterior.set(card.dataset.fatWeek, card.querySelector('.fat-table-scroll')?.scrollLeft || 0);
+                card._fatScrollObserver?.disconnect();
+            });
             grid.innerHTML = '';
 
             if (sortedWeeks.length === 0) {
@@ -1624,6 +1676,7 @@
                 const qtdNotas = notasSet.size;
 
                 const card = document.createElement('div');
+                card.dataset.fatWeek = String(week.weekNum);
                 card.className = 'bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm';
 
                 card.innerHTML = `
@@ -1647,8 +1700,16 @@
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto custom-scroll">
-                        <table class="w-full text-left text-xs border-collapse">
+                    <!-- Barra horizontal logo abaixo do resumo: sempre acessivel sem ir ao fim da lista. -->
+                    <div class="fat-scroll-navigation hidden flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+                        <button type="button" data-fat-scroll-direction="-1" aria-label="Rolar a tabela para a esquerda" title="Rolar para a esquerda" class="shrink-0 px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 font-bold">◀</button>
+                        <div class="fat-scroll-top custom-scroll flex-1" aria-label="Barra de rolagem horizontal da tabela">
+                            <div class="fat-scroll-spacer h-px"></div>
+                        </div>
+                        <button type="button" data-fat-scroll-direction="1" aria-label="Rolar a tabela para a direita" title="Rolar para a direita" class="shrink-0 px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 font-bold">▶</button>
+                    </div>
+                    <div class="fat-table-scroll custom-scroll">
+                        <table class="w-full min-w-[1540px] text-left text-xs border-collapse">
                             <thead>
                                 <tr class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800 uppercase text-[10px]">
                                     <th class="p-3 w-10 text-center">
@@ -1700,10 +1761,10 @@
                                             </td>
                                             <td class="p-3 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">${formatPedidoFaturamento(item.n_pedido ?? item.N_PEDIDO)}</td>
                                             <td class="p-3 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">${formatPedidoFaturamento(item.n_pedido_item ?? item.N_PEDIDO_ITEM)}</td>
-                                            <td class="p-3 font-bold text-slate-800 dark:text-slate-200 truncate max-w-[150px]">${item.cliente || '-'}</td>
+                                            <td class="p-3 font-bold text-slate-800 dark:text-slate-200 min-w-[160px] max-w-[220px] whitespace-normal break-words">${item.cliente || '-'}</td>
                                             <td class="p-3 font-mono text-slate-500 dark:text-slate-400">${item.cod_interno || '-'}</td>
                                             <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">OS ${item.n_os || '-'}</td>
-                                            <td class="p-3 text-slate-700 dark:text-slate-300 truncate max-w-[200px]" title="${item.descricao || ''}">${item.descricao || '-'}</td>
+                                            <td class="p-3 text-slate-700 dark:text-slate-300 min-w-[220px] max-w-[360px] whitespace-normal break-words" title="${item.descricao || ''}">${item.descricao || '-'}</td>
                                             <td class="p-3 text-center font-medium text-slate-500 dark:text-slate-400">${formatDateOnly(item.dt_item || item.dt_previsao_entrega)}</td>
                                             <td class="p-3 text-center">
                                                 <span class="inline-block px-2 py-0.5 rounded border text-[10px] font-black uppercase ${status.css}" title="${reservaTexto}">
@@ -1729,6 +1790,9 @@
                     </div>
                 `;
                 grid.appendChild(card);
+                configurarRolagemFaturamento(card);
+                const posicao = rolamentoAnterior.get(card.dataset.fatWeek);
+                if (posicao) card.querySelector('.fat-table-scroll').scrollLeft = posicao;
             });
 
             lucide.createIcons();
