@@ -1709,16 +1709,14 @@
                         <button type="button" data-fat-scroll-direction="1" aria-label="Rolar a tabela para a direita" title="Rolar para a direita" class="shrink-0 px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 font-bold">▶</button>
                     </div>
                     <div class="fat-table-scroll custom-scroll">
-                        <table class="w-full min-w-[1540px] text-left text-xs border-collapse">
+                        <table class="w-full min-w-[1250px] text-left text-xs border-collapse">
                             <thead>
                                 <tr class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800 uppercase text-[10px]">
                                     <th class="p-3 w-10 text-center">
                                         <input type="checkbox" data-week-key="W${week.weekNum}" onchange="toggleWeekSelection(this.dataset.weekKey, this.checked)"
                                             class="w-4 h-4 accent-blue-600 cursor-pointer" title="Selecionar todos os itens a faturar desta semana" aria-label="Selecionar itens da semana ${week.weekNum}">
                                     </th>
-                                    <th class="p-3">Orçamento</th>
-                                    <th class="p-3 whitespace-nowrap">Pedido</th>
-                                    <th class="p-3 whitespace-nowrap">Item Pedido</th>
+                                    <th class="p-3">Orçamento / Pedido</th>
                                     <th class="p-3">Cliente</th>
                                     <th class="p-3">Cód. Interno</th>
                                     <th class="p-3">OS</th>
@@ -1750,7 +1748,7 @@
                                                     ? `<input type="checkbox" data-row-key="${rowKey}" onchange="toggleItemSelection(${rowKey}, this.checked)" class="w-4 h-4 accent-blue-600 cursor-pointer" aria-label="Selecionar item ${rowKey} para ações em lote">`
                                                     : '<span class="text-slate-400 dark:text-slate-600">-</span>'}
                                             </td>
-                                            <td class="p-3 font-bold font-mono text-amber-600 dark:text-amber-400">
+                                            <td class="p-3 font-bold font-mono text-amber-600 dark:text-amber-400 align-middle whitespace-nowrap">
                                                 ${Number(item.cod_orcamento || 0) > 0
                                                     ? `<button type="button" data-hist-empresa="${empresaFaturamentoOS(item)}" data-hist-orc="${Number(item.cod_orcamento)}"
                                                         onclick="abrirHistoricoFaturamento(this)"
@@ -1758,9 +1756,12 @@
                                                         ${item.n_orcamento || '-'} <i data-lucide="history" class="w-3.5 h-3.5 shrink-0"></i>
                                                     </button>`
                                                     : (item.n_orcamento || '-')}
+                                                ${(item.n_pedido ?? item.N_PEDIDO ?? item.n_pedido_item ?? item.N_PEDIDO_ITEM) != null ? `
+                                                    <div class="mt-1 font-normal text-[10px] leading-tight text-slate-500 dark:text-slate-400">
+                                                        <div>Ped.: ${formatPedidoFaturamento(item.n_pedido ?? item.N_PEDIDO)}</div>
+                                                        <div>Item: ${formatPedidoFaturamento(item.n_pedido_item ?? item.N_PEDIDO_ITEM)}</div>
+                                                    </div>` : ''}
                                             </td>
-                                            <td class="p-3 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">${formatPedidoFaturamento(item.n_pedido ?? item.N_PEDIDO)}</td>
-                                            <td class="p-3 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">${formatPedidoFaturamento(item.n_pedido_item ?? item.N_PEDIDO_ITEM)}</td>
                                             <td class="p-3 font-bold text-slate-800 dark:text-slate-200 min-w-[160px] max-w-[220px] whitespace-normal break-words">${item.cliente || '-'}</td>
                                             <td class="p-3 font-mono text-slate-500 dark:text-slate-400">${item.cod_interno || '-'}</td>
                                             <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">OS ${item.n_os || '-'}</td>
