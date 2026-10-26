@@ -45,6 +45,7 @@
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: #e2e8f0; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        #osHistoricoHover { z-index: 49; width: min(420px, calc(100vw - 24px)); max-height: min(430px, calc(100vh - 24px)); overflow-y: auto; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-200">
@@ -581,6 +582,182 @@
             return eventos;
         }
 
+
+        // Previa de TOS.U_HIST: consulta sob demanda, sem carregar um historico por OS no calendario.
+        const historicoHoverCache = new Map();
+        const historicoHoverBuscas = new Map();
+        let historicoHoverCard = null;
+        let historicoHoverPopup = null;
+        let historicoHoverEntradaTimer = null;
+        let historicoHoverSaidaTimer = null;
+
+        function registrarHistoricoHover(empresa, codigo, texto) {
+            const key = String(empresa) + ':' + String(codigo);
+            historicoHoverCache.delete(key);
+            historicoHoverCache.set(key, {
+                eventos: separarEventosHistorico(texto),
+                expires: Date.now() + 60000
+            });
+            if (historicoHoverCache.size > 120) {
+                historicoHoverCache.delete(historicoHoverCache.keys().next().value);
+            }
+        }
+
+        function fecharHistoricoHover() {
+            clearTimeout(historicoHoverEntradaTimer);
+            clearTimeout(historicoHoverSaidaTimer);
+            historicoHoverCard = null;
+            if (historicoHoverPopup) historicoHoverPopup.classList.add('hidden');
+        }
+
+        function agendarFechamentoHistoricoHover() {
+            clearTimeout(historicoHoverEntradaTimer);
+            clearTimeout(historicoHoverSaidaTimer);
+            historicoHoverSaidaTimer = setTimeout(() => {
+                if (!historicoHoverCard?.matches(':hover') &&
+                    !historicoHoverPopup?.matches(':hover')) fecharHistoricoHover();
+            }, 220);
+        }
+
+        function obterPopupHistoricoHover() {
+            if (historicoHoverPopup) return historicoHoverPopup;
+            const popup = document.createElement('aside');
+            popup.id = 'osHistoricoHover';
+            popup.className = 'hidden fixed rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-2xl custom-scroll';
+            popup.setAttribute('aria-label', 'Previa do historico da OS');
+            popup.addEventListener('pointerenter', e => {
+                if (e.pointerType === 'mouse') clearTimeout(historicoHoverSaidaTimer);
+            });
+            popup.addEventListener('pointerleave', e => {
+                if (e.pointerType === 'mouse') agendarFechamentoHistoricoHover();
+            });
+            document.body.appendChild(popup);
+            historicoHoverPopup = popup;
+            return popup;
+        }
+
+        function posicionarHistoricoHover(card) {
+            const popup = historicoHoverPopup;
+            if (!popup || popup.classList.contains('hidden') || !card?.isConnected) return;
+            const r = card.getBoundingClientRect();
+            const gap = 12;
+            const w = popup.offsetWidth;
+            const h = popup.offsetHeight;
+            const left = r.right + gap + w <= window.innerWidth - gap
+                ? r.right + gap
+                : r.left - w - gap >= gap ? r.left - w - gap
+                : Math.max(gap, Math.min(r.left, window.innerWidth - w - gap));
+            const top = Math.max(gap, Math.min(r.top, window.innerHeight - h - gap));
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+        }
+
+        function exibirHistoricoHover(card, eventos) {
+            const popup = obterPopupHistoricoHover();
+            popup.replaceChildren();
+
+            const header = document.createElement('div');
+            header.className = 'sticky top-0 z-10 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-700 p-3';
+            const titulo = document.createElement('div');
+            titulo.className = 'text-xs font-black text-slate-900 dark:text-white';
+            titulo.textContent = 'HISTORICO DA OS ' + (card.dataset.historicoNumero || card.dataset.historicoCodigo);
+            const subtitulo = document.createElement('div');
+            subtitulo.className = 'text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1';
+            subtitulo.textContent = eventos.length + (eventos.length === 1 ? ' registro' : ' registros') + ' • Mais detalhes ao abrir a OS';
+            header.append(titulo, subtitulo);
+            popup.appendChild(header);
+
+            eventos.slice(0, 40).forEach((evento, index) => {
+                const bloco = document.createElement('article');
+                bloco.className = 'p-3 border-b border-slate-200 dark:border-slate-700 ' +
+                    (index === 0 ? 'bg-emerald-50 dark:bg-emerald-950/30' : '');
+                const meta = document.createElement('div');
+                meta.className = 'text-[10px] font-bold text-slate-500 dark:text-slate-400';
+                meta.textContent = [evento.data, evento.usuario].filter(Boolean).join(' • ');
+                const acao = document.createElement('div');
+                acao.className = 'text-xs font-black text-emerald-700 dark:text-emerald-400 mt-1';
+                acao.textContent = evento.acao;
+                const corpo = document.createElement('div');
+                corpo.className = 'text-xs leading-relaxed whitespace-pre-wrap break-words mt-1 text-slate-700 dark:text-slate-200';
+                corpo.textContent = evento.corpo || 'Sem detalhes.';
+                bloco.append(meta, acao, corpo);
+                popup.appendChild(bloco);
+            });
+            if (eventos.length > 40) {
+                const nota = document.createElement('div');
+                nota.className = 'text-[11px] p-3 text-center font-semibold text-slate-500 dark:text-slate-400';
+                nota.textContent = 'Outros ' + (eventos.length - 40) + ' registros no historico completo.';
+                popup.appendChild(nota);
+            }
+            popup.classList.remove('hidden');
+            posicionarHistoricoHover(card);
+        }
+
+        async function consultarHistoricoHover(empresa, codigo) {
+            const key = empresa + ':' + codigo;
+            const cached = historicoHoverCache.get(key);
+            if (cached && cached.expires > Date.now()) return cached.eventos;
+            if (historicoHoverBuscas.has(key)) return historicoHoverBuscas.get(key);
+
+            const promessa = (async () => {
+                const response = await fetch(API_URL + '/' + encodeURIComponent(codigo) +
+                    '/historico?cod_empresa=' + encodeURIComponent(empresa), {
+                    headers: authHistHeaders(),
+                    cache: 'no-store'
+                });
+                if (!response.ok) throw new Error('Falha HTTP ' + response.status);
+                const dados = await response.json();
+                registrarHistoricoHover(empresa, codigo, dados.historico || '');
+                return historicoHoverCache.get(key).eventos;
+            })().catch(error => {
+                console.warn('Consulta do historico da OS indisponivel:', error);
+                return [];
+            }).finally(() => historicoHoverBuscas.delete(key));
+
+            historicoHoverBuscas.set(key, promessa);
+            return promessa;
+        }
+
+        function agendarHistoricoHover(card) {
+            if (historicoHoverCard === card) {
+                clearTimeout(historicoHoverSaidaTimer);
+                return;
+            }
+            fecharHistoricoHover();
+            const empresa = card.dataset.historicoEmpresa;
+            const codigo = card.dataset.historicoCodigo;
+            if (!empresa || !codigo) return;
+            historicoHoverCard = card;
+            historicoHoverEntradaTimer = setTimeout(async () => {
+                if (historicoHoverCard !== card || !card.isConnected || !card.matches(':hover')) return;
+                const eventos = await consultarHistoricoHover(empresa, codigo);
+                if (historicoHoverCard !== card || !card.isConnected ||
+                    (!card.matches(':hover') && !historicoHoverPopup?.matches(':hover')) ||
+                    !eventos.length) return;
+                exibirHistoricoHover(card, eventos);
+            }, 350);
+        }
+
+        const calendarioHistoricoHover = document.getElementById('calendarGrid');
+        calendarioHistoricoHover.addEventListener('pointerover', event => {
+            if (event.pointerType !== 'mouse') return;
+            const card = event.target instanceof Element
+                ? event.target.closest('[data-historico-codigo]') : null;
+            if (card && calendarioHistoricoHover.contains(card)) agendarHistoricoHover(card);
+        });
+        calendarioHistoricoHover.addEventListener('pointerout', event => {
+            if (event.pointerType !== 'mouse') return;
+            const card = event.target instanceof Element
+                ? event.target.closest('[data-historico-codigo]') : null;
+            if (card && card === historicoHoverCard &&
+                !card.contains(event.relatedTarget) &&
+                !historicoHoverPopup?.contains(event.relatedTarget)) {
+                agendarFechamentoHistoricoHover();
+            }
+        });
+        window.addEventListener('scroll', () => posicionarHistoricoHover(historicoHoverCard), true);
+        window.addEventListener('resize', () => posicionarHistoricoHover(historicoHoverCard));
+
         function renderizarHistoricoOS(texto) {
             const area = document.getElementById('historicoOSLista');
             if (!area) return;
@@ -634,6 +811,7 @@
                 if (currentOSItem && String(currentOSItem.codigo_os) === os &&
                     Number(currentOSItem.cod_empresa) === empresa) {
                     renderizarHistoricoOS(resposta.historico || '');
+                    registrarHistoricoHover(empresa, os, resposta.historico || '');
                 }
             } catch (error) {
                 if (area) area.textContent = error.message;
@@ -671,6 +849,7 @@
                 if (currentOSItem && String(currentOSItem.codigo_os) === os &&
                     Number(currentOSItem.cod_empresa) === empresa) {
                     renderizarHistoricoOS(resposta.historico || '');
+                    registrarHistoricoHover(empresa, os, resposta.historico || '');
                     input.value = '';
                 }
             } catch (error) {
@@ -792,6 +971,7 @@
                     try { detail = (await response.json()).detail || detail; } catch (_) {}
                     throw new Error(detail);
                 }
+                historicoHoverCache.delete(key);
                 // Atualiza todas as projeções da mesma OS, inclusive cartões de várias datas.
                 rawData.forEach(row => {
                     if (String(row?.cod_empresa ?? '') === String(codEmpresa) &&
@@ -856,6 +1036,7 @@
                     try { detail = (await response.json()).detail || detail; } catch (_) {}
                     throw new Error(detail);
                 }
+                historicoHoverCache.delete(key);
                 // Mesma OS pode aparecer em diferentes datas/cartoes.
                 rawData.forEach(row => {
                     if (String(row?.cod_empresa ?? '') === String(codEmpresa) &&
@@ -1825,6 +2006,7 @@
         }
 
         function renderCalendar() {
+            fecharHistoricoHover();
             const monthStr = currentDate.toLocaleDateString('pt-BR', { month: 'long' });
             const capitalizedMonth = monthStr.charAt(0).toUpperCase() + monthStr.slice(1);
             document.getElementById('currentMonthYearLabel').textContent = `${capitalizedMonth} De ${currentDate.getFullYear()}`;
@@ -2690,6 +2872,7 @@
                     throw new Error(detail);
                 }
 
+                historicoHoverCache.delete(String(codEmpresa) + ':' + String(codigoOs));
                 rawData.forEach(row => {
                     if (
                         String(row?.cod_empresa ?? '') === String(codEmpresa) &&
@@ -2760,7 +2943,7 @@
                     </label>`;
 
             return `
-                <div onclick='openModal(${payload})' class="relative overflow-hidden border ${isZeroed ? 'border-slate-400/70 dark:border-slate-600' : 'border-slate-200 dark:border-slate-800'} rounded-xl bg-white dark:bg-slate-950 hover:border-amber-500 dark:hover:border-amber-500/60 hover:shadow-lg transition cursor-pointer text-xs">
+                <div data-historico-empresa="${escapeAuxText(item.cod_empresa)}" data-historico-codigo="${escapeAuxText(item.codigo_os)}" data-historico-numero="${escapeAuxText(item.n_os)}" onclick='openModal(${payload})' class="relative overflow-hidden border ${isZeroed ? 'border-slate-400/70 dark:border-slate-600' : 'border-slate-200 dark:border-slate-800'} rounded-xl bg-white dark:bg-slate-950 hover:border-amber-500 dark:hover:border-amber-500/60 hover:shadow-lg transition cursor-pointer text-xs">
                     <span class="absolute inset-y-0 left-0 w-1.5 ${type.rail}"></span>
         
                     <div class="pl-4 pr-3 py-3">
@@ -3027,6 +3210,7 @@
         }
 
         function openModal(item, preserveHistory = false) {
+            fecharHistoricoHover();
             if (!preserveHistory) osNavigationHistory = [];
             currentOSItem = item;
             const painelHistorico = document.getElementById('boxHistoricoOS');
@@ -3185,6 +3369,7 @@
                     throw new Error(errData.detail || 'Falha ao atualizar prazo.');
                 }
 
+                historicoHoverCache.delete(String(currentOSItem.cod_empresa) + ':' + String(currentOSItem.codigo_os));
                 alert('Data de entrega alterada com sucesso!');
                 closeModal();
                 fetchData();
