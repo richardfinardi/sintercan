@@ -145,7 +145,7 @@
     <!-- CONTROLES E FILTROS -->
     <main class="max-w-7xl w-full mx-auto p-4 flex flex-col gap-4 flex-1">
         
-        <div class="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+        <div class="relative z-30 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-sm">
             
             <!-- Busca Avançada -->
             <div class="flex items-center gap-2 flex-1 min-w-[260px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
@@ -159,17 +159,25 @@
                 </button>
             </div>
 
-            <!-- Status da NF e da reserva de estoque -->
-            <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
-                <i data-lucide="check-circle-2" class="w-4 h-4 text-slate-400"></i>
-                <select id="statusFilter" onchange="renderCalendar()" class="text-xs bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer max-w-[190px] font-bold">
-                    <option value="">Todos os Status</option>
-                    <option value="faturado">Faturado</option>
-                    <option value="a_faturar">A faturar (todos)</option>
-                    <option value="pendente">Pendente (sem reserva)</option>
-                    <option value="disponivel">Disponível (reserva total)</option>
-                    <option value="disponivel_parcial">Disponível parcial</option>
-                </select>
+            <!-- Status da NF e da reserva de estoque: selecao multipla -->
+            <div id="statusFilterContainer" class="relative flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                <button type="button" id="statusFilterButton" onclick="toggleStatusFilterDropdown()" aria-haspopup="true" aria-expanded="false" aria-controls="statusFilterMenu"
+                        class="flex items-center justify-between gap-2 text-xs text-slate-800 dark:text-white focus:outline-none cursor-pointer font-bold min-w-[130px] max-w-[200px]">
+                    <span id="statusFilterLabel" class="truncate">Todos os Status</span>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 shrink-0"></i>
+                </button>
+                <div id="statusFilterMenu" role="group" aria-label="Selecione os status de faturamento" class="hidden absolute top-full left-0 mt-2 z-40 w-[280px] max-w-[calc(100vw-32px)] p-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl shadow-2xl">
+                    <button type="button" onclick="clearStatusFilter()" class="w-full text-left text-xs font-semibold px-3 py-2 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800">Todos os Status (limpar seleção)</button>
+                    <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+                    <div class="max-h-64 overflow-y-auto custom-scroll">
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="faturado" onchange="onStatusFilterChange()"> Faturado</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="a_faturar" onchange="onStatusFilterChange()"> A faturar (todos)</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="pendente" onchange="onStatusFilterChange()"> Pendente (sem reserva)</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="disponivel" onchange="onStatusFilterChange()"> Disponível (reserva total)</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"><input type="checkbox" class="status-option w-4 h-4 accent-blue-600" value="disponivel_parcial" onchange="onStatusFilterChange()"> Disponível parcial</label>
+                    </div>
+                </div>
             </div>
 
             <!-- Filtro por Semana -->
@@ -367,9 +375,14 @@
             });
             document.addEventListener('keydown', event => {
                 if (event.key === 'Escape') {
+                    closeStatusFilterDropdown();
                     closeSearchHelp();
                     if (!isSavingRenegociacao) closeEditModal();
                 }
+            });
+            document.addEventListener('click', event => {
+                const container = document.getElementById('statusFilterContainer');
+                if (container && !container.contains(event.target)) closeStatusFilterDropdown();
             });
         });
 
@@ -650,10 +663,58 @@
             weekSelect.value = currentStillExists ? currentWeek : '';
         }
 
+        function getSelectedStatusFilters() {
+            return Array.from(document.querySelectorAll('#statusFilterMenu .status-option:checked'), input => input.value);
+        }
+
+        function updateStatusFilterLabel() {
+            const labels = {
+                faturado: 'Faturado',
+                a_faturar: 'A faturar (todos)',
+                pendente: 'Pendente (sem reserva)',
+                disponivel: 'Disponível (reserva total)',
+                disponivel_parcial: 'Disponível parcial'
+            };
+            const selected = getSelectedStatusFilters();
+            const label = selected.length === 0 ? 'Todos os Status'
+                : selected.length === 1 ? labels[selected[0]] : `${selected.length} status selecionados`;
+            document.getElementById('statusFilterLabel').textContent = label;
+            document.getElementById('statusFilterButton').title = selected.length
+                ? selected.map(key => labels[key]).join(', ') : 'Todos os Status';
+        }
+
+        function closeStatusFilterDropdown() {
+            document.getElementById('statusFilterMenu').classList.add('hidden');
+            document.getElementById('statusFilterButton').setAttribute('aria-expanded', 'false');
+        }
+
+        function toggleStatusFilterDropdown() {
+            const menu = document.getElementById('statusFilterMenu');
+            const open = menu.classList.contains('hidden');
+            menu.classList.toggle('hidden', !open);
+            document.getElementById('statusFilterButton').setAttribute('aria-expanded', String(open));
+        }
+
+        function onStatusFilterChange() {
+            updateStatusFilterLabel();
+            renderCalendar();
+        }
+
+        function resetStatusFilterSelection() {
+            document.querySelectorAll('#statusFilterMenu .status-option').forEach(input => { input.checked = false; });
+            updateStatusFilterLabel();
+            closeStatusFilterDropdown();
+        }
+
+        function clearStatusFilter() {
+            resetStatusFilterSelection();
+            renderCalendar();
+        }
+
         function clearAllFilters() {
             document.getElementById('searchInput').value = '';
             document.getElementById('clientFilter').value = '';
-            document.getElementById('statusFilter').value = '';
+            resetStatusFilterSelection();
             document.getElementById('weekFilter').value = '';
             renderCalendar();
         }
@@ -706,10 +767,10 @@
             return { key, label: statuses[key][0], css: statuses[key][1] };
         }
 
-        function matchesStatusFilter(item, selectedStatus) {
-            if (!selectedStatus) return true;
+        function matchesStatusFilter(item, selectedStatuses) {
+            if (!selectedStatuses.length) return true;
             const key = getFaturamentoStatus(item).key;
-            return selectedStatus === 'a_faturar' ? key !== 'faturado' : key === selectedStatus;
+            return selectedStatuses.some(status => status === 'a_faturar' ? key !== 'faturado' : key === status);
         }
 
         function canRenegotiate(item) {
@@ -839,7 +900,7 @@
 
             const search = document.getElementById('searchInput').value.trim();
             const selectedClient = document.getElementById('clientFilter').value;
-            const selectedStatus = document.getElementById('statusFilter').value;
+            const selectedStatuses = getSelectedStatusFilters();
             const selectedWeek = document.getElementById('weekFilter').value;
 
             const selectedYear = currentDate.getFullYear();
@@ -858,7 +919,7 @@
                 if (temNF && fat <= 0) return false;
 
                 // FATURADO ou um dos três níveis de disponibilidade.
-                if (!matchesStatusFilter(item, selectedStatus)) return false;
+                if (!matchesStatusFilter(item, selectedStatuses)) return false;
 
                 // Se não tem nota emitida E a qtde_a_faturar for 0, NÃO MOSTRA
                 if (!isFaturado) {
@@ -1263,7 +1324,7 @@
 
             const search = document.getElementById('searchInput').value.trim();
             const selectedClient = document.getElementById('clientFilter').value;
-            const selectedStatus = document.getElementById('statusFilter').value;
+            const selectedStatuses = getSelectedStatusFilters();
             const selectedWeek = document.getElementById('weekFilter').value;
             const selectedYear = currentDate.getFullYear();
             const selectedMonth = currentDate.getMonth();
@@ -1279,7 +1340,7 @@
                 // Mesma proteção da tela: NF de remessa com valor zero não é exportada.
                 if (temNF && fat <= 0) return false;
 
-                if (!matchesStatusFilter(item, selectedStatus)) return false;
+                if (!matchesStatusFilter(item, selectedStatuses)) return false;
 
                 if (!isFaturado) {
                     const qtdAFaturar = parseValue(item.qtde_a_faturar);
