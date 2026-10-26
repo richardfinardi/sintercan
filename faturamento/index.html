@@ -386,6 +386,8 @@
 
         // Historico sob demanda: nao precisa trazer o BYTEA na FAT.sql.
         const fatHistCache = new Map();
+        let isSavingObsFaturamento = false;
+        let fatLiberacaoPendente = null;
         let fatHistPopup = null;
         let fatHistHoverTarget = null;
         let fatHistEnterTimer = null;
@@ -398,18 +400,26 @@
         }
 
         function eventosHistoricoFaturamento(raw) {
-            const texto = limparDetalhesInternosHist(raw);
-            const pattern = /^=== HISTORICO FATURAMENTO \| ([^|\n]+) \| ([^|\n]+) \| ([^\n]+?) ===\n([\s\S]*?)\n=== FIM ===/gm;
+            // Historico simples, uma linha por evento. Os logs antigos sao resumidos.
+            const linhas = limparDetalhesInternosHist(raw).replace(/\r\n?/g, '\n').split('\n');
             const eventos = [];
-            let match, fim = 0;
-            while ((match = pattern.exec(texto)) !== null) {
-                eventos.push({data:match[1].trim(), usuario:match[2].trim(),
-                    acao:match[3].trim(), corpo:match[4].trim()});
-                fim = pattern.lastIndex;
+            let dentroDoBlocoAntigo = false;
+            for (const entrada of linhas) {
+                const linha = entrada.trim();
+                if (!linha) continue;
+                const bloco = linha.match(/^=== HISTORICO FATURAMENTO \| ([^|]+) \| ([^|]+) \| (.+?) ===$/i);
+                if (bloco) {
+                    eventos.push({data:bloco[1].trim(), usuario:bloco[2].trim(), acao:bloco[3].trim()});
+                    dentroDoBlocoAntigo = true;
+                    continue;
+                }
+                if (dentroDoBlocoAntigo) {
+                    if (/^=== FIM ===$/i.test(linha)) dentroDoBlocoAntigo = false;
+                    continue;
+                }
+                const atual = linha.match(/^(\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})\s*\|\s*([^|]+)\s*\|\s*(.+)$/);
+                if (atual) eventos.push({data:atual[1].trim(), usuario:atual[2].trim(), acao:atual[3].trim()});
             }
-            const legado = (eventos.length ? texto.slice(fim) : texto).trim();
-            if (legado) eventos.push({data:'', usuario:'Registro anterior',
-                acao:'Histórico anterior', corpo:legado});
             return eventos;
         }
 
@@ -428,23 +438,19 @@
                     'Nenhum registro de histórico para este orçamento.'));
                 return;
             }
-            eventos.slice(0, limite).forEach((evento, i) => {
-                const item = criarElementoHist('article',
-                    'rounded-xl border p-3 space-y-1 ' + (i === 0
-                        ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-700'
-                        : 'border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-700'));
-                item.append(
-                    criarElementoHist('div', 'text-[10px] font-bold text-slate-500 dark:text-slate-400',
-                        [evento.data, evento.usuario].filter(Boolean).join(' • ')),
-                    criarElementoHist('div', 'text-xs font-black text-emerald-700 dark:text-emerald-400', evento.acao),
-                    criarElementoHist('div', 'mt-1 whitespace-pre-wrap break-words leading-relaxed text-slate-700 dark:text-slate-200',
-                        evento.corpo || 'Sem detalhes.')
-                );
-                conteiner.appendChild(item);
+            eventos.slice(0, limite).forEach((evento, indice) => {
+                const linha = [evento.data, evento.usuario, evento.acao].filter(Boolean).join(' | ');
+                conteiner.appendChild(criarElementoHist('div',
+                    'rounded-lg border px-3 py-2 font-mono text-[11px] leading-relaxed break-words ' +
+                    (indice === 0
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200 dark:border-emerald-700'
+                        : 'border-slate-200 bg-white text-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700'),
+                    linha));
             });
-            if (eventos.length > limite)
+            if (eventos.length > limite) {
                 conteiner.appendChild(criarElementoHist('p','p-3 text-center text-slate-500',
-                    `Outros ${eventos.length-limite} registros: clique no orçamento para ver todos.`));
+                    'Outros ' + (eventos.length - limite) + ' registros: clique no orçamento para ver todos.'));
+            }
         }
 
         function chaveHistoricoFaturamento(empresa, orcamento) {
@@ -539,7 +545,6 @@
                     const cab = criarElementoHist('div',
                         'sticky top-0 bg-slate-100 dark:bg-slate-950 px-3 py-2 text-xs font-black',
                         'HISTÓRICO DO ORÇAMENTO ' + (alvo.textContent || '').trim());
-                    popup.appendChild(cab);
                     preencherHistoricoFaturamento(popup, eventos, 18);
                     popup.prepend(cab);
                     popup.classList.remove('hidden');
@@ -558,6 +563,8 @@
             document.getElementById('fatHistTitle').textContent =
                 'Histórico do orçamento ' + fatHistModalTarget.numero;
             const area = document.getElementById('fatHistList');
+            document.getElementById('fatHistNewObs').value = '';
+            document.getElementById('fatHistObsAviso').textContent = '';
             area.replaceChildren(criarElementoHist('div','py-5 text-center text-slate-500','Carregando histórico...'));
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -572,6 +579,7 @@
         }
 
         function fecharHistoricoFaturamento() {
+            if (isSavingObsFaturamento) return;
             document.getElementById('fatHistModal').classList.add('hidden');
             document.getElementById('fatHistModal').classList.remove('flex');
             fatHistModalTarget = null;
@@ -585,6 +593,44 @@
                 const eventos = await buscarHistoricoFaturamento(alvo.empresa, alvo.orcamento, true);
                 if (fatHistModalTarget === alvo) preencherHistoricoFaturamento(area, eventos);
             } catch (e) { area.textContent = 'Falha: ' + e.message; }
+        }
+
+        async function salvarObservacaoFaturamento() {
+            if (isSavingObsFaturamento || !fatHistModalTarget) return;
+            const target = {...fatHistModalTarget};
+            const campo = document.getElementById('fatHistNewObs');
+            const texto = campo.value.trim();
+            const aviso = document.getElementById('fatHistObsAviso');
+            if (!texto) {
+                aviso.textContent = 'Digite uma observação.';
+                campo.focus(); return;
+            }
+            const botao = document.getElementById('btnSalvarFatHistObs');
+            isSavingObsFaturamento = true;
+            botao.disabled = true; campo.disabled = true; aviso.textContent = 'Registrando...';
+            try {
+                const response = await fetch(API_PATCH_URL + '/observacao', {
+                    method:'POST',
+                    headers:headersFaturamentoHist(),
+                    body:JSON.stringify({
+                        cod_empresa:target.empresa, cod_orcamento:target.orcamento,
+                        usuario:getUsuarioLogado(), observacao:texto
+                    })
+                });
+                const resultado = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(resultado.detail || 'HTTP ' + response.status);
+                campo.value = '';
+                fatHistCache.delete(chaveHistoricoFaturamento(target.empresa,target.orcamento));
+                const lista = document.getElementById('fatHistList');
+                try {
+                    const eventos = await buscarHistoricoFaturamento(target.empresa,target.orcamento,true);
+                    if (fatHistModalTarget?.empresa === target.empresa &&
+                        fatHistModalTarget?.orcamento === target.orcamento)
+                        preencherHistoricoFaturamento(lista,eventos);
+                } catch(e) { console.warn('Observação salva; falha ao atualizar histórico:', e); }
+                aviso.textContent = 'Observação registrada.';
+            } catch(e) { aviso.textContent = 'Erro: ' + e.message; }
+            finally { isSavingObsFaturamento = false; botao.disabled = false; campo.disabled = false; }
         }
 
         function ativarHoverFaturamento() {
