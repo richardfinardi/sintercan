@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://consultoriarf.net/PRODUCAO_SINTERCAN/LOGO MINIMALISTA.png">
     <meta property="og:type" content="website">
     
-    <title>Sintercan - Controle de Faturamento V1.9.1</title>
+    <title>Sintercan - Controle de Faturamento V1.9.4</title>
 
     <!-- VALIDAÇÃO DE AUTENTICAÇÃO E PERMISSÃO ANTES DE RENDERIZAR A PÁGINA -->
     <script>
@@ -79,7 +79,7 @@
 
                 <div>
                     <h1 class="text-xl font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.9.1</span></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Controle de Faturamento <span class="text-blue-600 dark:text-blue-400 font-mono">V1.9.4</span></p>
                 </div>
             </div>
 
@@ -316,6 +316,23 @@
         </div>
     </div>
 
+    <!-- MODAL DE HISTORICO DO ORCAMENTO (TORCAMENTO.U_OBS_FAT) -->
+    <div id="fatHistModal" class="hidden fixed inset-0 z-[1000] items-center justify-center bg-slate-950/70 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="Historico do faturamento" onclick="if(event.target===this) fecharHistoricoFaturamento()">
+        <div class="flex w-full max-w-2xl max-h-[88vh] flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
+                <div>
+                    <h3 id="fatHistTitle" class="text-base font-extrabold text-slate-900 dark:text-white">Histórico do orçamento</h3>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Liberações, cancelamentos e renegociações</p>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="recarregarHistoricoFaturamento()" class="rounded-lg px-2 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-500/10">Atualizar</button>
+                    <button type="button" onclick="fecharHistoricoFaturamento()" aria-label="Fechar histórico" class="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+            <div id="fatHistList" class="custom-scroll min-h-[120px] overflow-y-auto p-3 sm:p-4 space-y-2 text-xs" aria-live="polite"></div>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT -->
     <script>
         const API_URL = 'https://sintercan.consultoriarf.net/faturamento';
@@ -340,6 +357,225 @@
             return [...bytes].map((n,i)=>n.toString(16).padStart(2,'0')+([3,5,7,9].includes(i)?'-':'')).join('');
         }
 
+
+        // Historico sob demanda: nao precisa trazer o BYTEA na FAT.sql.
+        const fatHistCache = new Map();
+        let fatHistPopup = null;
+        let fatHistHoverTarget = null;
+        let fatHistEnterTimer = null;
+        let fatHistExitTimer = null;
+        let fatHistModalTarget = null;
+
+        function limparDetalhesInternosHist(texto) {
+            return String(texto || '').replace(/\r\n?/g, '\n')
+                .replace(/^\s*(?:GUID_LINHA|Requisicao|Requisição)\s*:.*(?:\n|$)/gmi, '');
+        }
+
+        function eventosHistoricoFaturamento(raw) {
+            const texto = limparDetalhesInternosHist(raw);
+            const pattern = /^=== HISTORICO FATURAMENTO \| ([^|\n]+) \| ([^|\n]+) \| ([^\n]+?) ===\n([\s\S]*?)\n=== FIM ===/gm;
+            const eventos = [];
+            let match, fim = 0;
+            while ((match = pattern.exec(texto)) !== null) {
+                eventos.push({data:match[1].trim(), usuario:match[2].trim(),
+                    acao:match[3].trim(), corpo:match[4].trim()});
+                fim = pattern.lastIndex;
+            }
+            const legado = (eventos.length ? texto.slice(fim) : texto).trim();
+            if (legado) eventos.push({data:'', usuario:'Registro anterior',
+                acao:'Histórico anterior', corpo:legado});
+            return eventos;
+        }
+
+        function criarElementoHist(tag, classe, conteudo) {
+            const el = document.createElement(tag);
+            if (classe) el.className = classe;
+            if (conteudo !== undefined) el.textContent = conteudo;
+            return el;
+        }
+
+        function preencherHistoricoFaturamento(conteiner, eventos, limite=Infinity) {
+            conteiner.replaceChildren();
+            if (!eventos.length) {
+                conteiner.appendChild(criarElementoHist('div',
+                    'py-5 text-center text-slate-500 dark:text-slate-400',
+                    'Nenhum registro de histórico para este orçamento.'));
+                return;
+            }
+            eventos.slice(0, limite).forEach((evento, i) => {
+                const item = criarElementoHist('article',
+                    'rounded-xl border p-3 space-y-1 ' + (i === 0
+                        ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-700'
+                        : 'border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-700'));
+                item.append(
+                    criarElementoHist('div', 'text-[10px] font-bold text-slate-500 dark:text-slate-400',
+                        [evento.data, evento.usuario].filter(Boolean).join(' • ')),
+                    criarElementoHist('div', 'text-xs font-black text-emerald-700 dark:text-emerald-400', evento.acao),
+                    criarElementoHist('div', 'mt-1 whitespace-pre-wrap break-words leading-relaxed text-slate-700 dark:text-slate-200',
+                        evento.corpo || 'Sem detalhes.')
+                );
+                conteiner.appendChild(item);
+            });
+            if (eventos.length > limite)
+                conteiner.appendChild(criarElementoHist('p','p-3 text-center text-slate-500',
+                    `Outros ${eventos.length-limite} registros: clique no orçamento para ver todos.`));
+        }
+
+        function chaveHistoricoFaturamento(empresa, orcamento) {
+            return String(empresa) + ':' + String(orcamento);
+        }
+
+        async function buscarHistoricoFaturamento(empresa, orcamento, atualizar=false) {
+            const chave = chaveHistoricoFaturamento(empresa, orcamento);
+            const salvo = fatHistCache.get(chave);
+            if (!atualizar && salvo && salvo.expires > Date.now()) {
+                return salvo.eventos || salvo.promise;
+            }
+            const promise = (async () => {
+                const url = API_PATCH_URL + '/historico?cod_empresa=' +
+                    encodeURIComponent(empresa) + '&cod_orcamento=' + encodeURIComponent(orcamento);
+                const response = await fetch(url, {
+                    method:'GET',
+                    headers:{'ngrok-skip-browser-warning':'69420'},
+                    cache:'no-store'
+                });
+                const dados = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(dados.detail || `HTTP ${response.status}`);
+                const eventos = eventosHistoricoFaturamento(dados.historico || '');
+                fatHistCache.set(chave, {eventos, expires:Date.now()+120000});
+                return eventos;
+            })();
+            fatHistCache.set(chave, {promise, expires:Date.now()+120000});
+            try { return await promise; }
+            catch (e) { fatHistCache.delete(chave); throw e; }
+        }
+
+        function obterPopupFatHist() {
+            if (fatHistPopup) return fatHistPopup;
+            const popup = document.createElement('aside');
+            popup.id = 'fatHistoricoHover';
+            popup.className = 'hidden fixed z-[900] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-2xl custom-scroll';
+            popup.style.width = 'min(410px, calc(100vw - 24px))';
+            popup.style.maxHeight = 'min(430px, calc(100vh - 24px))';
+            popup.style.overflowY = 'auto';
+            popup.addEventListener('pointerenter', () => clearTimeout(fatHistExitTimer));
+            popup.addEventListener('pointerleave', () => agendarSaidaHistFaturamento());
+            document.body.appendChild(popup);
+            fatHistPopup = popup;
+            return popup;
+        }
+
+        function posicionarPopupFatHist(alvo) {
+            if (!alvo?.isConnected || !fatHistPopup || fatHistPopup.classList.contains('hidden')) return;
+            const r = alvo.getBoundingClientRect(), gap = 12;
+            const w = fatHistPopup.offsetWidth, h = fatHistPopup.offsetHeight;
+            const x = r.right + gap + w <= innerWidth - gap ? r.right + gap
+                : r.left - w - gap >= gap ? r.left-w-gap
+                : Math.max(gap, Math.min(r.left, innerWidth-w-gap));
+            fatHistPopup.style.left = x+'px';
+            fatHistPopup.style.top = Math.max(gap, Math.min(r.top, innerHeight-h-gap))+'px';
+        }
+
+        function fecharPopupFatHist() {
+            clearTimeout(fatHistEnterTimer);
+            clearTimeout(fatHistExitTimer);
+            fatHistHoverTarget = null;
+            if (fatHistPopup) fatHistPopup.classList.add('hidden');
+        }
+
+        function agendarSaidaHistFaturamento() {
+            clearTimeout(fatHistEnterTimer);
+            clearTimeout(fatHistExitTimer);
+            fatHistExitTimer = setTimeout(() => {
+                if (!fatHistHoverTarget?.matches(':hover') &&
+                    !fatHistPopup?.matches(':hover')) fecharPopupFatHist();
+            }, 180);
+        }
+
+        function iniciarHoverFatHist(alvo) {
+            if (alvo === fatHistHoverTarget) {
+                clearTimeout(fatHistExitTimer);
+                return;
+            }
+            fecharPopupFatHist();
+            fatHistHoverTarget = alvo;
+            fatHistEnterTimer = setTimeout(async () => {
+                if (fatHistHoverTarget !== alvo || !alvo.isConnected ||
+                    !alvo.matches(':hover') || !alvo.dataset.histOrc) return;
+                try {
+                    const eventos = await buscarHistoricoFaturamento(
+                        Number(alvo.dataset.histEmpresa), Number(alvo.dataset.histOrc));
+                    if (fatHistHoverTarget !== alvo || !alvo.isConnected ||
+                        (!alvo.matches(':hover') && !fatHistPopup?.matches(':hover')) ||
+                        !eventos.length) return;
+                    const popup = obterPopupFatHist();
+                    popup.replaceChildren();
+                    const cab = criarElementoHist('div',
+                        'sticky top-0 bg-slate-100 dark:bg-slate-950 px-3 py-2 text-xs font-black',
+                        'HISTÓRICO DO ORÇAMENTO ' + (alvo.textContent || '').trim());
+                    popup.appendChild(cab);
+                    preencherHistoricoFaturamento(popup, eventos, 18);
+                    popup.prepend(cab);
+                    popup.classList.remove('hidden');
+                    posicionarPopupFatHist(alvo);
+                } catch(e) { console.warn('Historico indisponivel:', e); }
+            }, 320);
+        }
+
+        async function abrirHistoricoFaturamento(alvo) {
+            const empresa = Number(alvo?.dataset?.histEmpresa);
+            const orcamento = Number(alvo?.dataset?.histOrc);
+            if (!empresa || !orcamento) return;
+            fecharPopupFatHist();
+            fatHistModalTarget = {empresa, orcamento, numero:(alvo.textContent || '').trim()};
+            const modal = document.getElementById('fatHistModal');
+            document.getElementById('fatHistTitle').textContent =
+                'Histórico do orçamento ' + fatHistModalTarget.numero;
+            const area = document.getElementById('fatHistList');
+            area.replaceChildren(criarElementoHist('div','py-5 text-center text-slate-500','Carregando histórico...'));
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            lucide.createIcons();
+            try {
+                const eventos = await buscarHistoricoFaturamento(empresa, orcamento);
+                if (fatHistModalTarget?.empresa === empresa && fatHistModalTarget?.orcamento === orcamento)
+                    preencherHistoricoFaturamento(area, eventos);
+            } catch (e) {
+                area.replaceChildren(criarElementoHist('p','text-red-600 dark:text-red-400', 'Falha: ' + e.message));
+            }
+        }
+
+        function fecharHistoricoFaturamento() {
+            document.getElementById('fatHistModal').classList.add('hidden');
+            document.getElementById('fatHistModal').classList.remove('flex');
+            fatHistModalTarget = null;
+        }
+        async function recarregarHistoricoFaturamento() {
+            const alvo = fatHistModalTarget;
+            if (!alvo) return;
+            const area = document.getElementById('fatHistList');
+            area.replaceChildren(criarElementoHist('div','py-5 text-center text-slate-500','Atualizando...'));
+            try {
+                const eventos = await buscarHistoricoFaturamento(alvo.empresa, alvo.orcamento, true);
+                if (fatHistModalTarget === alvo) preencherHistoricoFaturamento(area, eventos);
+            } catch (e) { area.textContent = 'Falha: ' + e.message; }
+        }
+
+        function ativarHoverFaturamento() {
+            const grade = document.getElementById('faturamentoGrid');
+            grade.addEventListener('pointerover', e => {
+                if (e.pointerType !== 'mouse') return;
+                const alvo = e.target.closest('[data-hist-orc]');
+                if (alvo && grade.contains(alvo)) iniciarHoverFatHist(alvo);
+            });
+            grade.addEventListener('pointerout', e => {
+                const alvo = e.target.closest('[data-hist-orc]');
+                if (alvo && alvo === fatHistHoverTarget && !alvo.contains(e.relatedTarget)
+                    && !fatHistPopup?.contains(e.relatedTarget)) agendarSaidaHistFaturamento();
+            });
+            window.addEventListener('scroll', () => posicionarPopupFatHist(fatHistHoverTarget), true);
+            window.addEventListener('resize', () => posicionarPopupFatHist(fatHistHoverTarget));
+        }
 
         const FAT_CACHE_DB = 'SINTERCAN_FATURAMENTO_CACHE';
         const FAT_CACHE_STORE = 'dados';
@@ -366,6 +602,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
+            ativarHoverFaturamento();
             loadFaturamento();
             setInterval(() => {
                 if (document.visibilityState === 'visible' && !isSavingRenegociacao && !isSavingLiberacao && !isModalOpen()
@@ -384,6 +621,8 @@
                     closeStatusFilterDropdown();
                     closeSearchHelp();
                     if (!isSavingRenegociacao) closeEditModal();
+                    fecharHistoricoFaturamento();
+                    fecharPopupFatHist();
                 }
             });
             document.addEventListener('click', event => {
@@ -1244,7 +1483,15 @@
                                                     ? `<input type="checkbox" data-row-key="${rowKey}" onchange="toggleItemSelection(${rowKey}, this.checked)" class="w-4 h-4 accent-blue-600 cursor-pointer" aria-label="Selecionar item ${rowKey} para ações em lote">`
                                                     : '<span class="text-slate-400 dark:text-slate-600">-</span>'}
                                             </td>
-                                            <td class="p-3 font-bold font-mono text-amber-600 dark:text-amber-400">${item.n_orcamento || '-'}</td>
+                                            <td class="p-3 font-bold font-mono text-amber-600 dark:text-amber-400">
+                                                ${Number(item.cod_orcamento || 0) > 0
+                                                    ? `<button type="button" data-hist-empresa="${empresaFaturamentoOS(item)}" data-hist-orc="${Number(item.cod_orcamento)}"
+                                                        onclick="abrirHistoricoFaturamento(this)" title="Clique ou passe o mouse para ver o histórico"
+                                                        class="inline-flex items-center gap-1 rounded-md p-1 -m-1 hover:bg-amber-500/10 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                                        ${item.n_orcamento || '-'} <i data-lucide="history" class="w-3.5 h-3.5 shrink-0"></i>
+                                                    </button>`
+                                                    : (item.n_orcamento || '-')}
+                                            </td>
                                             <td class="p-3 font-bold text-slate-800 dark:text-slate-200 truncate max-w-[150px]">${item.cliente || '-'}</td>
                                             <td class="p-3 font-mono text-slate-500 dark:text-slate-400">${item.cod_interno || '-'}</td>
                                             <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">OS ${item.n_os || '-'}</td>
@@ -1319,6 +1566,8 @@
                     if (chaves.has(chave)) item.liberado_faturamento = liberar;
                 });
                 selectedRows.clear();
+                fatHistCache.clear();
+                fecharPopupFatHist();
                 applyDataset(rawData);
                 const savedAt = new Date().toISOString();
                 cacheSavedAt = savedAt;
@@ -1462,6 +1711,8 @@
             }
 
             if (successOS.size) {
+                fatHistCache.clear();
+                fecharPopupFatHist();
                 selectedRows = new Set([...selectedRows].filter(key => {
                     const item = rowByKey.get(key);
                     return item && !successOS.has(empresaFaturamentoOS(item) + ':' + String(item.n_os).trim());
