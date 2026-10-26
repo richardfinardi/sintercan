@@ -369,7 +369,10 @@
 
     <!-- JAVASCRIPT -->
     <script>
-        const API_URL = 'https://sintercan.consultoriarf.net/faturamento';
+        const API_URLS = [
+            'https://sintercan.consultoriarf.net/FAT_PENDENTES',
+            'https://sintercan.consultoriarf.net/FAT_FATURADOS'
+        ];
         const API_PATCH_URL = 'https://sintercan.consultoriarf.net/faturamento';
 
         // Cabeçalhos padrão. O nome vem do login já existente no portal.
@@ -892,15 +895,21 @@
             if (btn) btn.disabled = true;
             updateDataStatus('updating', cacheSavedAt);
             try {
-                const response = await fetch(`${API_URL}?_t=${Date.now()}`, {
-                    method: 'GET', headers: { 'ngrok-skip-browser-warning': '69420', 'Cache-Control': 'no-cache' }, cache: 'no-store'
-                });
-                const data = await response.json().catch(() => null);
-                if (!response.ok || !Array.isArray(data)) {
-                    const detalhe = data?.detail ?? data?.mensagem ?? data?.error ??
-                        (!response.ok ? `HTTP ${response.status}` : 'Formato da resposta invalido');
-                    throw new Error(typeof detalhe === 'string' ? detalhe : JSON.stringify(detalhe));
-                }
+                // Consulta pendentes e faturados em paralelo; preserva o contrato
+                // de dados combinado usado pelos filtros, indicadores e cache.
+                const resultados = await Promise.all(API_URLS.map(async url => {
+                    const response = await fetch(`${url}?_t=${Date.now()}`, {
+                        method: 'GET', headers: { 'ngrok-skip-browser-warning': '69420', 'Cache-Control': 'no-cache' }, cache: 'no-store'
+                    });
+                    const registros = await response.json().catch(() => null);
+                    if (!response.ok || !Array.isArray(registros)) {
+                        const detalhe = registros?.detail ?? registros?.mensagem ?? registros?.error ??
+                            (!response.ok ? `HTTP ${response.status}` : 'Formato da resposta invalido');
+                        throw new Error(`${url.split('/').pop()}: ${typeof detalhe === 'string' ? detalhe : JSON.stringify(detalhe)}`);
+                    }
+                    return registros;
+                }));
+                const data = resultados.flat();
                 const savedAt = new Date().toISOString();
                 applyDataset(data);
                 cacheSavedAt = savedAt;
