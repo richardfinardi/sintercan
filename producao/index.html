@@ -2021,18 +2021,6 @@
 
             const completionSelection = document.getElementById('completionFilter').value;
 
-            const hasActiveFilter =
-                !!search ||
-                !!selectedClassification ||
-                selectedPriority !== '' ||
-                !!selectedClient ||
-                !!selectedCompras ||
-                !!selectedTerceiros ||
-                completionSelection !== 'open' ||
-                onlyWithBudget ||
-                zeroFilterMode === 'only' ||
-                libfatFilterMode === 'only';
-
             let filtered = rawData.filter(item => {
                 if (!matchesCompletionFilter(item, completionSelection)) return false;
                 if (zeroFilterMode === 'hide' && isOSZeroed(item)) return false;
@@ -2043,7 +2031,9 @@
                 const date = new Date(item.entrega_normalizada);
                 if (isNaN(date)) return false;
 
-                if (!hasActiveFilter && onlyCurrentMonth) {
+                // O recorte do mes e independente dos demais filtros.
+                // Quando desligado, os filtros podem buscar em qualquer mes.
+                if (onlyCurrentMonth) {
                     if (date.getMonth() !== currentDate.getMonth() || date.getFullYear() !== currentDate.getFullYear()) {
                         return false;
                     }
