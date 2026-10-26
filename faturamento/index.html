@@ -922,6 +922,13 @@
             }
         }
 
+        // Formata o numero e o item do pedido sem permitir HTML nos valores recebidos.
+        function formatPedidoFaturamento(value) {
+            const texto = String(value ?? '').trim();
+            return texto ? texto.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '-';
+        }
+
         function normalizeSearchText(value) {
             return String(value ?? '')
                 .normalize('NFD')
@@ -1640,6 +1647,8 @@
                                             class="w-4 h-4 accent-blue-600 cursor-pointer" title="Selecionar todos os itens a faturar desta semana" aria-label="Selecionar itens da semana ${week.weekNum}">
                                     </th>
                                     <th class="p-3">Orçamento</th>
+                                    <th class="p-3 whitespace-nowrap">Pedido</th>
+                                    <th class="p-3 whitespace-nowrap">Item Pedido</th>
                                     <th class="p-3">Cliente</th>
                                     <th class="p-3">Cód. Interno</th>
                                     <th class="p-3">OS</th>
@@ -1680,6 +1689,8 @@
                                                     </button>`
                                                     : (item.n_orcamento || '-')}
                                             </td>
+                                            <td class="p-3 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">${formatPedidoFaturamento(item.n_pedido ?? item.N_PEDIDO)}</td>
+                                            <td class="p-3 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">${formatPedidoFaturamento(item.n_pedido_item ?? item.N_PEDIDO_ITEM)}</td>
                                             <td class="p-3 font-bold text-slate-800 dark:text-slate-200 truncate max-w-[150px]">${item.cliente || '-'}</td>
                                             <td class="p-3 font-mono text-slate-500 dark:text-slate-400">${item.cod_interno || '-'}</td>
                                             <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">OS ${item.n_os || '-'}</td>
