@@ -439,6 +439,31 @@
                     </div>
                 </section>
 
+                <!-- ANEXOS DA OS/SUB-OS: LISTAGEM LEVE; BYTEA SOMENTE SOB DEMANDA -->
+                <section id="mAnexosProdSection" class="rounded-xl border border-sky-500/25 bg-sky-500/5 overflow-hidden">
+                    <button type="button" onclick="alternarAnexosOS()" class="w-full px-3 py-2 flex items-center justify-between gap-3 hover:bg-sky-500/10 transition">
+                        <span class="flex items-center gap-2 min-w-0">
+                            <i data-lucide="paperclip" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"></i>
+                            <span class="text-[10px] font-black uppercase tracking-wide">Anexos / desenhos técnicos</span>
+                            <span id="mAnexosProdCount" class="text-[9px] font-black text-slate-400"></span>
+                        </span>
+                        <i id="mAnexosProdChevron" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform"></i>
+                    </button>
+                    <div id="mAnexosProdBody" class="hidden border-t border-sky-500/15 px-3 py-3 space-y-2.5">
+                        <div id="mAnexosProdLogin" class="hidden flex-col gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 p-3">
+                            <label for="mAnexosProdSenha" class="text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                                Confirme sua senha CPS para acessar os desenhos
+                            </label>
+                            <form onsubmit="autenticarAnexosOS(event)" class="flex flex-col sm:flex-row gap-2 min-w-0">
+                                <input id="mAnexosProdSenha" type="password" autocomplete="current-password" required
+                                       placeholder="Sua senha CPS" class="min-w-0 flex-1 rounded-lg px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700">
+                                <button id="mAnexosProdAuthBtn" type="submit" class="shrink-0 rounded-lg bg-sky-600 hover:bg-sky-500 px-3 py-2 text-xs font-black text-white">Acessar</button>
+                            </form>
+                        </div>
+                        <div id="mAnexosProdList" class="text-xs text-slate-500 dark:text-slate-400">Abra para carregar os anexos.</div>
+                    </div>
+                </section>
+
                 <section class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3 sm:p-4">
                     <div class="flex items-center justify-between gap-3 mb-3">
                         <div class="flex items-center gap-2">
@@ -3210,7 +3235,197 @@
             }
         }
 
+        // Anexos: a API valida novamente o login CPS e entrega sessao temporaria.
+        const ANEXOS_API_URL = 'https://sintercan.consultoriarf.net/arquivos-producao';
+        let anexosProdRows = [];
+        let anexosProdRequestId = 0;
+
+        function anexosProdTokenKey() {
+            return 'sintercan_anexos_sessao_' + String(currentUser.nome || '').toUpperCase();
+        }
+
+        function resetAnexosOS() {
+            ++anexosProdRequestId;
+            anexosProdRows = [];
+            document.getElementById('mAnexosProdBody').classList.add('hidden');
+            document.getElementById('mAnexosProdChevron').classList.remove('rotate-180');
+            document.getElementById('mAnexosProdLogin').classList.add('hidden');
+            document.getElementById('mAnexosProdList').textContent = 'Abra para carregar os anexos.';
+            document.getElementById('mAnexosProdCount').textContent = '';
+            document.getElementById('mAnexosProdSenha').value = '';
+        }
+
+        function alternarAnexosOS() {
+            if (!currentOSItem) return;
+            const body = document.getElementById('mAnexosProdBody');
+            const abrir = body.classList.contains('hidden');
+            body.classList.toggle('hidden', !abrir);
+            document.getElementById('mAnexosProdChevron').classList.toggle('rotate-180', abrir);
+            if (abrir) carregarAnexosOS();
+        }
+
+        function mostrarLoginAnexos(msg) {
+            const login = document.getElementById('mAnexosProdLogin');
+            const lista = document.getElementById('mAnexosProdList');
+            login.classList.remove('hidden');
+            login.classList.add('flex');
+            lista.textContent = msg || 'Informe sua senha CPS para consultar os anexos.';
+            document.getElementById('mAnexosProdSenha').focus();
+        }
+
+        async function autenticarAnexosOS(event) {
+            if (event) event.preventDefault();
+            const input = document.getElementById('mAnexosProdSenha');
+            const button = document.getElementById('mAnexosProdAuthBtn');
+            const lista = document.getElementById('mAnexosProdList');
+            if (!input.value.trim() || button.disabled) return;
+            button.disabled = true;
+            button.textContent = 'Validando...';
+            try {
+                const res = await fetch(ANEXOS_API_URL + '/sessao', {
+                    method: 'POST',
+                    cache: 'no-store',
+                    headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '69420' },
+                    body: JSON.stringify({ usuario: String(currentUser.nome || ''), senha: input.value })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.token) throw new Error(data.detail || 'Nao foi possivel autenticar.');
+                sessionStorage.setItem(anexosProdTokenKey(), data.token);
+                input.value = '';
+                document.getElementById('mAnexosProdLogin').classList.add('hidden');
+                document.getElementById('mAnexosProdLogin').classList.remove('flex');
+                carregarAnexosOS();
+            } catch (e) {
+                lista.textContent = 'Falha no acesso: ' + (e.message || 'Erro de conexao');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Acessar';
+            }
+        }
+
+        async function carregarAnexosOS() {
+            if (!currentOSItem) return;
+            const token = sessionStorage.getItem(anexosProdTokenKey());
+            if (!token) {
+                mostrarLoginAnexos();
+                return;
+            }
+            const os = String(currentOSItem.codigo_os);
+            const empresa = String(currentOSItem.cod_empresa || 1);
+            const requestId = ++anexosProdRequestId;
+            const lista = document.getElementById('mAnexosProdList');
+            lista.textContent = 'Buscando anexos da OS e das sub-OS...';
+            const query = new URLSearchParams({cod_empresa: empresa, cod_os: os});
+            try {
+                const res = await fetch(ANEXOS_API_URL + '/lista?' + query.toString(), {
+                    cache: 'no-store',
+                    headers: { 'Authorization': 'Bearer ' + token, 'ngrok-skip-browser-warning': '69420' }
+                });
+                if (res.status === 401) {
+                    sessionStorage.removeItem(anexosProdTokenKey());
+                    if (requestId === anexosProdRequestId) mostrarLoginAnexos('Sessao expirada. Confirme a senha novamente.');
+                    return;
+                }
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Falha HTTP ' + res.status);
+                }
+                const rows = await res.json();
+                if (requestId !== anexosProdRequestId || !currentOSItem ||
+                    String(currentOSItem.codigo_os) !== os || String(currentOSItem.cod_empresa || 1) !== empresa) return;
+                if (!Array.isArray(rows)) throw new Error('Retorno de anexos invalido');
+                anexosProdRows = rows;
+                document.getElementById('mAnexosProdCount').textContent =
+                    rows.length ? String(rows.length) + (rows.length === 1 ? ' arquivo' : ' arquivos') : 'sem anexos';
+                if (!rows.length) {
+                    lista.textContent = 'Nenhum anexo encontrado nesta OS.';
+                    return;
+                }
+                lista.innerHTML = rows.map(function(anexo, index) {
+                    const nome = escapeAuxText(anexo.nome_arquivo || ('Anexo ' + anexo.codigo));
+                    const descricao = escapeAuxText(anexo.descricao || '');
+                    const tamanho = Number(anexo.tamanho_bytes || 0);
+                    const tamanhoTexto = tamanho < 1048576 ? (tamanho / 1024).toFixed(0) + ' KB' : (tamanho / 1048576).toFixed(1) + ' MB';
+                    const ext = String(anexo.nome_arquivo || '').split('.').pop().toLowerCase();
+                    const visivel = ['dwg', 'dxf', 'pdf', 'png', 'jpg', 'jpeg', 'webp'].includes(ext);
+                    const botaoVisualizar = visivel
+                        ? '<button type="button" onclick="acaoAnexoOS(' + index + ', \'abrir\', this)" class="px-2.5 py-1.5 rounded-lg text-white bg-sky-600 hover:bg-sky-500 font-black text-[10px]">Visualizar</button>'
+                        : '';
+                    return '<div class="flex flex-wrap items-center gap-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 p-2.5">' +
+                        '<i data-lucide="file" class="w-4 h-4 shrink-0 text-sky-600"></i>' +
+                        '<div class="flex-1 min-w-[130px]"><div class="truncate text-xs font-bold text-slate-800 dark:text-slate-100" title="' + nome + '">' + nome + '</div>' +
+                        '<div class="text-[10px] text-slate-500 dark:text-slate-400">Sub-OS ' + escapeAuxText(anexo.cod_os_aux) +
+                        ' · ' + tamanhoTexto + (descricao ? ' · ' + descricao : '') + '</div></div>' +
+                        botaoVisualizar +
+                        '<button type="button" onclick="acaoAnexoOS(' + index + ', \'baixar\', this)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 font-black text-[10px]">Baixar original</button></div>';
+                }).join('');
+                lucide.createIcons();
+            } catch (e) {
+                if (requestId === anexosProdRequestId)
+                    lista.textContent = 'Erro ao carregar anexos: ' + (e.message || 'Falha de conexao');
+            }
+        }
+
+        async function acaoAnexoOS(index, acao, button) {
+            const arquivo = anexosProdRows[index];
+            if (!arquivo || !currentOSItem || button.disabled) return;
+            const token = sessionStorage.getItem(anexosProdTokenKey());
+            if (!token) { mostrarLoginAnexos(); return; }
+            const os = String(currentOSItem.codigo_os);
+            const params = new URLSearchParams({
+                cod_empresa: String(arquivo.cod_empresa),
+                cod_os: String(arquivo.cod_os),
+                cod_os_aux: String(arquivo.cod_os_aux),
+                codigo: String(arquivo.codigo)
+            });
+            const preview = acao === 'abrir' ? window.open('about:blank', '_blank') : null;
+            if (preview) preview.document.body.textContent = 'Preparando o desenho...';
+            const before = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Carregando...';
+            try {
+                const res = await fetch(ANEXOS_API_URL + '/' + acao + '?' + params.toString(), {
+                    cache: 'no-store',
+                    headers: { Authorization: 'Bearer ' + token, 'ngrok-skip-browser-warning': '69420' }
+                });
+                if (res.status === 401) {
+                    sessionStorage.removeItem(anexosProdTokenKey());
+                    mostrarLoginAnexos('Sessao expirada. Confirme a senha novamente.');
+                    throw new Error('Sessao expirada');
+                }
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'HTTP ' + res.status);
+                }
+                if (!currentOSItem || String(currentOSItem.codigo_os) !== os) throw new Error('OS alterada');
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                if (acao === 'abrir') {
+                    if (preview) preview.location.replace(url);
+                    else {
+                        const w = window.open(url, '_blank');
+                        if (!w) alert('Permita pop-ups para visualizar os anexos.');
+                    }
+                } else {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = String(arquivo.nome_arquivo || 'anexo');
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                }
+                setTimeout(function() { URL.revokeObjectURL(url); }, 300000);
+            } catch (e) {
+                if (preview) preview.close();
+                alert('Nao foi possivel abrir o anexo: ' + (e.message || 'Erro desconhecido'));
+            } finally {
+                button.disabled = false;
+                button.textContent = before;
+            }
+        }
+
         function openModal(item, preserveHistory = false) {
+            resetAnexosOS();
             fecharHistoricoHover();
             if (!preserveHistory) osNavigationHistory = [];
             currentOSItem = item;
@@ -3386,6 +3601,7 @@
         }
 
         function closeModal() {
+            ++anexosProdRequestId;
             const modal = document.getElementById('osModal');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
