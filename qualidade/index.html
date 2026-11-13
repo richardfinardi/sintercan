@@ -1,82 +1,552 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qualidade - Sintercan</title>
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
-    <!-- Tailwind CSS e Configuração Dark Mode -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' }
-    </script>
-    <!-- Script para carregar o tema dinâmico salvo na index -->
-    <script>
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    </script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Qualidade | Sintercan</title>
+  <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+  </script>
+  <style>
+    :root { color-scheme: light; --bg:#f1f5f9; --panel:#fff; --panel2:#f8fafc; --text:#0f172a; --muted:#64748b; --line:#dfe6ef; --accent:#d99710; --accentbg:#fff6df; --accentink:#985e00; --shadow:0 4px 20px #3341550b; }
+    .dark { color-scheme:dark; --bg:#020617; --panel:#0f172a; --panel2:#101c31; --text:#f1f5f9; --muted:#94a3b8; --line:#263448; --accent:#f59e0b; --accentbg:#362806; --accentink:#fbbf24; --shadow:0 4px 25px #0002; }
+    * { box-sizing: border-box; } body { margin:0; background:var(--bg); color:var(--text); font:14px/1.45 "Segoe UI",system-ui,-apple-system,sans-serif; } button,input,select { font:inherit; }
+    button { cursor:pointer; } button:disabled { opacity:.55; cursor:wait; } a { color:inherit; text-decoration:none; }
+    .wrap { width:min(1640px,100%); margin:0 auto; padding:0 20px; }
+    header { position:sticky;top:0;z-index:30; background:var(--panel);border-bottom:1px solid var(--line);box-shadow:var(--shadow); }
+    .header-inner { min-height:67px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .brand-side,.header-actions,.brand-title,.toolbar,.tabs,.tags { display:flex;align-items:center;gap:10px; }
+    .brand-logo {display:flex;align-items:center;justify-content:center;background:#020617;padding:6px 8px;border-radius:11px;min-width:55px;height:46px;}
+    .brand-logo img {height:34px;max-width:92px;object-fit:contain;}
+    .brand-title {align-items:flex-start; flex-direction:column;gap:0;}
+    .brand-title strong {font-size:17px; letter-spacing:.2px;}
+    .brand-title span {font-size:11px;color:var(--muted);}
+    .icon-btn {display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:var(--panel2);color:var(--text);font-weight:650;}
+    .icon-btn:hover {border-color:var(--accent);color:var(--accentink);}
+    .icon-btn.primary {border-color:var(--accent);background:var(--accent);color:#0f172a;}
+    .icon-btn.primary:hover {filter:brightness(1.08);}
+    .icon-btn svg,.tabs svg {width:17px;height:17px;}
+    .user {font-weight:650;color:var(--muted);font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    main {padding-top:18px;padding-bottom:30px;}
+    .topline {display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px;}
+    .page-title {margin:0;font-size:22px;font-weight:800;letter-spacing:-.4px;}
+    .subheading {margin:3px 0 0;color:var(--muted);font-size:12px;}
+    .status {color:var(--muted);font-size:12px;}
+    .status.error {color:#dc2626;}.dark .status.error{color:#fca5a5;}
+    .panel {background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);}
+    .filters {padding:15px;margin-bottom:15px;}
+    .filters-top {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+    .filters-top h2 {font-size:13px;margin:0;display:flex;align-items:center;gap:7px;}
+    .filter-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;}
+    .filter-field {position:relative;min-width:0;}
+    .filter-label {display:block;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.6px;margin-bottom:5px;}
+    .picker-button {display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0;width:100%;height:37px;padding:0 10px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:9px;text-align:left;}
+    .picker-button:hover,.picker-button[aria-expanded="true"] {border-color:var(--accent);}
+    .picker-label {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;}
+    .picker-menu {position:absolute;top:65px;left:0;z-index:50;background:var(--panel);border:1px solid var(--line);box-shadow:0 16px 40px #0003;border-radius:12px;width:max(220px,100%);max-width:min(310px,90vw);padding:9px;}
+    .picker-menu.hidden {display:none;}
+    .picker-menu input {width:100%;height:34px;padding:0 10px;margin-bottom:7px;border:1px solid var(--line);border-radius:8px;color:var(--text);background:var(--panel2);outline:none;}
+    .picker-tools {display:flex;justify-content:space-between;padding:0 5px 7px;gap:8px;}
+    .text-btn {border:0;background:none;color:var(--accentink);font-weight:750;font-size:12px;padding:2px;cursor:pointer;}
+    .picker-items {max-height:210px;overflow-y:auto;border-top:1px solid var(--line);padding-top:6px;}
+    .picker-item {display:flex;gap:9px;align-items:center;border-radius:6px;padding:6px;font-size:12px;cursor:pointer;overflow-wrap:anywhere;}
+    .picker-item:hover {background:var(--panel2);}
+    .picker-item input {accent-color:#d97706;flex:none;}
+    .picker-none {color:var(--muted);font-size:12px;padding:10px;}
+    .tabs {gap:5px;overflow-x:auto;white-space:nowrap;margin-bottom:15px;padding:5px;border-radius:13px;border:1px solid var(--line);background:var(--panel);width:max-content;max-width:100%;}
+    .tab {border:0;background:transparent;color:var(--muted);padding:10px 16px;border-radius:9px;font-weight:750;font-size:13px;display:flex;align-items:center;gap:7px;}
+    .tab:hover {background:var(--panel2);color:var(--text);}
+    .tab.active {background:var(--accent);color:#0f172a;}
+    .grid {display:grid;gap:13px;}
+    .kpis {grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:13px;}
+    .rates {grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:13px;}
+    .money {grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:13px;}
+    .metric {padding:16px 15px;min-height:113px;position:relative;overflow:hidden;}
+    .metric::before {content:'';position:absolute;inset:0 auto 0 0;width:4px;background:var(--mcolor,var(--accent));}
+    .metric .label {font-size:11px;color:var(--muted);font-weight:750;line-height:1.3;margin-bottom:11px;min-height:28px;}
+    .metric .value {font-size:clamp(19px,2vw,29px);font-weight:850;letter-spacing:-.7px;line-height:1.15;overflow-wrap:anywhere;}
+    .metric .detail {font-size:11px;color:var(--muted);margin-top:6px;}
+    .metric .mini {height:4px;margin-top:10px;border-radius:7px;background:var(--panel2);overflow:hidden;}
+    .metric .mini span {height:100%;display:block;background:var(--mcolor,var(--accent));max-width:100%;}
+    .chart-panel {padding:18px;min-height:260px;}
+    .panel-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+    .panel-heading h2 {font-size:14px;font-weight:800;margin:0;}
+    .panel-heading small {color:var(--muted);font-size:11px;}
+    .weekly-chart {display:flex;align-items:flex-end;gap:5px;height:255px;overflow-x:auto;padding:10px 3px 0;border-bottom:1px solid var(--line);}
+    .week-col {min-width:34px;flex:1;max-width:78px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px;}
+    .week-bar {width:70%;max-width:55px;background:linear-gradient(180deg,#fbbf24,#d97706);border-radius:6px 6px 0 0;min-height:2px;transition:height .2s;}
+    .week-val {font-size:10px;font-weight:750;color:var(--muted);}
+    .week-name {font-size:9px;color:var(--muted);white-space:nowrap;margin-bottom:3px;}
+    .bars-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
+    .hbar {display:grid;grid-template-columns:minmax(100px,34%) minmax(80px,1fr) auto;align-items:center;gap:9px;margin:10px 0;font-size:12px;}
+    .hbar-name {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .hbar-track {height:13px;background:var(--panel2);border-radius:99px;overflow:hidden;}
+    .hbar-fill {height:100%;border-radius:99px;background:#d97706;min-width:2px;}
+    .hbar-num {font-variant-numeric:tabular-nums;color:var(--muted);font-weight:750;}
+    .empty {color:var(--muted);padding:45px 15px;text-align:center;}
+    .table-panel {overflow:hidden;}
+    .table-controls {padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+    .search {min-width:200px;flex:1;max-width:430px;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);padding:0 12px;color:var(--text);outline:none;}
+    .search:focus {border-color:var(--accent);}
+    .table-scroll {overflow:auto;max-height:64vh;min-height:160px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+    table {border-collapse:separate;border-spacing:0;width:100%;font-size:12px;white-space:nowrap;}
+    th,td {padding:9px 11px;text-align:left;border-bottom:1px solid var(--line);}
+    th {position:sticky;top:0;z-index:2;background:var(--panel2);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.35px;}
+    td {max-width:245px;overflow:hidden;text-overflow:ellipsis;}
+    tbody tr:hover {background:var(--panel2);}
+    .num {text-align:right;font-variant-numeric:tabular-nums;}
+    .table-foot {display:flex;justify-content:space-between;align-items:center;padding:12px 16px;gap:12px;color:var(--muted);font-size:12px;flex-wrap:wrap;}
+    .badge {border:1px solid var(--line);background:var(--panel2);padding:4px 7px;border-radius:7px;font-size:11px;color:var(--muted);}
+    .alert {padding:13px 16px;margin-bottom:15px;border:1px solid #fbbf24;background:var(--accentbg);color:var(--accentink);border-radius:11px;font-size:12px;}
+    .hidden {display:none!important;}
+    @media(max-width:1150px) {.filter-grid{grid-template-columns:repeat(4,minmax(0,1fr));}.kpis{grid-template-columns:repeat(3,minmax(0,1fr));}}
+    @media(max-width:760px) {
+      .wrap{padding:0 12px;} .header-inner{min-height:61px;}
+      .brand-title strong{font-size:15px;}.brand-title span{font-size:10px;}
+      .brand-side,.header-actions{gap:6px;}.brand-logo{min-width:40px;height:39px;padding:4px;}.brand-logo img{height:29px;max-width:65px;}
+      .user,.hide-mobile{display:none!important;}
+      .icon-btn{padding:0 9px;min-height:35px;}
+      .filter-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .filter-field:nth-child(even) .picker-menu{right:0;left:auto;}
+      .kpis{grid-template-columns:repeat(2,minmax(0,1fr));}.rates,.money,.bars-grid{grid-template-columns:1fr;}
+      .metric{min-height:104px;padding:13px;}.metric .value{font-size:24px;}
+      .topline{align-items:flex-start;}.page-title{font-size:19px;}
+      .tabs{width:100%;}.tab{padding:9px 11px;}
+      .chart-panel{padding:13px;}.weekly-chart{height:205px;}
+      .table-scroll{max-height:66vh;}
+    }
+  </style>
 </head>
-<body class="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-hidden transition-colors duration-200">
-
-    <!-- HEADER -->
-    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center gap-4">
-            <div class="flex items-center gap-4">
-                <a href="../" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-300 dark:border-slate-700 flex items-center justify-center" title="Voltar ao Menu">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                </a>
-                
-                <!-- CONTAINER DA LOGO EM FUNDO ESCURO FIXO -->
-                <div class="flex items-center justify-center p-1 bg-slate-950 rounded-xl border border-slate-800 shadow-inner">
-                    <img src="../logo.png" alt="Logo" class="h-9 max-h-10 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <div class="hidden p-2 bg-amber-500 rounded-xl text-slate-950 font-bold items-center justify-center">
-                        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
-                    </div>
-                </div>
-
-                <div>
-                    <h1 class="text-lg font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Dashboard de Qualidade (NOK)</p>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- CONTEÚDO PRINCIPAL (POWER BI TELA CHEIA) -->
-    <main class="flex-1 w-full h-full bg-slate-100 dark:bg-slate-950 transition-colors duration-200">
-        <iframe 
-            title="NOK" 
-            class="w-full h-full border-0" 
-            src="https://app.powerbi.com/view?r=eyJrIjoiMzViNmFlNzUtNTNlNy00NDJmLTlkNDctY2Q1YTM0M2M3MmQ2IiwidCI6ImQ2OWIzZmE3LTBhMGEtNDhhZC1hNDZmLWVhYmM5YzFiMDRjOCJ9" 
-            allowFullScreen="true">
-        </iframe>
-    </main>
-
-    <script>
-        // VALIDAÇÃO DE SESSÃO E PERMISSÃO DE ACESSO
-        const sessionData = localStorage.getItem('sintercan_user');
-        if (!sessionData) {
-            window.location.href = '../';
+<body>
+<header>
+  <div class="wrap header-inner">
+    <div class="brand-side">
+      <a class="icon-btn" href="../" title="Voltar ao portal" aria-label="Voltar ao portal"><i data-lucide="arrow-left"></i></a>
+      <div class="brand-logo"><img src="../logo.png" alt="Sintercan"></div>
+      <div class="brand-title"><strong>Sintercan</strong><span>Qualidade | Indicadores NOK</span></div>
+    </div>
+    <div class="header-actions">
+      <span class="user" id="userName"></span>
+      <button class="icon-btn" onclick="toggleTheme()" title="Alternar tema" aria-label="Alternar tema"><i data-lucide="sun-moon"></i></button>
+      <button class="icon-btn primary" id="refreshBtn" onclick="loadData(true)" title="Atualizar dados"><i data-lucide="refresh-cw"></i><span class="hide-mobile">Atualizar</span></button>
+    </div>
+  </div>
+</header>
+<main class="wrap hidden" id="app">
+  <div class="topline">
+    <div><h1 class="page-title">Painel de Qualidade</h1><p class="subheading">Não conformidades, quantidade, custos e detalhamento das ocorrências.</p></div>
+    <div id="syncStatus" class="status" aria-live="polite"></div>
+  </div>
+  <div id="errorBanner" class="alert hidden"></div>
+  <section class="panel filters">
+    <div class="filters-top">
+      <h2><i data-lucide="sliders-horizontal" style="width:16px;height:16px"></i> Filtros <span id="filteredCount" class="badge"></span></h2>
+      <button class="text-btn" onclick="clearFilters()">Limpar filtros</button>
+    </div>
+    <div class="filter-grid" id="filterGrid"></div>
+  </section>
+  <nav class="tabs" aria-label="Visões da qualidade">
+    <button class="tab active" data-tab="quantitativo" onclick="selectTab('quantitativo')"><i data-lucide="hash"></i> Quantitativo</button>
+    <button class="tab" data-tab="valorizacao" onclick="selectTab('valorizacao')"><i data-lucide="circle-dollar-sign"></i> Valorização</button>
+    <button class="tab" data-tab="demonstrativos" onclick="selectTab('demonstrativos')"><i data-lucide="bar-chart-3"></i> Demonstrativos</button>
+    <button class="tab" data-tab="listagem" onclick="selectTab('listagem')"><i data-lucide="list"></i> Listagem</button>
+  </nav>
+  <div id="view"></div>
+</main>
+<script>
+  'use strict';
+  const API = 'https://sintercan.consultoriarf.net';
+  const KEYS = { cache:'sintercan_qualidade_data_v2', filters:'sintercan_qualidade_filters_v2', tab:'sintercan_qualidade_tab_v2' };
+  const LABELS = {year:'Ano',month:'Mês',tipo:'Tipo',operacao:'Operação',motivo:'Motivo',funcionario:'Funcionário',maquina:'Máquina'};
+  const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const COLORS = ['#d97706','#0284c7','#7c3aed','#059669','#be123c','#0d9488'];
+  const FIELDS = ['data','osorigem','os_utilizada','cliente','titulo_servico','qtde','motivo','operacao','maquina','funcionario','responsavel','custo_mo','custo_mp','custo_st','custo_retrabalho','custo_refugo'];
+  const HEADERS = ['Data','OS origem','OS utilizada','Cliente','Título do serviço','Qtde','Motivo','Operação','Máquina','Funcionário','Responsável','Custo MO','Custo MP','Custo ST','Custo retrabalho','Custo refugo'];
+  let rawRNC=[],rawQRS=[],records=[],produced=[],lastSync=0,fetching=false,activeTab=localStorage.getItem(KEYS.tab)||'quantitativo',tablePage=1,tableSearch='',shown=[],openPicker=null;
+  let filters={year:[],month:[],tipo:[],operacao:[],motivo:[],funcionario:[],maquina:[]};
+  try { let v=JSON.parse(localStorage.getItem(KEYS.filters)||'{}'); for(const key of Object.keys(filters)) if(Array.isArray(v[key])) filters[key]=v[key].map(String); } catch(e) {}
+  if(!['quantitativo','valorizacao','demonstrativos','listagem'].includes(activeTab)) activeTab='quantitativo';
+  function norm(v) { return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+  function field(obj,...names) {
+    if(!obj||typeof obj!=='object') return undefined;
+    for(const name of names) if(obj[name]!==undefined && obj[name]!==null && obj[name]!=='') return obj[name];
+    const dict={};
+    for(const key of Object.keys(obj)) dict[norm(key)]=obj[key];
+    for(const name of names) {
+      const value=dict[norm(name)];
+      if(value!==undefined && value!==null && value!=='') return value;
+    }
+    return undefined;
+  }
+  function number(v) {
+    if(typeof v==='number') return Number.isFinite(v)?v:0;
+    if(v===undefined || v===null || String(v).trim()==='') return 0;
+    let s=String(v).trim().replace(/R\$\s*/gi,'').replace(/\s/g,'');
+    if(s.includes(',')&&s.includes('.')) s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');
+    else if(s.includes(',')) s=s.replace(',','.');
+    const n=Number(s); return Number.isFinite(n)?n:0;
+  }
+  function optionalNumber(v) {return v===undefined || v===null || String(v).trim()===''?null:number(v);}
+  function esc(s) { return String(s===null||s===undefined?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fmt(n,dec=0) {return Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
+  function brl(n) {return n===null?'—':Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+  function pct(n) {return n===null?'—':fmt(n,2)+'%';}
+  function parseDate(v) {
+    if(v===null||v===undefined||v==='')return null;
+    if(typeof v==='number'&&v>30000&&v<100000) {const d=new Date(Date.UTC(1899,11,30)+v*86400000);return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());}
+    if(v instanceof Date) return isNaN(v)?null:v;
+    const s=String(v).trim();
+    let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(m) {const d=new Date(+m[1],+m[2]-1,+m[3]);return isNaN(d)?null:d;}
+    m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if(m) {let y=+m[3];if(y<100)y+=y>70?1900:2000;const d=new Date(y,+m[2]-1,+m[1]);return isNaN(d)?null:d;}
+    const d=new Date(s);return isNaN(d)?null:d;
+  }
+  function monthValue(v,date) {
+    if(v===undefined||v===null||v==='')return date?String(date.getMonth()+1).padStart(2,'0'):'';
+    const str=String(v).trim(),n=Number(str);
+    if(Number.isFinite(n)&&n>=1&&n<=12)return String(n).padStart(2,'0');
+    const i=MONTHS.findIndex(x=>norm(x)===norm(str)||norm(x).slice(0,3)===norm(str).slice(0,3));
+    return i<0?(date?String(date.getMonth()+1).padStart(2,'0'):''):String(i+1).padStart(2,'0');
+  }
+  function readDate(row) {return parseDate(field(row,'data','dt_ocorrencia','dt_rnc','data_rnc','dt_registro','dt_emissao','data_registro','dia'));}
+  function readDim(row,key) {
+    const aliases={
+      tipo:['tipo_origem','tipo','origem','tipo_rnc'],
+      operacao:['operacao','operação','processo','etapa'],
+      motivo:['motivo','motivo_rnc','descricao_motivo','causa'],
+      funcionario:['funcionario','funcionário','operador','nome_funcionario'],
+      maquina:['maquina','máquina','equipamento','nome_maquina']
+    };
+    const v=field(row,...(aliases[key]||[key]));return v===undefined?'Não informado':String(v).trim()||'Não informado';
+  }
+  function makeRNC(row) {
+    const d=readDate(row), year=field(row,'ano','ano_rnc'),month=field(row,'mes','mês','mes_rnc');
+    const treatment=String(field(row,'destino','disposicao','disposição','tratativa','classificacao','classificação','acao','ação','resultado','status_nok','tipo_ocorrencia','tipo_disposicao')||'').trim();
+    const qty=Math.max(0,number(field(row,'qtde','quantidade','qtd','qtde_nok','quantidade_nok')??1));
+    const cm=optionalNumber(field(row,'custo_mo','custo de mo','valor_mo','vl_mo','custo_mao_obra'));
+    const cp=optionalNumber(field(row,'custo_mp','custo de mp','valor_mp','vl_mp','custo_material'));
+    const cs=optionalNumber(field(row,'custo_st','custo de st','valor_st','vl_st','custo_terceiros'));
+    let cr=optionalNumber(field(row,'custo_retrabalho','vl_retrabalho','valor_retrabalho'));
+    let cf=optionalNumber(field(row,'custo_refugo','vl_refugo','valor_refugo'));
+    const isRefugo=/refug|sucata|descart|perda/.test(norm(treatment));
+    const isRetrab=/retrabalh|reprocess|repar/.test(norm(treatment));
+    const isAC=/condicional|aceitocondicional/.test(norm(treatment))||norm(treatment)==='ac';
+    const qRef=optionalNumber(field(row,'qtde_refugo','qtd_refugo','quantidade_refugada'));
+    const qRet=optionalNumber(field(row,'qtde_retrabalho','qtd_retrabalho','quantidade_retrabalho'));
+    const qAC=optionalNumber(field(row,'qtde_ac','qtd_ac','quantidade_ac'));
+    if(cr===null&&isRetrab&&(cm!==null||cp!==null||cs!==null))cr=(cm||0)+(cp||0)+(cs||0);
+    if(cf===null&&isRefugo&&(cm!==null||cp!==null||cs!==null))cf=(cm||0)+(cp||0)+(cs||0);
+    return {
+      data:d, year:year!==undefined?String(year):d?String(d.getFullYear()):'',
+      month:monthValue(month,d),tipo:readDim(row,'tipo'),operacao:readDim(row,'operacao'),
+      motivo:readDim(row,'motivo'),funcionario:readDim(row,'funcionario'),maquina:readDim(row,'maquina'),
+      osorigem:field(row,'osorigem','os_origem','os origem','n_os_origem'),
+      os_utilizada:field(row,'os_utilizada','osutilizada','os utilizada','n_os_utilizada'),
+      cliente:field(row,'cliente','nome_cliente','razao_social'),
+      titulo_servico:field(row,'titulo_servico','titulo serviço','titulo','descricao','descrição','peca'),
+      qtde:qty,responsavel:field(row,'responsavel','responsável','nome_responsavel'),
+      custo_mo:cm,custo_mp:cp,custo_st:cs,custo_retrabalho:cr,custo_refugo:cf,
+      qtd_refugo:qRef!==null?qRef:(isRefugo?qty:null),qtd_retrabalho:qRet!==null?qRet:(isRetrab?qty:null),
+      qtd_ac:qAC!==null?qAC:(isAC?qty:null),tratamento:treatment,
+      hasRefugo:qRef!==null||isRefugo,hasRetrabalho:qRet!==null||isRetrab,hasAC:qAC!==null||isAC,
+      raw:row
+    };
+  }
+  function makeQRS(row) {
+    const d=readDate(row), year=field(row,'ano','ano_rs'),month=field(row,'mes','mês','mes_rs');
+    return {year:year!==undefined?String(year):d?String(d.getFullYear()):'',
+      month:monthValue(month,d),data:d,qtde:number(field(row,'qtde','quantidade','qtd','qtde_rs','quantidade_rs','total_pecas','qrs','total')??0)};
+  }
+  function unpack(payload,label) {
+    if(Array.isArray(payload)) return payload;
+    if(!payload||typeof payload!=='object')throw Error('Resposta inválida de /'+label);
+    const candidates=[label,label.toUpperCase(),'dados','data','rows','results','result','registros','records','items','itens','lista','produtos'];
+    for(const k of candidates) {
+      const v=field(payload,k);
+      if(Array.isArray(v)) {
+        if(v.length&&Array.isArray(v[0])) {
+          const cols=field(payload,'columns','colunas','fields','campos');
+          if(Array.isArray(cols))return v.map(a=>Object.fromEntries(cols.map((c,i)=>[typeof c==='string'?c:c.name||c.field||i,a[i]])));
         }
-
-        const currentUser = JSON.parse(sessionData);
-        if (Number(currentUser.u_qualidade) !== 1) {
-            alert("Acesso negado para este módulo.");
-            window.location.href = '../';
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-        });
-    </script>
+        return v;
+      }
+      if(v&&typeof v==='object')try{return unpack(v,label);}catch(e){}
+    }
+    const arr=Object.values(payload).filter(Array.isArray);
+    if(arr.length===1)return arr[0];
+    throw Error('Não foi encontrada uma lista de registros em /'+label);
+  }
+  async function verifySession() {
+    let user;
+    try {user=JSON.parse(localStorage.getItem('sintercan_user')||'null');} catch(e) {}
+    if(!user||!user.nome||Number(user.u_qualidade)!==1){location.replace('../');return false;}
+    document.getElementById('userName').textContent=user.nome;
+    try{
+      const ctrl=new AbortController(),to=setTimeout(()=>ctrl.abort(),12000);
+      const r=await fetch(API+'/me',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:user.nome}),signal:ctrl.signal});
+      clearTimeout(to);
+      if(!r.ok)throw Error(r.status===401||r.status===403?'Acesso recusado':'Validação não disponível');
+      const fresh=await r.json();
+      if(Number(fresh.u_qualidade)!==1){location.replace('../');return false;}
+      localStorage.setItem('sintercan_user',JSON.stringify(fresh));
+      document.getElementById('userName').textContent=fresh.nome||user.nome;
+      return true;
+    }catch(e) {
+      // Não libera dados de qualidade se a validação de acesso falhar.
+      showError('Não foi possível validar a sessão com a API. Verifique a conexão e recarregue a página.');
+      document.getElementById('app').classList.remove('hidden');
+      return false;
+    }
+  }
+  function showError(msg){const e=document.getElementById('errorBanner');e.textContent=msg;e.classList.remove('hidden');}
+  function clearError(){document.getElementById('errorBanner').classList.add('hidden');}
+  function useRows(rnc,qrs,stamp){
+    rawRNC=rnc;rawQRS=qrs;records=rnc.filter(x=>x&&typeof x==='object').map(makeRNC);
+    produced=qrs.filter(x=>x&&typeof x==='object').map(makeQRS);lastSync=stamp;
+    renderFilterGrid();render();
+    document.getElementById('syncStatus').textContent='Atualizado: '+new Date(lastSync).toLocaleString('pt-BR');
+  }
+  async function loadData(force) {
+    if(fetching)return;
+    fetching=true;const btn=document.getElementById('refreshBtn');btn.disabled=true;
+    document.getElementById('syncStatus').textContent='Atualizando dados...';
+    try{
+      const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),60000);
+      let responses;
+      try{responses=await Promise.all(['rnc','qrs'].map(x=>fetch(API+'/'+x,{cache:'no-store',signal:ctrl.signal})));}
+      finally{clearTimeout(timeout);}
+      for(let i=0;i<responses.length;i++)if(!responses[i].ok)throw Error('Endpoint /'+['rnc','qrs'][i]+' retornou HTTP '+responses[i].status);
+      const data=await Promise.all(responses.map(x=>x.json()));
+      const rnc=unpack(data[0],'rnc'),qrs=unpack(data[1],'qrs');
+      if(rnc.some(x=>typeof x!=='object')||qrs.some(x=>typeof x!=='object'))throw Error('Estrutura inesperada nos dados de qualidade.');
+      const stamp=Date.now();useRows(rnc,qrs,stamp);clearError();
+      try{localStorage.setItem(KEYS.cache,JSON.stringify({rnc,qrs,stamp}));}catch(e){}
+    }catch(err) {
+      showError('Não foi possível atualizar os dados: '+err.message+(lastSync?'. Exibindo o último carregamento disponível.':'.'));
+      document.getElementById('syncStatus').textContent=lastSync?'Dados em cache: '+new Date(lastSync).toLocaleString('pt-BR'):'Falha de conexão';
+    }finally{btn.disabled=false;fetching=false;iconify();}
+  }
+  function restoreCache() {
+    try {const d=JSON.parse(localStorage.getItem(KEYS.cache)||'null');if(d&&Array.isArray(d.rnc)&&Array.isArray(d.qrs))useRows(d.rnc,d.qrs,d.stamp||Date.now());}catch(e){}
+  }
+  function options(key) {
+    const a=[...new Set(records.map(x=>x[key]).filter(Boolean))];
+    if(key==='year')return a.sort((x,y)=>Number(y)-Number(x));
+    if(key==='month')return a.sort((x,y)=>Number(x)-Number(y));
+    return a.sort((a,b)=>String(a).localeCompare(String(b),'pt-BR',{numeric:true}));
+  }
+  function niceOption(key,v){return key==='month'?MONTHS[Number(v)-1]||v:v;}
+  function renderFilterGrid() {
+    let out='';
+    for(const key of Object.keys(LABELS)){
+      const opts=options(key),selected=filters[key],title=selected.length===0?'Todos':selected.length===1?niceOption(key,selected[0]):selected.length+' selecionados';
+      out+='<div class="filter-field"><label class="filter-label">'+esc(LABELS[key]).toUpperCase()+'</label>'+
+        '<button class="picker-button" id="picker-'+key+'" onclick="togglePicker(\''+key+'\')" aria-expanded="'+(openPicker===key)+'" type="button"><span class="picker-label">'+esc(title)+'</span><span>⌄</span></button>'+
+        '<div class="picker-menu '+(openPicker===key?'':'hidden')+'" id="menu-'+key+'">'+
+        '<input aria-label="Pesquisar '+esc(LABELS[key])+'" placeholder="Pesquisar..." oninput="searchPicker(\''+key+'\',this.value)">'+
+        '<div class="picker-tools"><button class="text-btn" onclick="setAll(\''+key+'\',true)">Selecionar todos</button><button class="text-btn" onclick="setAll(\''+key+'\',false)">Limpar</button></div>'+
+        '<div class="picker-items">'+(opts.length?opts.map(v=>
+         '<label class="picker-item" data-text="'+esc(norm(niceOption(key,v)))+'"><input type="checkbox" '+(selected.includes(String(v))?'checked':'')+' onchange="changeFilter(\''+key+'\',\''+esc(String(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'"))+'\',this.checked)"><span>'+esc(niceOption(key,v))+'</span></label>'
+        ).join(''):'<div class="picker-none">Sem opções disponíveis</div>')+'</div></div></div>';
+    }
+    document.getElementById('filterGrid').innerHTML=out;
+    iconify();
+  }
+  function togglePicker(key) {
+    openPicker=openPicker===key?null:key;
+    for(const k of Object.keys(LABELS)) {
+      const m=document.getElementById('menu-'+k),b=document.getElementById('picker-'+k);
+      m.classList.toggle('hidden',k!==openPicker);b.setAttribute('aria-expanded',String(k===openPicker));
+    }
+    if(openPicker) document.querySelector('#menu-'+openPicker+' input')?.focus();
+  }
+  function searchPicker(key,value) {
+    const term=norm(value);
+    document.querySelectorAll('#menu-'+key+' .picker-item').forEach(el=>el.classList.toggle('hidden',!el.dataset.text.includes(term)));
+  }
+  function changeFilter(key,v,on){
+    const s=new Set(filters[key]);on?s.add(v):s.delete(v);filters[key]=Array.from(s);filterChanged(key);
+  }
+  function setAll(key,all) {filters[key]=all?options(key).map(String):[];filterChanged();}
+  function filterChanged(keepPicker) {
+    localStorage.setItem(KEYS.filters,JSON.stringify(filters));tablePage=1;tableSearch='';openPicker=keepPicker||null;renderFilterGrid();render();
+  }
+  function clearFilters() {for(const k of Object.keys(filters))filters[k]=[];openPicker=null;filterChanged();}
+  document.addEventListener('click',e=>{
+    if(openPicker&&!e.target.closest('.filter-field')){
+      openPicker=null;
+      document.querySelectorAll('.picker-menu').forEach(el=>el.classList.add('hidden'));
+      document.querySelectorAll('.picker-button').forEach(el=>el.setAttribute('aria-expanded','false'));
+    }
+  });
+  function selectTab(tab) {
+    activeTab=tab;tablePage=1;tableSearch='';localStorage.setItem(KEYS.tab,tab);
+    document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+    render();
+  }
+  function filteredRows(){
+    return records.filter(r=>Object.keys(filters).every(k=>!filters[k].length||filters[k].includes(String(r[k]))));
+  }
+  function filteredRS() {
+    // O denominador de peças produzidas é filtrado pelo período; demais dimensões são específicas da RNC.
+    return produced.filter(r=>(!filters.year.length||filters.year.includes(String(r.year)))&&(!filters.month.length||filters.month.includes(String(r.month))));
+  }
+  function nonNullSum(rows,key){const eligible=rows.filter(r=>r[key]!==null);return eligible.length?eligible.reduce((a,r)=>a+r[key],0):null;}
+  function total(rows,key){return rows.reduce((a,r)=>a+number(r[key]),0);}
+  function metrics(rows) {
+    const qty=total(rows,'qtde'),pecas=total(filteredRS(),'qtde'),ref=nonNullSum(rows,'qtd_refugo'),ret=nonNullSum(rows,'qtd_retrabalho'),ac=nonNullSum(rows,'qtd_ac');
+    const cref=nonNullSum(rows,'custo_refugo'),cret=nonNullSum(rows,'custo_retrabalho');
+    const totalCost=cref!==null||cret!==null?(cref||0)+(cret||0):nonNullSum(rows,'custo_total');
+    return {nc:rows.length,qty,pecas,ref,ret,ac,cref,cret,totalCost,
+      rateNok:pecas>0?qty/pecas*100:null,rateRef:pecas>0&&ref!==null?ref/pecas*100:null,
+      rateRet:pecas>0&&ret!==null?ret/pecas*100:null,rateAC:pecas>0&&ac!==null?ac/pecas*100:null};
+  }
+  function metric(title,value,color,detail,bar) {
+    return '<article class="panel metric" style="--mcolor:'+color+'"><div class="label">'+esc(title)+'</div>'+
+      '<div class="value">'+esc(value)+'</div>'+
+      (detail?'<div class="detail">'+esc(detail)+'</div>':'')+
+      (Number.isFinite(bar)?'<div class="mini"><span style="width:'+Math.max(0,Math.min(100,bar))+'%"></span></div>':'')+
+      '</article>';
+  }
+  function weekOf(date) {
+    if(!date)return '';
+    const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));
+    d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));
+    const year=d.getUTCFullYear(),start=new Date(Date.UTC(year,0,1));
+    return year+'-S'+String(Math.ceil((((d-start)/86400000)+1)/7)).padStart(2,'0');
+  }
+  function weekly(rows,key) {
+    const sums={};
+    for(const row of rows){const w=weekOf(row.data);if(w) sums[w]=(sums[w]||0)+(key==='nc'?1:number(row[key]));}
+    const keys=Object.keys(sums).sort();if(!keys.length)return '<div class="empty">Nenhuma ocorrência com data no período.</div>';
+    const max=Math.max(1,...Object.values(sums));
+    return '<div class="weekly-chart">'+keys.map(k=>{
+      const v=sums[k],h=Math.max(2,v/max*165);
+      return '<div class="week-col" title="'+esc(k+' · '+fmt(v,key==='nc'?0:2))+'"><div class="week-val">'+esc(key==='nc'?fmt(v):fmt(v,0))+'</div>'+
+        '<div class="week-bar" style="height:'+h+'px"></div><div class="week-name">'+esc(k.slice(2))+'</div></div>';
+    }).join('')+'</div>';
+  }
+  function chartPanel(title,content,caption) {return '<section class="panel chart-panel"><div class="panel-heading"><h2>'+esc(title)+'</h2><small>'+esc(caption||'')+'</small></div>'+content+'</section>';}
+  function grouped(rows,key) {
+    const obj={};for(const r of rows)obj[r[key]||'Não informado']=(obj[r[key]||'Não informado']||0)+1;
+    return Object.entries(obj).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'pt-BR'));
+  }
+  function bars(rows,key) {
+    const vals=grouped(rows,key),max=vals.length?vals[0][1]:1;
+    if(!vals.length)return '<div class="empty">Sem dados para os filtros aplicados.</div>';
+    return vals.slice(0,15).map(([label,n],i)=>
+      '<div class="hbar" title="'+esc(label+' · '+fmt(n))+'"><span class="hbar-name">'+esc(label)+'</span>'+
+      '<div class="hbar-track"><div class="hbar-fill" style="width:'+Math.max(1,n/max*100)+'%;background:'+COLORS[i%COLORS.length]+'"></div></div>'+
+      '<span class="hbar-num">'+fmt(n)+'</span></div>'
+    ).join('')+(vals.length>15?'<div class="subheading">Exibindo as 15 maiores categorias de '+fmt(vals.length)+'.</div>':'');
+  }
+  function quantView(rows,m) {
+    return '<div class="grid kpis">'+
+      metric('TOTAL DE NÃO CONFORMIDADES',fmt(m.nc),'#d97706','Registros de RNC')+
+      metric('TOTAL DE ITENS NOK',fmt(m.qty),'#dc2626','Quantidade nas RNCs')+
+      metric('TOTAL DE PEÇAS',fmt(m.pecas),'#0284c7','Quantidade informada em QRS')+
+      metric('ITENS REFUGADOS',m.ref===null?'—':fmt(m.ref),'#be123c','Conforme classificação disponível')+
+      metric('ITENS COM RETRABALHO',m.ret===null?'—':fmt(m.ret),'#7c3aed','Conforme classificação disponível')+
+      metric('ITENS ACEITOS CONDICIONALMENTE',m.ac===null?'—':fmt(m.ac),'#059669','Conforme classificação disponível')+
+      '</div><div class="grid rates">'+
+      metric('TAXA DE ITENS NOK',pct(m.rateNok),'#dc2626','NOK ÷ peças',m.rateNok)+
+      metric('TAXA DE REFUGO',pct(m.rateRef),'#be123c','Refugo ÷ peças',m.rateRef)+
+      metric('TAXA DE RETRABALHO',pct(m.rateRet),'#7c3aed','Retrabalho ÷ peças',m.rateRet)+
+      metric('TAXA DE ACEITE CONDICIONAL',pct(m.rateAC),'#059669','Aceite condicional ÷ peças',m.rateAC)+
+      '</div>'+chartPanel('Quantidade de não conformidades por semana',weekly(rows,'nc'),'Semana ISO');
+  }
+  function valView(rows,m) {
+    return '<div class="grid money">'+
+      metric('CUSTO TOTAL',brl(m.totalCost),'#d97706','Retrabalho + refugo')+
+      metric('CUSTO DE RETRABALHO',brl(m.cret),'#7c3aed','Custos identificados nas RNCs')+
+      metric('CUSTO DE REFUGO',brl(m.cref),'#be123c','Custos identificados nas RNCs')+
+      '</div>'+chartPanel('Custo por semana',weekly(rows,'custo_total_grafico'),'Custo em R$');
+  }
+  function demoView(rows) {
+    return '<div class="grid bars-grid">'+
+      chartPanel('Não conformidades por motivo',bars(rows,'motivo'))+
+      chartPanel('Não conformidades por operação',bars(rows,'operacao'))+
+      chartPanel('Não conformidades por funcionário',bars(rows,'funcionario'))+
+      chartPanel('Não conformidades por máquina',bars(rows,'maquina'))+
+      '</div>';
+  }
+  function dateLabel(d) {return d?d.toLocaleDateString('pt-BR'):'—';}
+  function rowCell(r,key) {
+    const v=r[key];
+    if(key==='data')return dateLabel(v);
+    if(key==='qtde')return fmt(v);
+    if(key.startsWith('custo_'))return brl(v);
+    return v===undefined||v===null||v===''?'—':String(v);
+  }
+  function listRows(rows) {
+    if(!tableSearch)return rows;
+    const term=norm(tableSearch);
+    return rows.filter(r=>FIELDS.some(k=>norm(k==='data'?dateLabel(r.data):r[k]).includes(term)));
+  }
+  function tableView(rows) {
+    shown=listRows(rows);
+    const pages=Math.max(1,Math.ceil(shown.length/50));tablePage=Math.max(1,Math.min(tablePage,pages));
+    const current=shown.slice((tablePage-1)*50,tablePage*50);
+    return '<section class="panel table-panel">'+
+      '<div class="table-controls"><div><h2 style="margin:0;font-size:14px">Listagem de não conformidades</h2><div class="subheading">'+fmt(shown.length)+' registros encontrados</div></div>'+
+      '<input class="search" id="tableSearch" placeholder="Pesquisar em todas as colunas..." value="'+esc(tableSearch)+'" oninput="updateTableSearch(this.value)">'+
+      '<button class="icon-btn primary" onclick="exportExcel()"><i data-lucide="file-spreadsheet"></i> Exportar Excel</button></div>'+
+      '<div class="table-scroll"><table><thead><tr>'+HEADERS.map((h,i)=>'<th'+(i===5||i>=11?' class="num"':'')+'>'+esc(h)+'</th>').join('')+'</tr></thead>'+
+      '<tbody>'+(current.length?current.map(r=>'<tr>'+FIELDS.map((k,i)=>'<td title="'+esc(rowCell(r,k))+'"'+(i===5||i>=11?' class="num"':'')+'>'+esc(rowCell(r,k))+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="16" class="empty">Nenhum registro corresponde aos filtros.</td></tr>')+'</tbody></table></div>'+
+      '<div class="table-foot"><span>'+fmt(shown.length)+' registro(s) | '+fmt(current.length)+' nesta página</span>'+
+      '<div class="toolbar"><button class="icon-btn" onclick="changePage(-1)" '+(tablePage<=1?'disabled':'')+'>Anterior</button>'+
+      '<span>Página '+fmt(tablePage)+' / '+fmt(pages)+'</span>'+
+      '<button class="icon-btn" onclick="changePage(1)" '+(tablePage>=pages?'disabled':'')+'>Próxima</button></div></div></section>';
+  }
+  function updateTableSearch(value) {
+    const at=document.getElementById('tableSearch'),cursor=at?at.selectionStart:null;
+    tableSearch=value;tablePage=1;document.getElementById('view').innerHTML=tableView(filteredRows());
+    const input=document.getElementById('tableSearch');input.focus();if(cursor!==null)input.setSelectionRange(cursor,cursor);
+    iconify();
+  }
+  function changePage(delta) {tablePage+=delta;document.getElementById('view').innerHTML=tableView(filteredRows());iconify();}
+  function exportExcel() {
+    const rows=listRows(filteredRows()),data=rows.map(r=>Object.fromEntries(FIELDS.map((k,i)=>[HEADERS[i],k==='data'?dateLabel(r.data):k.startsWith('custo_')?(r[k]??''):r[k]??''])));
+    const name='Sintercan_Qualidade_NOK_'+new Date().toISOString().slice(0,10);
+    if(window.XLSX) {
+      const ws=XLSX.utils.json_to_sheet(data,{header:HEADERS});
+      ws['!cols']=HEADERS.map((h,i)=>({wch:i===4?36:i===3?28:i>=11?19:17}));
+      const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'NOK');
+      XLSX.writeFile(wb,name+'.xlsx');return;
+    }
+    const values=[HEADERS,...data.map(row=>HEADERS.map(h=>row[h]))].map(line=>line.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
+    const a=document.createElement('a'),url=URL.createObjectURL(new Blob(['\ufeff'+values],{type:'text/csv;charset=utf-8;'}));
+    a.href=url;a.download=name+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }
+  function render() {
+    document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===activeTab));
+    const rows=filteredRows(),m=metrics(rows);
+    document.getElementById('filteredCount').textContent=fmt(rows.length)+' RNC';
+    for(const r of rows)r.custo_total_grafico=(r.custo_retrabalho||0)+(r.custo_refugo||0);
+    const view=document.getElementById('view');
+    if(activeTab==='valorizacao')view.innerHTML=valView(rows,m);
+    else if(activeTab==='demonstrativos')view.innerHTML=demoView(rows);
+    else if(activeTab==='listagem')view.innerHTML=tableView(rows);
+    else view.innerHTML=quantView(rows,m);
+    iconify();
+  }
+  function iconify(){if(window.lucide)lucide.createIcons();}
+  function toggleTheme() {
+    const dark=document.documentElement.classList.toggle('dark');localStorage.setItem('theme',dark?'dark':'light');
+  }
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&lastSync&&Date.now()-lastSync>300000)loadData(false);});
+  (async function init() {
+    const ok=await verifySession();if(!ok)return;
+    document.getElementById('app').classList.remove('hidden');
+    restoreCache();
+    if(!lastSync){renderFilterGrid();render();}
+    loadData(false);
+  })();
+  iconify();
+</script>
 </body>
 </html>
