@@ -1667,6 +1667,7 @@
                     </div>
                     <div class="flex flex-wrap gap-1.5 items-center text-[11px] font-semibold">
                         <button id="materialToggleFiltersBtn" type="button" onclick="materialToggleFilters()" aria-expanded="true" class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-amber-500">Recolher filtros</button>
+                        <button id="materialClearFiltersBtn" type="button" onclick="resetMaterialClienteFilters()" class="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20 flex items-center gap-1.5" title="Limpar pesquisa, filtros superiores e todos os filtros das colunas"><i data-lucide="filter-x" class="w-3.5 h-3.5"></i><span>Limpar filtros</span></button>
                         <button type="button" onclick="materialOpenLayoutModal()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-amber-500" title="Mostrar, ocultar, mover e dimensionar colunas">Personalizar colunas</button>
 
                     </div>
@@ -1731,7 +1732,7 @@
             }
         }
 
-        const APP_VERSION = 'V1.6.8';
+        const APP_VERSION = 'V1.6.9';
         const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
         let autoRefreshTimer = null;
         let appHiddenAt = null;
@@ -5168,6 +5169,6 @@
             }, 160);
         });
     </script>
-    <script src="./material-cliente.js?v=1.6.8"></script>
+    <script src="./material-cliente.js?v=1.6.9"></script>
 </body>
 </html>
