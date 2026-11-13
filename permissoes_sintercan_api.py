@@ -13,6 +13,7 @@ CPS novamente, e TODAS as rotas conferem U_GESTOR no banco.
 from __future__ import annotations
 
 import base64
+import binascii
 import hashlib
 import hmac
 import json
@@ -96,7 +97,7 @@ def _ler_token(token: str) -> str:
         if dados.get("escopo") != "permissoes" or int(dados.get("exp", 0)) < time.time():
             raise ValueError("token expirado ou sem permissão")
         return str(dados["usuario"]).strip().upper()
-    except (ValueError, KeyError, TypeError, UnicodeError) as exc:
+    except (ValueError, KeyError, TypeError, UnicodeError, binascii.Error) as exc:
         raise HTTPException(401, "Sessão administrativa inválida ou expirada.") from exc
 
 
@@ -110,10 +111,13 @@ def _validar_senha_grv(informada: str, gravada) -> bool:
     if isinstance(gravada, memoryview):
         gravada = gravada.tobytes()
     if isinstance(gravada, bytes):
-        try:
-            gravada = gravada.decode("utf-8")
-        except UnicodeDecodeError:
-            gravada = gravada.hex()
+        if len(gravada) == 16:
+            gravada = gravada.hex()  # MD5 armazenado como 16 bytes (bytea).
+        else:
+            try:
+                gravada = gravada.decode("utf-8")
+            except UnicodeDecodeError:
+                gravada = gravada.hex()
     gravada = str(gravada).strip()
     candidatas = {informada}
     for codificacao in ("utf-8", "cp1252"):
