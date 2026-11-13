@@ -352,9 +352,9 @@ function exportMaterialClienteExcel() {
         'Previsão Entrega': formatDateBR(row.previsao_entrega),
         'Dias NF': row.dias_nf == null ? '' : materialClienteNumber(row.dias_nf)
     }));
-    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const worksheet = window.XLSX.utils.json_to_sheet(rows);
     worksheet['!cols'] = Object.keys(rows[0]).map(key => ({ wch: Math.max(12, Math.min(32, key.length + 7)) }));
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Material Cliente');
-    XLSX.writeFile(workbook, 'Material_Cliente_follow-up_' + materialClienteDateKey(new Date()) + '.xlsx');
+    const workbook = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(workbook, worksheet, 'Material Cliente');
+    window.XLSX.writeFile(workbook, 'Material_Cliente_follow-up_' + materialClienteDateKey(new Date()) + '.xlsx');
 }
