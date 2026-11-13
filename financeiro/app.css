@@ -118,3 +118,21 @@ tfoot th{position:sticky;bottom:0;z-index:9;background:var(--panel);border-top:2
   .status-segment button{font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){.status-segment::before{transition:none}}
+
+/* Situação compacta na barra superior, independente de recolher os filtros. */
+.period-panel{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.period-panel .period-buttons{min-width:0;flex:1 1 auto}
+.period-panel .status-field{display:flex;flex:0 0 auto;align-items:center;gap:8px;grid-column:auto}
+.period-panel .status-field>label{margin:0;flex:none;white-space:nowrap}
+.period-panel .status-segment{width:306px;max-width:100%;height:34px;padding:2px}
+.period-panel .status-segment::before{top:2px;left:2px;bottom:2px;width:calc((100% - 4px)/3)}
+.period-panel .status-segment button{font-size:11px;padding:0 3px}
+@media(max-width:1130px){
+  .period-panel{flex-wrap:wrap}
+  .period-panel .period-buttons{flex-basis:100%}
+  .period-panel .status-field{margin-left:auto}
+}
+@media(max-width:550px){
+  .period-panel .status-field{width:100%;justify-content:space-between}
+  .period-panel .status-segment{flex:1;min-width:0;width:auto;max-width:350px}
+}
