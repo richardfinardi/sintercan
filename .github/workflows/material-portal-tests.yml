@@ -5,11 +5,13 @@ on:
     paths:
       - 'backend/portal_material_cliente.py'
       - 'rs/material-portal.js'
+      - 'tests/test_material_portal_acesso.py'
       - '.github/workflows/material-portal-tests.yml'
   pull_request:
     paths:
       - 'backend/portal_material_cliente.py'
       - 'rs/material-portal.js'
+      - 'tests/test_material_portal_acesso.py'
       - '.github/workflows/material-portal-tests.yml'
 
 jobs:
@@ -23,7 +25,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install test dependencies
+        run: python -m pip install "fastapi>=0.100" "pydantic>=2"
       - name: Check Python syntax
         run: python -m py_compile backend/portal_material_cliente.py
       - name: Check JavaScript syntax
         run: node --check rs/material-portal.js
+      - name: Validate RS portal access rules
+        run: python -m unittest discover -s tests -p 'test_material_portal_acesso.py' -v
