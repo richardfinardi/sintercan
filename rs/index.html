@@ -1663,38 +1663,47 @@
                 <div class="flex-shrink-0 px-3 py-2 border-b border-slate-200 dark:border-slate-800 flex flex-wrap gap-2 justify-between items-center">
                     <div>
                         <h2 class="text-sm font-extrabold text-slate-900 dark:text-white">Material de Cliente (follow-up)</h2>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Origem: carteira_nf • Clique nos títulos para ordenar • Pesquisa e filtros acima</p>
+                        <p id="materialActiveColumnFilters" class="text-[10px] text-slate-500 dark:text-slate-400">Arraste colunas e linhas para reorganizar</p>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 items-center text-[11px] font-semibold">
+                        <button id="materialToggleFiltersBtn" type="button" onclick="materialToggleFilters()" aria-expanded="true" class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-amber-500">Recolher filtros</button>
+                        <button type="button" onclick="materialOpenLayoutModal()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-amber-500" title="Mostrar, ocultar, mover e dimensionar colunas">Personalizar colunas</button>
+                        <button id="materialManualSortBtn" type="button" onclick="useMaterialManualOrder()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-amber-500" title="Reativar ordem personalizada das linhas">Ordem manual</button>
                     </div>
                 </div>
-                <div class="flex-1 min-h-0 overflow-auto">
-                    <table class="text-left text-[11px] w-max min-w-full border-separate border-spacing-0 text-slate-700 dark:text-slate-200">
-                        <thead class="sticky top-0 z-20 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold shadow-sm">
-                            <tr>
-                                <th class="px-3 py-2 min-w-[205px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="cliente" onclick="sortMaterialCliente('cliente')">Cliente / CNPJ<span class="mat-sort-indicator"></span></button></th>
-                                <th class="px-3 py-2 min-w-[115px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="n_nf" onclick="sortMaterialCliente('n_nf')">NF / Emissão<span class="mat-sort-indicator"></span></button></th>
-                                <th class="px-3 py-2 min-w-[220px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="codigo_interno" onclick="sortMaterialCliente('codigo_interno')">Código / Item<span class="mat-sort-indicator"></span></button></th>
-                                <th class="px-3 py-2 min-w-[95px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="ncm" onclick="sortMaterialCliente('ncm')">NCM / Un.<span class="mat-sort-indicator"></span></button></th>
-                                <th class="px-3 py-2 min-w-[75px] text-right border-r border-slate-300 dark:border-slate-700"><button data-material-sort="qtde" onclick="sortMaterialCliente('qtde')">Qtde<span class="mat-sort-indicator"></span></button></th>
-                                <th class="px-3 py-2 min-w-[140px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="status_material" onclick="sortMaterialCliente('status_material')">Status material<span class="mat-sort-indicator"></span></button></th>
-                                <th class="px-3 py-2 min-w-[160px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="status_os" onclick="sortMaterialCliente('status_os')">Status OS / Lista<span class="mat-sort-indicator"></span></button></th>
-                                <th class="px-3 py-2 min-w-[180px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="os_utilizada" onclick="sortMaterialCliente('os_utilizada')">OS utilizada / OS<span class="mat-sort-indicator"></span></button></th>
-                                <th class="px-3 py-2 min-w-[100px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="n_pedido" onclick="sortMaterialCliente('n_pedido')">Pedido<span class="mat-sort-indicator"></span></button></th>
-                                <th class="px-3 py-2 min-w-[125px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="orcamento" onclick="sortMaterialCliente('orcamento')">Orçamento<span class="mat-sort-indicator"></span></button></th>
-                                <th class="px-3 py-2 min-w-[105px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="dt_aprovacao" onclick="sortMaterialCliente('dt_aprovacao')">Aprovação<span class="mat-sort-indicator"></span></button></th>
-                                <th class="px-3 py-2 min-w-[110px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="previsao_entrega" onclick="sortMaterialCliente('previsao_entrega')">Previsão entrega<span class="mat-sort-indicator"></span></button></th>
-                                <th class="px-3 py-2 min-w-[75px] text-right"><button data-material-sort="dias_nf" onclick="sortMaterialCliente('dias_nf')">Dias NF<span class="mat-sort-indicator"></span></button></th>
-                            </tr>
+                <div id="materialClienteTableScroll" class="flex-1 min-h-0 overflow-auto">
+                    <table id="materialClienteTable" class="text-left text-[11px] min-w-full border-separate border-spacing-0 text-slate-700 dark:text-slate-200">
+                        <colgroup id="materialClienteColgroup"></colgroup>
+                        <thead id="materialClienteHead" class="sticky top-0 z-20 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold shadow-sm">
+                            <tr id="materialClienteHeadRow"></tr>
                         </thead>
-                        <tbody id="materialClienteTableBody"><tr><td colspan="13" class="p-8 text-center text-slate-500">Carregando materiais...</td></tr></tbody>
+                        <tbody id="materialClienteTableBody"><tr><td colspan="14" class="p-8 text-center text-slate-500">Carregando materiais...</td></tr></tbody>
                     </table>
                 </div>
             </div>
             <div class="flex-shrink-0 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 flex flex-wrap items-center gap-3">
                 <span>Exibindo <strong id="materialExibindoRegistros" class="text-amber-600 dark:text-amber-400">0</strong> de <strong id="materialTotalRegistros" class="text-amber-600 dark:text-amber-400">0</strong> registros</span>
                 <button id="materialLoadMore" onclick="loadMoreMaterialCliente()" class="hidden rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1 text-amber-700 dark:text-amber-400">Carregar +120</button>
+                <button type="button" onclick="materialResetRowOrder()" class="ml-auto rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-1 text-slate-600 dark:text-slate-300 hover:border-amber-500" title="Voltar à ordem original das linhas neste terminal">Restaurar ordem das linhas</button>
             </div>
         </div>
     </main>
+
+    <div id="materialLayoutModal" class="hidden fixed inset-0 z-[165] bg-slate-950/65 backdrop-blur-sm p-3 items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="materialLayoutTitle" onclick="if(event.target===this) materialCloseLayoutModal()">
+        <div class="w-full max-w-lg max-h-[90vh] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden text-slate-800 dark:text-slate-100">
+            <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+                <div><h3 id="materialLayoutTitle" class="text-base font-extrabold">Personalizar colunas</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Ajustes salvos somente neste terminal.</p></div>
+                <button type="button" onclick="materialCloseLayoutModal()" class="rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-sm" aria-label="Fechar">✕</button>
+            </div>
+            <p class="px-4 pt-3 text-xs text-slate-500 dark:text-slate-400">Marque para mostrar, desmarque para ocultar, arraste ou use as setas para mover. A largura é ajustada pela borda direita do cabeçalho da tabela.</p>
+            <div id="materialLayoutOptions" class="px-4 py-3 overflow-auto space-y-1.5 flex-1 min-h-0"></div>
+            <div class="px-4 py-3 border-t border-slate-200 dark:border-slate-800 flex justify-between gap-2">
+                <button type="button" onclick="materialResetLayout()" class="rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs hover:border-rose-500">Restaurar colunas</button>
+                <button type="button" onclick="materialCloseLayoutModal()" class="rounded-lg bg-amber-500 text-slate-950 font-bold px-4 py-2 text-xs">Concluído</button>
+            </div>
+        </div>
+    </div>
 
     <nav class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 py-1 flex gap-1 overflow-x-auto text-xs font-medium flex-shrink-0">
         <button id="navBtnRS" onclick="switchMainTab('RS')" class="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer">RS</button>
@@ -1723,7 +1732,7 @@
             }
         }
 
-        const APP_VERSION = 'V1.6.6';
+        const APP_VERSION = 'V1.6.7';
         const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
         let autoRefreshTimer = null;
         let appHiddenAt = null;
@@ -3682,6 +3691,7 @@
             }
 
             ensureActiveDatasetLoaded();
+            materialApplyFilterVisibility();
 
             if (window.innerWidth < 640) {
                 const activeBtn = { RS: btnRS, Grafico: btnGrafico, Mensal: btnMensal, MensalCliente: btnMensalCliente, Classificacao: btnClassificacao, Pedidos: btnPedidos, NotasFiscais: btnNotasFiscais, PedidoCarteira: btnPedidoCarteira, PrazoEntrega: btnPrazoEntrega, MaterialCliente: btnMaterialCliente }[tabName];
@@ -5159,6 +5169,6 @@
             }, 160);
         });
     </script>
-    <script src="./material-cliente.js?v=1.6.6"></script>
+    <script src="./material-cliente.js?v=1.6.7"></script>
 </body>
 </html>
