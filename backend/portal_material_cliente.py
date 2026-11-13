@@ -136,6 +136,8 @@ def row_key(row):
                 values.append("%.6f" % float(normalized))
             except (TypeError, ValueError):
                 values.append("0.000000")
+        elif isinstance(value, float):
+            values.append(format(value, ".15g"))
         else:
             values.append(str(value if value is not None else "").strip())
     return json.dumps(values, ensure_ascii=False, separators=(",", ":"))
@@ -265,8 +267,10 @@ def dados_portal(portal_id: str, token: str = Query(min_length=20, max_length=15
                    (iso(now()), portal_id))
     return JSONResponse({
         "portal": public_portal(row), "dados": sanitized, "atualizado_em": iso(now()),
-        "resumo": {"registros": len(dados), "quantidade": sum(quantity(x) for x in dados),
-                   "notas": len(nf), "vencidos": overdue}
+        "resumo": {"registros": len(dados),
+                   "quantidade": sum(quantity(x) for x in dados) if "qtde" in cols else None,
+                   "notas": len(nf) if "n_nf" in cols else None,
+                   "vencidos": overdue if "previsao_entrega" in cols else None}
     }, headers=NO_CACHE)
 
 
@@ -316,7 +320,7 @@ $("count").textContent=filtered.length.toLocaleString("pt-BR")+" registros";
 $("head").innerHTML="<tr>"+columns.map(function(k){return "<th data-sort='"+esc(k)+"'>"+esc(labels[k]||k)+(sortCol===k?(sortAsc?" ▲":" ▼"):"")+"</th>"}).join("")+"</tr>";
 $("body").innerHTML=filtered.length?filtered.map(function(r){return "<tr>"+columns.map(function(k){return "<td>"+cell(r,k)+"</td>"}).join("")+"</tr>"}).join(""):"<tr><td colspan='"+columns.length+"' style='padding:35px;text-align:center'>Nenhum registro encontrado.</td></tr>";
 $("head").querySelectorAll("[data-sort]").forEach(function(th){th.addEventListener("click",function(){var key=th.getAttribute("data-sort");sortAsc=sortCol===key?!sortAsc:true;sortCol=key;render()})})}
-function drawKpis(summary){var cards=[["Materiais / registros",summary.registros||0],["Quantidade",summary.quantidade||0],["Notas fiscais",summary.notas||0],["Prazo vencido",summary.vencidos||0]];$("kpis").innerHTML=cards.map(function(x){return "<div class='card'><small>"+x[0]+"</small><b>"+Number(x[1]).toLocaleString("pt-BR",{maximumFractionDigits:2})+"</b></div>"}).join("")}
+function drawKpis(summary){var cards=[["Materiais / registros",summary.registros],["Quantidade",summary.quantidade],["Notas fiscais",summary.notas],["Prazo vencido",summary.vencidos]].filter(function(x){return x[1]!==null&&x[1]!==undefined});$("kpis").innerHTML=cards.map(function(x){return "<div class='card'><small>"+x[0]+"</small><b>"+Number(x[1]).toLocaleString("pt-BR",{maximumFractionDigits:2})+"</b></div>"}).join("")}
 async function load(){var p=new URLSearchParams(location.search),id=location.pathname.split("/").pop(),token=p.get("token");if(!token||!id){$("notice").textContent="Link incompleto.";return}$("refresh").disabled=true;try{var r=await fetch("/material_cliente/portal/"+encodeURIComponent(id)+"/dados?token="+encodeURIComponent(token),{cache:"no-store"}),d=await r.json().catch(function(){return {}});if(!r.ok)throw new Error(d.detail||"Erro HTTP "+r.status);meta=d.portal||{};rows=Array.isArray(d.dados)?d.dados:[];columns=Array.isArray(meta.colunas)?meta.colunas:[];$("title").textContent=meta.nome||"Materiais de Cliente";$("expiry").textContent="Disponível até "+new Date(meta.validade_ate).toLocaleString("pt-BR");$("updated").textContent="Atualizado em "+new Date(d.atualizado_em).toLocaleString("pt-BR");$("excel").style.display=meta.permitir_excel?"":"none";$("notice").style.display="none";$("tablebox").style.display="";drawKpis(d.resumo||{});render()}catch(err){$("tablebox").style.display="none";$("notice").style.display="block";$("notice").textContent=err.message||"Portal indisponível."}finally{$("refresh").disabled=false}}
 function excel(){if(!meta.permitir_excel||!window.XLSX)return alert("Não foi possível carregar o gerador de Excel.");var data=filtered.map(function(r){var line={};columns.forEach(function(k){line[labels[k]||k]=(r[k]===null||r[k]===undefined?"":r[k])+(sub[k]&&r[sub[k]]?" | "+r[sub[k]]:"")});return line});var book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,XLSX.utils.json_to_sheet(data),"MATERIAIS");XLSX.writeFile(book,"SINTERCAN_MATERIAIS.xlsx")}
 $("refresh").addEventListener("click",load);$("excel").addEventListener("click",excel);$("search").addEventListener("input",render);load();
