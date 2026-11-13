@@ -119,6 +119,25 @@ class PortalPermissoesTest(unittest.TestCase):
         validade = datetime.fromisoformat(link["validade_ate"])
         self.assertEqual((validade - criado).days, 7)
 
+    def test_lista_elimina_legados_desativados_definitivamente(self):
+        alice = self.login("ALICE")
+        link = self.create(alice)
+        with portal.conn() as cx:
+            cx.execute("UPDATE portais SET ativo=0 WHERE id=?", (link["id"],))
+        self.assertEqual(portal.listar_portais(authorization=alice).body, b"[]")
+        with self.assertRaises(HTTPException) as ex:
+            portal.get_portal(link["id"])
+        self.assertEqual(ex.exception.status_code, 404)
+
+    def test_delete_repetido_nao_deixa_link_preso(self):
+        alice = self.login("ALICE")
+        link = self.create(alice)
+        self.assertTrue(portal.excluir_portal(link["id"], authorization=alice)["ok"])
+        novamente = portal.excluir_portal(link["id"], authorization=alice)
+        self.assertTrue(novamente["ok"])
+        self.assertTrue(novamente["ja_excluido"])
+        self.assertEqual(json.loads(portal.listar_portais(authorization=alice).body), [])
+
     def test_permissao_revogada_bloqueia_sessao_antiga(self):
         alice = self.login("ALICE")
         self.users["ALICE"]["u_rs"] = "0"
