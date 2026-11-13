@@ -271,8 +271,9 @@ def criar_portal(payload: NovoPortal, authorization: str | None = Header(default
         raise HTTPException(422, "Filtre um único cliente antes de gerar o portal.")
     identificador = secrets.token_urlsafe(10).replace("-", "").replace("_", "")
     token = secrets.token_urlsafe(32)
-    criado = iso(now())
-    vence = iso(now() + timedelta(days=payload.validade_dias))
+    agora = now()
+    criado = iso(agora)
+    vence = iso(agora + timedelta(days=payload.validade_dias))
     with conn() as cx:
         cx.execute("""INSERT INTO portais
             (id,token,nome,criado_em,criado_por,validade_ate,ativo,colunas,row_keys,qtd_itens,permitir_excel)
