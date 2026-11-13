@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerenciar acessos | Sintercan</title>
+<link rel="icon" type="image/png" href="./LOGO MINIMALISTA.png">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root{color-scheme:light;--bg:#f5f7fa;--surface:#fff;--ink:#17283e;--muted:#64748b;--border:#dce4ed;--accent:#c47a05;--accent2:#fff3d8;--nav:#19283e;--green:#157448;--red:#b42335}
+*{box-sizing:border-box}
+html[data-theme="dark"]{color-scheme:dark;--bg:#0c1421;--surface:#142236;--ink:#e7eef9;--muted:#a7b8cc;--border:#2d3d53;--accent:#f2b64a;--accent2:#342818;--nav:#0f1a2a;--green:#59d39e;--red:#fb7f8e}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px "Segoe UI",system-ui,Arial,sans-serif;min-height:100vh}
+button,input{font:inherit}a{text-decoration:none;color:inherit}
+header{background:var(--nav);color:#fff;box-shadow:0 2px 15px #0002}
+.header{max-width:1540px;min-height:74px;margin:auto;padding:12px 22px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.logo{height:43px;width:43px;object-fit:contain;background:#0d1524;border-radius:10px;padding:5px}
+.brand{display:flex;gap:10px;align-items:center}.brand strong{font-size:18px}.brand small{display:block;color:#cbd5e1;font-size:11px;margin-top:2px}
+.grow{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--surface);color:var(--ink);font-weight:700;cursor:pointer;white-space:nowrap}
+.btn:hover{filter:brightness(.97)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn svg{width:17px;height:17px}.btn.accent{background:#d9921d;color:#111c2a;border-color:#d9921d}
+header .btn{background:#ffffff14;color:#fff;border-color:#ffffff39}
+header .username{font-weight:700;color:#e6edf6;font-size:12px}
+main{max-width:1540px;margin:auto;padding:25px 22px 50px}
+.eyebrow{color:var(--accent);font-size:11px;text-transform:uppercase;font-weight:900;letter-spacing:1.4px}
+h1{margin:6px 0;font-size:29px}p{margin:0;color:var(--muted);line-height:1.5}
+.notice{background:var(--accent2);color:var(--ink);border:1px solid var(--border);padding:13px 15px;border-radius:13px;margin:18px 0;display:flex;gap:12px;align-items:flex-start}
+.notice svg{flex:none;width:20px;height:20px;color:var(--accent)}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:20px 0 13px;flex-wrap:wrap}
+.toolbar-right{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.search{display:flex;gap:9px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0 12px;width:min(100%,370px)}
+.search input{background:transparent;border:0;outline:0;width:100%;height:43px;color:var(--ink)}
+.search svg{width:17px;color:var(--muted)}
+#counter,#pending{font-size:12px;color:var(--muted);font-weight:700}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 4px 12px #06112409}
+.panel-h{padding:15px 20px;display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--border)}
+.panel-h h2{margin:0;font-size:15px}.panel-h small{color:var(--muted)}
+.table-wrap{overflow:auto;max-height:min(74dvh,760px);overscroll-behavior:contain;scrollbar-gutter:stable}
+table{width:100%;border-spacing:0;border-collapse:separate;min-width:1450px;font-size:12px}
+th{position:sticky;top:0;z-index:3;background:var(--bg);font-size:10px;text-transform:uppercase;letter-spacing:.4px;padding:14px 9px;border-bottom:1px solid var(--border);color:var(--muted);white-space:nowrap}
+td{border-bottom:1px solid var(--border);padding:10px 9px;text-align:center}
+th:first-child,td:first-child{position:sticky;left:0;z-index:2;min-width:185px;padding-left:18px;text-align:left;background:var(--surface)}
+th:first-child{z-index:5;background:var(--bg)}
+tbody tr:hover td{background:var(--bg)}tbody tr.dirty td{background:var(--accent2)}
+tbody tr:hover td:first-child,tbody tr.dirty td:first-child{background:inherit}
+td:first-child strong{font-size:12px;display:block}td:first-child small{display:block;color:var(--muted);font-size:10px;margin-top:4px}
+input[type="checkbox"]{width:19px;height:19px;accent-color:#d99522;cursor:pointer}
+input[type="checkbox"].manager{accent-color:#875fc1}
+.row-save{background:#bd810b;color:white;border:0;border-radius:9px;padding:9px 11px;font-size:11px;font-weight:800;cursor:pointer}
+.row-save:disabled{opacity:.4;cursor:default}
+.tag{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:10px;background:#def5e7;color:#136d41;font-size:9px;font-weight:800}
+.tag.manager{background:#eee1ff;color:#6936ad}
+html[data-theme="dark"] .tag{background:#194132;color:#9be0b9}
+html[data-theme="dark"] .tag.manager{background:#39284e;color:#cfb5f6}
+.msg{border-radius:11px;padding:12px 14px;font-weight:700;margin:14px 0;display:none}
+.msg.ok{display:block;background:#e5f8ee;color:#126b45;border:1px solid #a9e6c6}
+.msg.error{display:block;background:#fff0f1;color:#a32334;border:1px solid #ffb5be}
+#login-overlay{position:fixed;inset:0;background:#07101cba;display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+#login-overlay[hidden]{display:none}
+.auth-card{background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:20px;width:min(100%,440px);padding:25px;box-shadow:0 22px 70px #0004}
+.auth-card h2{margin:0 0 8px;font-size:21px}
+.auth-card label{display:block;font-weight:800;margin:18px 0 5px}
+.auth-card input{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--ink)}
+.auth-card .btn{width:100%;margin-top:20px}
+.auth-card #login-error{margin-top:13px;color:var(--red);font-size:12px;font-weight:700}
+footer{text-align:center;color:var(--muted);font-size:11px;margin-top:26px}
+@media(max-width:650px){main{padding:18px 10px 25px}.header{padding:12px}.panel{border-radius:10px}.toolbar-right{width:100%}.toolbar-right .btn{flex:1}.search{width:100%}h1{font-size:24px}.panel-h{padding:12px}}
+</style>
+</head>
+<body>
+<header><div class="header">
+<a class="btn" href="./index.html"><i data-lucide="arrow-left"></i> Menu</a>
+<div class="brand"><img class="logo" src="./logo.png" alt="Sintercan"><div><strong>SINTERCAN</strong><small>Administração de acessos</small></div></div>
+<div class="grow"></div><span class="username" id="logged-user"></span>
+<button class="btn" id="theme-button" title="Alternar tema" type="button"><i data-lucide="sun-moon"></i></button>
+<button class="btn" id="lock-button" type="button"><i data-lucide="lock"></i> Bloquear</button>
+</div></header>
+<main>
+<div class="eyebrow">Administração · Gestor</div>
+<h1>Gerenciar acessos</h1>
+<p>Consulte os usuários ativos e altere os módulos autorizados. As marcações são gravadas diretamente em CSENHA.</p>
+<div class="notice"><i data-lucide="shield-check"></i><div><b>U_GESTOR = 1 libera todos os módulos.</b> Apenas gestores podem consultar e alterar permissões. O campo Compras foi mantido para compatibilidade com a CSENHA, mas a aba Compras não aparece no portal. Alterações de acesso são atualizadas no próximo login ou atualização da sessão.</div></div>
+<div class="msg" id="message" role="alert"></div>
+<div class="toolbar">
+<label class="search"><i data-lucide="search"></i><input id="filter" type="search" placeholder="Pesquisar usuário..." aria-label="Pesquisar usuário"></label>
+<div class="toolbar-right"><span id="counter">Aguardando autenticação</span><span id="pending"></span>
+<button class="btn" id="reload" type="button"><i data-lucide="refresh-cw"></i> Atualizar</button>
+<button class="btn accent" id="save-all" disabled type="button"><i data-lucide="save"></i> Salvar alterações</button></div>
+</div>
+<section class="panel">
+<div class="panel-h"><h2>Usuários ativos da Sintercan</h2><small>CSENHA · INATIVO = 0 · Empresa 1</small></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Usuário</th><th>Produção</th><th>Estoque PA</th><th>Estoque MP</th><th>Faturamento</th><th>Qualidade</th><th>Financeiro</th><th>RS</th><th>Compras*</th><th>Custos</th><th>Prod. Valor</th><th>Gestor</th><th>Ação</th></tr></thead>
+<tbody id="rows"></tbody>
+</table></div>
+<div id="empty" style="text-align:center;padding:28px;color:var(--muted)" hidden>Nenhum usuário encontrado.</div>
+</section>
+<footer>* Compras: campo legado mantido na CSENHA, sem exibir aba no portal. Sessão administrativa expira após 30 minutos.</footer>
+</main>
+<div id="login-overlay">
+<form class="auth-card" id="admin-login" autocomplete="off">
+<h2>Identificação do gestor</h2>
+<p>Por segurança, informe novamente suas credenciais do CPS. Esta senha não será armazenada no navegador.</p>
+<label for="admin-username">Usuário</label><input id="admin-username" required maxlength="120" autocomplete="username" style="text-transform:uppercase">
+<label for="admin-password">Senha</label><input id="admin-password" required type="password" maxlength="200" autocomplete="current-password">
+<div id="login-error" role="alert"></div>
+<button type="submit" class="btn accent" id="login-button"><i data-lucide="shield-check"></i> Acessar gerenciamento</button>
+</form>
+</div>
+<script>
+(() => {
+'use strict';
+const API = 'https://sintercan.consultoriarf.net/permissoes';
+const CAMPOS = ['producao','estoque_pa','estoque_mp','faturamento','qualidade','financeiro','rs','compras','custos','producao_valor','gestor'];
+const LABELS = ['Produção','Estoque PA','Estoque MP','Faturamento','Qualidade','Financeiro','RS','Compras (legado)','Custos','Produção Valor','Gestor'];
+const $ = id => document.getElementById(id);
+const flag = v => v === true || v === 1 || String(v).trim().toLowerCase() === '1';
+let token = null, usuarioLogado = '', usuarios = [], busy = false, saving = false;
+try {
+  const user = JSON.parse(localStorage.getItem('sintercan_user') || '{}');
+  usuarioLogado = String(user.nome || '').trim().toUpperCase();
+} catch (_) {}
+$('logged-user').textContent = usuarioLogado || 'Usuário';
+$('admin-username').value = usuarioLogado;
+document.documentElement.dataset.theme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+$('theme-button').addEventListener('click', () => {
+  const dark = document.documentElement.dataset.theme !== 'dark';
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
+});
+const icons = () => window.lucide && lucide.createIcons();
+function message(txt = '', type = 'ok') { $('message').textContent = txt; $('message').className = txt ? 'msg ' + type : 'msg'; }
+function diff(u) { return CAMPOS.some(c => u['u_' + c] !== u.old['u_' + c]); }
+function pending() { return usuarios.filter(diff).length; }
+function setState() {
+  const count = pending();
+  $('pending').textContent = count ? count + ' alteração(ões) pendente(s)' : '';
+  $('save-all').disabled = !token || !count || busy || saving;
+  document.querySelectorAll('tr[data-user]').forEach(tr => {
+    const u = usuarios.find(x => x.usuario === tr.dataset.user);
+    if (!u) return;
+    tr.classList.toggle('dirty', diff(u));
+    tr.querySelector('.row-save').disabled = !token || !diff(u) || busy || saving;
+  });
+}
+function draw() {
+  const term = $('filter').value.trim().toLocaleUpperCase('pt-BR');
+  const found = usuarios.filter(u => u.usuario.toLocaleUpperCase('pt-BR').includes(term));
+  $('counter').textContent = found.length + ' de ' + usuarios.length + ' usuário(s)';
+  $('rows').replaceChildren();
+  $('empty').hidden = found.length > 0;
+  found.forEach(u => {
+    const tr = document.createElement('tr');tr.dataset.user = u.usuario;
+    const name = document.createElement('td');
+    const title = document.createElement('strong');title.textContent = u.usuario;name.appendChild(title);
+    const tag = document.createElement('span');
+    const renderTag = () => {
+      tag.className = 'tag' + (u.u_gestor ? ' manager' : '');
+      tag.textContent = u.u_gestor ? 'GESTOR · ACESSO TOTAL' : 'ACESSO POR MÓDULO';
+    };
+    renderTag();name.appendChild(tag);tr.appendChild(name);
+    CAMPOS.forEach((campo, i) => {
+      const td = document.createElement('td'), check = document.createElement('input');
+      check.type = 'checkbox';check.checked = Boolean(u['u_' + campo]);
+      check.className = campo === 'gestor' ? 'manager' : '';
+      check.setAttribute('aria-label', LABELS[i] + ' - ' + u.usuario);
+      check.addEventListener('change', () => {
+        u['u_' + campo] = check.checked ? 1 : 0;renderTag();setState();
+      });
+      td.appendChild(check);tr.appendChild(td);
+    });
+    const action = document.createElement('td'), save = document.createElement('button');
+    save.type = 'button';save.className = 'row-save';save.textContent = 'Salvar';
+    save.addEventListener('click', () => saveOne(u));
+    action.appendChild(save);tr.appendChild(action);$('rows').appendChild(tr);
+  });
+  setState();
+}
+function lock() {
+  token = null;
+  usuarios = [];
+  $('rows').replaceChildren();
+  $('counter').textContent = 'Aguardando autenticação';
+  $('admin-password').value = '';
+  $('login-overlay').hidden = false;
+  $('login-error').textContent = '';
+  $('admin-password').focus();
+  setState();
+}
+async function getJson(path, options = {}) {
+  const headers = {'Content-Type':'application/json', ...(token ? {'Authorization':'Bearer ' + token} : {})};
+  const r = await fetch(API + path, {cache:'no-store', ...options, headers:{...headers, ...options.headers}});
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    if ((r.status === 401 || r.status === 403) && path !== '/login') lock();
+    throw new Error(data.detail || 'Erro HTTP ' + r.status);
+  }
+  return data;
+}
+async function load() {
+  if (pending() && !confirm('Existem alterações não salvas. Descartar e atualizar?')) return;
+  if (!token || busy || saving) return;
+  busy = true;message('');$('reload').disabled = true;setState();
+  try {
+    const data = await getJson('/usuarios');
+    const lines = Array.isArray(data) ? data : data.usuarios;
+    if (!Array.isArray(lines)) throw new Error('A API retornou usuários em formato inválido.');
+    usuarios = lines.map(row => {
+      const u = {usuario:String(row.usuario ?? row.nome ?? '').trim()};
+      CAMPOS.forEach(c => u['u_' + c] = flag(row['u_' + c]) ? 1 : 0);
+      u.old = Object.fromEntries(CAMPOS.map(c => ['u_' + c, u['u_' + c]]));
+      return u;
+    }).filter(u => u.usuario).sort((a,b) => a.usuario.localeCompare(b.usuario,'pt-BR'));
+    draw();
+  } catch (err) {message(err.message,'error');}
+  finally {busy = false;$('reload').disabled = false;setState();}
+}
+async function saveOne(u, batch = false) {
+  if (!batch && saving) return false;
+  if (u.u_gestor !== u.old.u_gestor &&
+      !confirm('Confirmar alteração da permissão GESTOR para ' + u.usuario + '?')) return false;
+  if (!batch) saving = true;setState();
+  try {
+    const changes = Object.fromEntries(CAMPOS.map(c => ['u_' + c,u['u_' + c]]));
+    await getJson('/usuarios/' + encodeURIComponent(u.usuario),{method:'PATCH',body:JSON.stringify(changes)});
+    u.old = {...changes};message('Permissões de ' + u.usuario + ' gravadas na CSENHA.');return true;
+  } catch (err) {message('Erro ao salvar ' + u.usuario + ': ' + err.message, 'error');return false;}
+  finally {if (!batch) saving = false;draw();}
+}
+async function saveAll() {
+  if (saving || !pending()) return;
+  saving = true;setState();
+  // Alterar o próprio U_GESTOR sempre por último para não interromper o lote.
+  const entries = usuarios.filter(diff).sort((a,b) => (a.usuario === usuarioLogado) - (b.usuario === usuarioLogado));
+  let ok = 0, fails = 0;
+  for (const u of entries) {if (await saveOne(u,true)) ok++;else fails++;}
+  saving = false;draw();
+  message(ok + ' usuário(s) atualizado(s).' + (fails ? ' ' + fails + ' falha(s).' : ''), fails ? 'error' : 'ok');
+}
+$('admin-login').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('login-button');btn.disabled = true;$('login-error').textContent = '';
+  try {
+    const adminName = $('admin-username').value.trim().toUpperCase();
+    const result = await getJson('/login', {
+      method:'POST',body:JSON.stringify({usuario:adminName,senha:$('admin-password').value})
+    });
+    if (!result.access_token) throw new Error('A API não retornou uma sessão administrativa.');
+    token = result.access_token;
+    usuarioLogado = adminName;$('logged-user').textContent = adminName;
+    $('admin-password').value = '';$('login-overlay').hidden = true;
+    await load();
+  } catch (err) {$('login-error').textContent = err.message;token = null;}
+  finally {btn.disabled = false;}
+});
+$('filter').addEventListener('input',draw);
+$('reload').addEventListener('click',load);
+$('save-all').addEventListener('click',saveAll);
+$('lock-button').addEventListener('click',lock);
+window.addEventListener('beforeunload', e => {if (pending()) {e.preventDefault();e.returnValue='';}});
+icons();$('admin-password').focus();
+})();
+</script>
+</body>
+</html>
