@@ -46,15 +46,17 @@
     .picker-button {display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0;width:100%;height:37px;padding:0 10px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:9px;text-align:left;}
     .picker-button:hover,.picker-button[aria-expanded="true"] {border-color:var(--accent);}
     .picker-label {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;}
-    .picker-menu {position:absolute;top:65px;left:0;z-index:50;background:var(--panel);border:1px solid var(--line);box-shadow:0 16px 40px #0003;border-radius:12px;width:max(220px,100%);max-width:min(310px,90vw);padding:9px;}
+    .picker-menu {position:absolute;top:calc(100% + 7px);left:0;z-index:50;background:var(--panel);border:1px solid var(--line);box-shadow:0 16px 40px #0003;border-radius:12px;width:max(240px,100%);max-width:calc(100vw - 24px);padding:10px;overflow:hidden;}
     .picker-menu.hidden {display:none;}
-    .picker-menu input {width:100%;height:34px;padding:0 10px;margin-bottom:7px;border:1px solid var(--line);border-radius:8px;color:var(--text);background:var(--panel2);outline:none;}
-    .picker-tools {display:flex;justify-content:space-between;padding:0 5px 7px;gap:8px;}
-    .text-btn {border:0;background:none;color:var(--accentink);font-weight:750;font-size:12px;padding:2px;cursor:pointer;}
-    .picker-items {max-height:210px;overflow-y:auto;border-top:1px solid var(--line);padding-top:6px;}
-    .picker-item {display:flex;gap:9px;align-items:center;border-radius:6px;padding:6px;font-size:12px;cursor:pointer;overflow-wrap:anywhere;}
+    /* O campo de pesquisa é o único input que deve ocupar a largura total. */
+    .picker-menu > input {display:block;width:100%;height:36px;padding:0 10px;margin:0 0 9px;border:1px solid var(--line);border-radius:8px;color:var(--text);background:var(--panel2);outline:none;box-sizing:border-box;}
+    .picker-tools {display:flex;justify-content:space-between;align-items:center;padding:0 4px 8px;gap:8px;}
+    .text-btn {border:0;background:none;color:var(--accentink);font-weight:750;font-size:12px;padding:2px;cursor:pointer;white-space:nowrap;}
+    .picker-items {max-height:245px;overflow-y:auto;overflow-x:hidden;border-top:1px solid var(--line);padding-top:6px;scrollbar-width:thin;}
+    .picker-item {display:grid;grid-template-columns:17px minmax(0,1fr);gap:10px;align-items:center;min-width:0;width:100%;border-radius:7px;padding:8px 7px;font-size:12px;line-height:1.35;cursor:pointer;}
     .picker-item:hover {background:var(--panel2);}
-    .picker-item input {accent-color:#d97706;flex:none;}
+    .picker-item input[type="checkbox"] {appearance:auto;display:block;box-sizing:border-box;min-width:16px;max-width:16px;width:16px;height:16px;min-height:16px;max-height:16px;padding:0;margin:0;border:0;border-radius:3px;accent-color:#d97706;justify-self:start;flex:none;}
+    .picker-item span {display:block;min-width:0;white-space:normal;overflow-wrap:break-word;word-break:normal;}
     .picker-none {color:var(--muted);font-size:12px;padding:10px;}
     .tabs {gap:5px;overflow-x:auto;white-space:nowrap;margin-bottom:15px;padding:5px;border-radius:13px;border:1px solid var(--line);background:var(--panel);width:max-content;max-width:100%;}
     .tab {border:0;background:transparent;color:var(--muted);padding:10px 16px;border-radius:9px;font-weight:750;font-size:13px;display:flex;align-items:center;gap:7px;}
@@ -344,14 +346,15 @@
   function renderFilterGrid() {
     let out='';
     for(const key of Object.keys(LABELS)){
-      const opts=options(key),selected=filters[key],title=selected.length===0?'Todos':selected.length===1?niceOption(key,selected[0]):selected.length+' selecionados';
+      const opts=options(key),selected=filters[key];
+      const title=selected.length===0?'Todos':selected.length===1?niceOption(key,selected[0]):selected.length+' selecionados';
       out+='<div class="filter-field"><label class="filter-label">'+esc(LABELS[key]).toUpperCase()+'</label>'+
         '<button class="picker-button" id="picker-'+key+'" onclick="togglePicker(\''+key+'\')" aria-expanded="'+(openPicker===key)+'" type="button"><span class="picker-label">'+esc(title)+'</span><span>⌄</span></button>'+
         '<div class="picker-menu '+(openPicker===key?'':'hidden')+'" id="menu-'+key+'">'+
-        '<input aria-label="Pesquisar '+esc(LABELS[key])+'" placeholder="Pesquisar..." oninput="searchPicker(\''+key+'\',this.value)">'+
-        '<div class="picker-tools"><button class="text-btn" onclick="setAll(\''+key+'\',true)">Selecionar todos</button><button class="text-btn" onclick="setAll(\''+key+'\',false)">Limpar</button></div>'+
+        '<input type="search" aria-label="Pesquisar '+esc(LABELS[key])+'" placeholder="Pesquisar..." oninput="searchPicker(\''+key+'\',this.value)">'+
+        '<div class="picker-tools"><button type="button" class="text-btn" onclick="setAll(\''+key+'\',true)">Selecionar todos</button><button type="button" class="text-btn" onclick="setAll(\''+key+'\',false)">Limpar</button></div>'+
         '<div class="picker-items">'+(opts.length?opts.map(v=>
-         '<label class="picker-item" data-text="'+esc(norm(niceOption(key,v)))+'"><input type="checkbox" '+(selected.includes(String(v))?'checked':'')+' onchange="changeFilter(\''+key+'\',\''+esc(String(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'"))+'\',this.checked)"><span>'+esc(niceOption(key,v))+'</span></label>'
+         '<label class="picker-item" data-text="'+esc(norm(niceOption(key,v)))+'"><input type="checkbox" value="'+esc(v)+'" '+(selected.includes(String(v))?'checked':'')+' onchange="changeFilter(\''+key+'\',this.value,this.checked)"><span>'+esc(niceOption(key,v))+'</span></label>'
         ).join(''):'<div class="picker-none">Sem opções disponíveis</div>')+'</div></div></div>';
     }
     document.getElementById('filterGrid').innerHTML=out;
@@ -362,21 +365,50 @@
     for(const k of Object.keys(LABELS)) {
       const m=document.getElementById('menu-'+k),b=document.getElementById('picker-'+k);
       m.classList.toggle('hidden',k!==openPicker);b.setAttribute('aria-expanded',String(k===openPicker));
+      m.style.left='';m.style.right='';m.style.top='';m.style.bottom='';
     }
-    if(openPicker) document.querySelector('#menu-'+openPicker+' input')?.focus();
+    if(openPicker){
+      const m=document.getElementById('menu-'+openPicker);
+      if(m.getBoundingClientRect().right>window.innerWidth-10) {m.style.left='auto';m.style.right='0';}
+      const pos=m.getBoundingClientRect();
+      if(pos.bottom>window.innerHeight-10 && pos.top>window.innerHeight-pos.top) {
+        m.style.top='auto';m.style.bottom='calc(100% + 7px)';
+      }
+      m.querySelector('input[type="search"]')?.focus();
+    }
   }
   function searchPicker(key,value) {
     const term=norm(value);
     document.querySelectorAll('#menu-'+key+' .picker-item').forEach(el=>el.classList.toggle('hidden',!el.dataset.text.includes(term)));
   }
+  function updatePickerLabel(key){
+    const el=document.querySelector('#picker-'+key+' .picker-label');
+    if(!el)return;
+    const selected=filters[key];
+    el.textContent=selected.length===0?'Todos':selected.length===1?niceOption(key,selected[0]):selected.length+' selecionados';
+  }
+  function applyFilters(){
+    localStorage.setItem(KEYS.filters,JSON.stringify(filters));
+    tablePage=1;
+    render();
+  }
   function changeFilter(key,v,on){
-    const s=new Set(filters[key]);on?s.add(v):s.delete(v);filters[key]=Array.from(s);filterChanged(key);
+    const values=new Set(filters[key]);on?values.add(String(v)):values.delete(String(v));
+    filters[key]=[...values];
+    updatePickerLabel(key);
+    // Não reconstruir o menu ao marcar uma opção: mantém pesquisa, posição e rolagem.
+    applyFilters();
   }
-  function setAll(key,all) {filters[key]=all?options(key).map(String):[];filterChanged();}
-  function filterChanged(keepPicker) {
-    localStorage.setItem(KEYS.filters,JSON.stringify(filters));tablePage=1;tableSearch='';openPicker=keepPicker||null;renderFilterGrid();render();
+  function setAll(key,all) {
+    // 'Selecionar todos' vale para todas as opções do filtro, inclusive fora da busca.
+    filters[key]=all?options(key).map(String):[];
+    document.querySelectorAll('#menu-'+key+' input[type="checkbox"]').forEach(el=>{el.checked=all;});
+    updatePickerLabel(key);applyFilters();
   }
-  function clearFilters() {for(const k of Object.keys(filters))filters[k]=[];openPicker=null;filterChanged();}
+  function clearFilters(){
+    for(const k of Object.keys(filters)) filters[k]=[];
+    openPicker=null;renderFilterGrid();applyFilters();
+  }
   document.addEventListener('click',e=>{
     if(openPicker&&!e.target.closest('.filter-field')){
       openPicker=null;
