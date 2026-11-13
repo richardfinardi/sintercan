@@ -77,14 +77,14 @@ class PortalPermissoesTest(unittest.TestCase):
         bob = self.login("BOB")
         admin = self.login("GESTOR")
         link = self.create(alice)
-        self.assertEqual(len(portal.listar_portais(authorization=alice)), 1)
-        self.assertEqual(len(portal.listar_portais(authorization=bob)), 0)
-        self.assertEqual(len(portal.listar_portais(authorization=admin)), 1)
+        self.assertEqual(len(json.loads(portal.listar_portais(authorization=alice).body)), 1)
+        self.assertEqual(len(json.loads(portal.listar_portais(authorization=bob).body)), 0)
+        self.assertEqual(len(json.loads(portal.listar_portais(authorization=admin).body)), 1)
         with self.assertRaises(HTTPException) as ex:
             portal.excluir_portal(link["id"], authorization=bob)
         self.assertEqual(ex.exception.status_code, 403)
         self.assertEqual(portal.excluir_portal(link["id"], authorization=alice)["ok"], True)
-        self.assertEqual(len(portal.listar_portais(authorization=admin)), 0)
+        self.assertEqual(len(json.loads(portal.listar_portais(authorization=admin).body)), 0)
         with self.assertRaises(HTTPException) as ex:
             portal.get_portal(link["id"])
         self.assertEqual(ex.exception.status_code, 404)
