@@ -232,8 +232,9 @@
     const classifications=[
       'destino','disposicao','disposição','tratativa','classificacao','classificação',
       'acao','ação','resultado','status_nok','tipo_ocorrencia','tipo_disposicao',
-      'disposicao_final','destinacao','destinação','tipo_destino','situacao',
-      'tipo_resultado','tipo_acao','resultado_analise','acao_imediata','tipo_origem'
+      'disposicao_final','destinacao','destinação','tipo_destino','situacao','status','status_rnc',
+      'tipo_resultado','tipo_acao','resultado_analise','acao_imediata','tipo_origem','tipo',
+      'tipo_nok','destino_peca','classificacao_nok','tipo_tratamento','resultado_inspecao'
     ].map(name=>field(row,name)).filter(v=>v!==undefined && v!==null && String(v).trim()!=='').map(String);
     const treatment=classifications.join(' | ');
     const normalizedTreatment=norm(treatment);
@@ -246,17 +247,21 @@
     const ct=optionalNumber(field(row,'custo_total','custo_total_nok','valor_total_custo','vl_custo_total'));
     const isRefugo=/refug|sucata|descart|perda/.test(normalizedTreatment);
     const isRetrab=/retrabalh|reprocess|repar/.test(normalizedTreatment);
-    const isAC=/condicional|aceitocondicional|aceitacondicional|aceitocond/.test(normalizedTreatment)||normalizedTreatment==='ac';
+    const isAC=/condicional|aceitocondicional|aceitacondicional|aceitocond/.test(normalizedTreatment)||
+      classifications.some(item=>norm(item)==='ac');
     const qRef=optionalNumber(field(row,
       'qtde_refugo','qtd_refugo','qtde_refugada','qtd_refugada',
-      'quantidade_refugada','quantidade_refugo','quantidade_refugadas','pecas_refugadas','refugo_qtde'));
+      'quantidade_refugada','quantidade_refugo','quantidade_refugadas','pecas_refugadas','refugo_qtde',
+      'qtde_refugados','qtd_refugados','quantidade_itens_refugados','qtde_ref'));
     const qRet=optionalNumber(field(row,
       'qtde_retrabalho','qtd_retrabalho','qtde_retrabalhada','qtd_retrabalhada',
-      'quantidade_retrabalho','quantidade_retrabalhada','pecas_retrabalho'));
+      'quantidade_retrabalho','quantidade_retrabalhada','pecas_retrabalho','qtde_retrabalhos',
+      'qtde_retrabalhados','qtd_retrabalhados','qtde_retrab'));
     const qAC=optionalNumber(field(row,
       'qtde_ac','qtd_ac','quantidade_ac','qtde_aceito_condicional','qtd_aceito_condicional',
       'qtde_aceita_condicional','quantidade_aceito_condicional','quantidade_aceita_condicional',
-      'qtde_condicional','qtd_condicional','qtde_aceitos_condicionalmente','itens_ac'));
+      'qtde_condicional','qtd_condicional','qtde_aceitos_condicionalmente','qtd_aceitos_condicionalmente',
+      'quantidade_itens_ac','qtde_aceitos','qtde_aceito','qtd_aceitos','qtd_aceito','itens_ac'));
     // No modelo Power BI, custo de retrabalho é composto de MO + MP + ST.
     // Antes, o cálculo ignorava esses custos quando não havia um campo já totalizado.
     if(cr===null&&(cm!==null||cp!==null||cs!==null))cr=(cm||0)+(cp||0)+(cs||0);
