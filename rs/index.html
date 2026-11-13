@@ -1663,12 +1663,12 @@
                 <div class="flex-shrink-0 px-3 py-2 border-b border-slate-200 dark:border-slate-800 flex flex-wrap gap-2 justify-between items-center">
                     <div>
                         <h2 class="text-sm font-extrabold text-slate-900 dark:text-white">Material de Cliente (follow-up)</h2>
-                        <p id="materialActiveColumnFilters" class="text-[10px] text-slate-500 dark:text-slate-400">Arraste colunas e linhas para reorganizar</p>
+                        <p id="materialActiveColumnFilters" class="text-[10px] text-slate-500 dark:text-slate-400">Arraste o ícone ⠿ do cabeçalho para reorganizar as colunas</p>
                     </div>
                     <div class="flex flex-wrap gap-1.5 items-center text-[11px] font-semibold">
                         <button id="materialToggleFiltersBtn" type="button" onclick="materialToggleFilters()" aria-expanded="true" class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-amber-500">Recolher filtros</button>
                         <button type="button" onclick="materialOpenLayoutModal()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-amber-500" title="Mostrar, ocultar, mover e dimensionar colunas">Personalizar colunas</button>
-                        <button id="materialManualSortBtn" type="button" onclick="useMaterialManualOrder()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-amber-500" title="Reativar ordem personalizada das linhas">Ordem manual</button>
+
                     </div>
                 </div>
                 <div id="materialClienteTableScroll" class="flex-1 min-h-0 overflow-auto">
@@ -1684,7 +1684,6 @@
             <div class="flex-shrink-0 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 flex flex-wrap items-center gap-3">
                 <span>Exibindo <strong id="materialExibindoRegistros" class="text-amber-600 dark:text-amber-400">0</strong> de <strong id="materialTotalRegistros" class="text-amber-600 dark:text-amber-400">0</strong> registros</span>
                 <button id="materialLoadMore" onclick="loadMoreMaterialCliente()" class="hidden rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1 text-amber-700 dark:text-amber-400">Carregar +120</button>
-                <button type="button" onclick="materialResetRowOrder()" class="ml-auto rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-1 text-slate-600 dark:text-slate-300 hover:border-amber-500" title="Voltar à ordem original das linhas neste terminal">Restaurar ordem das linhas</button>
             </div>
         </div>
     </main>
@@ -1732,7 +1731,7 @@
             }
         }
 
-        const APP_VERSION = 'V1.6.7';
+        const APP_VERSION = 'V1.6.8';
         const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
         let autoRefreshTimer = null;
         let appHiddenAt = null;
@@ -5169,6 +5168,6 @@
             }, 160);
         });
     </script>
-    <script src="./material-cliente.js?v=1.6.7"></script>
+    <script src="./material-cliente.js?v=1.6.8"></script>
 </body>
 </html>
