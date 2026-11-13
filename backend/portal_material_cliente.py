@@ -129,7 +129,7 @@ def flag(valor):
 
 def autorizar_portal(authorization: str | None) -> tuple[str, bool]:
     """Confere sessão criada após senha CPS e permissão U_RS atual no CPS."""
-    if not authorization or not re.fullmatch(r"Bearer [A-Za-z0-9._~+\\-=/]+", authorization):
+    if not authorization or not re.fullmatch(r"Bearer [A-Za-z0-9_-]{40,128}", authorization):
         raise HTTPException(401, "Informe sua senha CPS para gerenciar os portais.")
     token_hash = hashlib.sha256(authorization[7:].encode("utf-8")).hexdigest()
     with conn() as cx:
