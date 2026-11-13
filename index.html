@@ -183,6 +183,24 @@
             const grid = document.getElementById('gridModules');
             grid.innerHTML = '';
 
+            // Atalho adicional no menu: visível apenas ao gestor já autenticado.
+            // A tela administrativa ainda exige senha CPS e valida U_GESTOR no backend.
+            if (gestor) {
+                const cardAcessos = document.createElement('a');
+                cardAcessos.href = './gerenciar-acessos.html';
+                cardAcessos.className = 'flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-400 dark:border-amber-700 rounded-xl hover:border-amber-500 hover:shadow-lg transition cursor-pointer group';
+                cardAcessos.innerHTML = `
+                    <div class="p-3 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-xl">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-900 dark:text-white">Gerenciar acessos</h3>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400">Permissões dos usuários da CSENHA</span>
+                    </div>
+                `;
+                grid.appendChild(cardAcessos);
+            }
+
             const modules = [
                 {
                     key: 'producao',
