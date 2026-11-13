@@ -232,6 +232,7 @@
     const cs=optionalNumber(field(row,'custo_st','custo de st','valor_st','vl_st','custo_terceiros'));
     let cr=optionalNumber(field(row,'custo_retrabalho','vl_retrabalho','valor_retrabalho'));
     let cf=optionalNumber(field(row,'custo_refugo','vl_refugo','valor_refugo'));
+    const ct=optionalNumber(field(row,'custo_total','custo_total_nok','valor_total_custo','vl_custo_total'));
     const isRefugo=/refug|sucata|descart|perda/.test(norm(treatment));
     const isRetrab=/retrabalh|reprocess|repar/.test(norm(treatment));
     const isAC=/condicional|aceitocondicional/.test(norm(treatment))||norm(treatment)==='ac';
@@ -249,7 +250,7 @@
       cliente:field(row,'cliente','nome_cliente','razao_social'),
       titulo_servico:field(row,'titulo_servico','titulo serviço','titulo','descricao','descrição','peca'),
       qtde:qty,responsavel:field(row,'responsavel','responsável','nome_responsavel'),
-      custo_mo:cm,custo_mp:cp,custo_st:cs,custo_retrabalho:cr,custo_refugo:cf,
+      custo_mo:cm,custo_mp:cp,custo_st:cs,custo_retrabalho:cr,custo_refugo:cf,custo_total:ct,
       qtd_refugo:qRef!==null?qRef:(isRefugo?qty:null),qtd_retrabalho:qRet!==null?qRet:(isRetrab?qty:null),
       qtd_ac:qAC!==null?qAC:(isAC?qty:null),tratamento:treatment,
       hasRefugo:qRef!==null||isRefugo,hasRetrabalho:qRet!==null||isRetrab,hasAC:qAC!==null||isAC,
@@ -526,7 +527,7 @@
     document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===activeTab));
     const rows=filteredRows(),m=metrics(rows);
     document.getElementById('filteredCount').textContent=fmt(rows.length)+' RNC';
-    for(const r of rows)r.custo_total_grafico=(r.custo_retrabalho||0)+(r.custo_refugo||0);
+    for(const r of rows)r.custo_total_grafico=(r.custo_retrabalho!==null||r.custo_refugo!==null)?(r.custo_retrabalho||0)+(r.custo_refugo||0):(r.custo_total||0);
     const view=document.getElementById('view');
     if(activeTab==='valorizacao')view.innerHTML=valView(rows,m);
     else if(activeTab==='demonstrativos')view.innerHTML=demoView(rows);
