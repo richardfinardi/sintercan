@@ -619,16 +619,35 @@
                     !alvo.matches(':hover') || !k.guid || !k.orcamento) return;
                 try {
                     const dados = await buscarHistoricoFaturamento(k.empresa,k.orcamento,k.guid,k.os);
+                    const legadoOrc=String(dados.historico_legado_orcamento || '').trim();
+                    const legadoOs=String(dados.historico_legado_os || '').trim();
+                    const legadoData=String(dados.data_renegociacao_legada_os || '').slice(0,10);
                     if (fatHistHoverTarget !== alvo || !alvo.isConnected ||
                         (!alvo.matches(':hover') && !fatHistPopup?.matches(':hover')) ||
-                        !dados.eventos.length) return;
-                    const popup = obterPopupFatHist();
+                        (!dados.eventos.length && !legadoOrc && !legadoOs && !legadoData)) return;
+                    const popup=obterPopupFatHist();
                     popup.replaceChildren();
-                    const cab = criarElementoHist('div',
+                    if (dados.eventos.length) preencherHistoricoFaturamento(popup,dados.eventos,18);
+                    // Registros anteriores são compartilhados pelo orçamento/OS, nunca por GUID.
+                    const legados=[
+                        ['HISTÓRICO ANTERIOR DO ORÇAMENTO (COMPARTILHADO)',legadoOrc],
+                        ['HISTÓRICO ANTERIOR DA OS (COMPARTILHADO)',legadoOs]
+                    ];
+                    if (legadoData) popup.append(criarElementoHist('div',
+                        'bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-xs font-semibold',
+                        'Data antiga de renegociação da OS: '+formatDateOnly(legadoData)));
+                    legados.forEach(([titulo,conteudo])=>{
+                        if (!conteudo) return;
+                        const grupo=criarElementoHist('div',
+                            'border-t border-amber-200 dark:border-amber-800 px-3 py-2 text-xs whitespace-pre-wrap break-words','');
+                        grupo.append(criarElementoHist('div','mb-1 font-extrabold text-amber-800 dark:text-amber-300',titulo));
+                        grupo.append(criarElementoHist('div','text-slate-700 dark:text-slate-300',conteudo.slice(0,3000)+
+                            (conteudo.length>3000?'\n(Abra para ver o histórico completo)':'')));
+                        popup.append(grupo);
+                    });
+                    popup.prepend(criarElementoHist('div',
                         'sticky top-0 bg-slate-100 dark:bg-slate-950 px-3 py-2 text-xs font-black',
-                        'HISTÓRICO DO ITEM ' + (alvo.textContent || '').trim());
-                    preencherHistoricoFaturamento(popup,dados.eventos,18);
-                    popup.prepend(cab);
+                        'HISTÓRICO · '+(alvo.textContent || '').trim()));
                     popup.classList.remove('hidden');
                     posicionarPopupFatHist(alvo);
                 } catch(e) {console.warn('Historico do item indisponivel:',e);}
