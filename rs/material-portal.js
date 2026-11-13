@@ -75,7 +75,9 @@
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
             if (response.status === 401 || response.status === 403) adminToken = null;
-            throw new Error(data.detail || ("Erro HTTP " + response.status));
+            const err = new Error(data.detail || ("Erro HTTP " + response.status));
+            err.httpStatus = response.status;
+            throw err;
         }
         return data;
     }
@@ -270,11 +272,14 @@
         box.textContent = "Consultando portais...";
         try {
             const list = await request(PORTALS);
-            if (!Array.isArray(list) || !list.length) {
-                box.textContent = "Nenhum portal de materiais criado.";
+            // Protege a interface até quando a API antiga ainda devolve
+            // portais já desativados no banco legado.
+            const ativos = Array.isArray(list) ? list.filter(p => p?.ativo === true) : [];
+            if (!ativos.length) {
+                box.textContent = "Nenhum portal ativo. Links excluídos não aparecem aqui.";
                 return;
             }
-            box.innerHTML = list.map(p => {
+            box.innerHTML = ativos.map(p => {
                 const url = encodeURIComponent(p.url || "");
                 return '<article class="border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex flex-col md:flex-row md:justify-between gap-2 items-start md:items-center">' +
                     '<div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><strong class="text-xs break-words" style="color:#0f172a">' + esc(p.nome) +
@@ -335,6 +340,13 @@
             await loadManager();
             managerMessage("Portal excluído definitivamente. O link compartilhado foi invalidado.");
         } catch (e) {
+            if (e.httpStatus === 404) {
+                // Outro dispositivo já apagou esse portal. Ele não deve
+                // continuar visível e o usuário não precisa repetir a ação.
+                await loadManager();
+                managerMessage("Portal já havia sido excluído. Lista atualizada.");
+                return;
+            }
             managerMessage("Falha ao excluir o portal: " + (e.message || String(e)), true);
             button.disabled = false;
             button.textContent = original;
