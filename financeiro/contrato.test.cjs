@@ -83,3 +83,24 @@ test('Semana atual é de domingo a sábado, e a próxima começa no domingo segu
   assert.equal(days(inicio, inicioProxima), 7);
   assert.equal(days(inicioProxima, fimProxima), 6);
 });
+
+test('Filtro Situação deslizante mantém as três opções exclusivas', () => {
+  assert.match(html, /id="statusSegment"/);
+  assert.match(html, /data-status-mode="all"/);
+  assert.match(html, /data-status-mode="ABERTO"/);
+  assert.match(html, /data-status-mode="PAGO"/);
+  assert.doesNotMatch(html, /data-filter="status"/);
+  assert.equal(u.matchesStatus('all', 'PAGO'), true);
+  assert.equal(u.matchesStatus('all', 'ABERTO'), true);
+  assert.equal(u.matchesStatus('all', 'DESCONHECIDO'), true);
+  assert.equal(u.matchesStatus('ABERTO', 'ABERTO'), true);
+  assert.equal(u.matchesStatus('ABERTO', 'PAGO'), false);
+  assert.equal(u.matchesStatus('PAGO', 'PAGO'), true);
+  assert.equal(u.matchesStatus('PAGO', 'ABERTO'), false);
+});
+test('Painel possui comando de recolher com controle de acessibilidade', () => {
+  assert.match(html, /id="toggleFiltersBtn"/);
+  assert.match(html, /aria-controls="filterGrid"/);
+  assert.match(html, /aria-expanded="true"/);
+  assert.match(html, /id="filterSummary"/);
+});
