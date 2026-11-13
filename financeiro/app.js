@@ -16,11 +16,11 @@
   const amountFmt = new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   const countFmt = new Intl.NumberFormat('pt-BR');
 
-  const FILTERS = {supplier: 'Fornecedor', plan: 'Plano de contas', account: 'Conta', type: 'Tipo', status: 'Situação'};
+  const FILTERS = {supplier: 'Fornecedor', plan: 'Plano de contas', account: 'Conta', type: 'Tipo'};
   const state = {
     user: null, rows: [], fetchedAt: 0, cached: false, loading: false,
-    selected: {supplier: [], plan: [], account: [], type: [], status: []},
-    period: 'geral', from: '', to: '', search: '',
+    selected: {supplier: [], plan: [], account: [], type: []},
+    period: 'geral', from: '', to: '', search: '', statusMode: 'all', filtersCollapsed: false,
     page: 1, pageSize: 50, sort: 'dateKey', sortDirection: 1,
     openPicker: '', invalidDates: 0, missingDates: 0, missingSuppliers: 0,
     unknownStatus: 0, sourceFields: [], lastError: ''
@@ -300,6 +300,9 @@
     return (!from || date >= from) && (!to || date <= to);
   }
   function isOverdue(r) { return r.status === 'ABERTO' && r.dateKey && r.dateKey < todayKey(); }
+  function matchesStatus(mode, status) {
+    return mode === 'all' || mode === status;
+  }
   function visibleRows() {
     const periodRange = rangeForPeriod(state.period);
     const start = state.from || periodRange[0];
@@ -309,6 +312,7 @@
     const sel = state.selected;
     return state.rows.filter(function (r) {
       if (state.period === 'vencidas' && !(r.status === 'ABERTO' && r.dateKey && r.dateKey < now)) return false;
+      if (!matchesStatus(state.statusMode, r.status)) return false;
       if (!compareDateValue(r.dateKey, start, end)) return false;
       for (const prop of Object.keys(FILTERS)) if (sel[prop].length && !sel[prop].includes(r[prop])) return false;
       if (search && !r.search.includes(search)) return false;
@@ -342,7 +346,8 @@
     try {
       localStorage.setItem(FILTER_KEY + ':' + key(state.user.nome), JSON.stringify({
         selected: state.selected, period: state.period, from: state.from, to: state.to,
-        search: state.search, pageSize: state.pageSize
+        search: state.search, pageSize: state.pageSize,
+        statusMode: state.statusMode, filtersCollapsed: state.filtersCollapsed
       }));
     } catch (_) {}
   }
@@ -351,6 +356,10 @@
       const saved = JSON.parse(localStorage.getItem(FILTER_KEY + ':' + key(state.user.nome)) || 'null');
       if (!saved) return;
       for (const prop of Object.keys(FILTERS)) if (saved.selected && Array.isArray(saved.selected[prop])) state.selected[prop] = saved.selected[prop].filter(function (v) { return typeof v === 'string'; });
+      if (['all', 'ABERTO', 'PAGO'].includes(saved.statusMode)) state.statusMode = saved.statusMode;
+      else if (saved.selected && Array.isArray(saved.selected.status) && saved.selected.status.length === 1 &&
+          ['ABERTO', 'PAGO'].includes(saved.selected.status[0])) state.statusMode = saved.selected.status[0];
+      if (typeof saved.filtersCollapsed === 'boolean') state.filtersCollapsed = saved.filtersCollapsed;
       if (['geral', 'semana', 'proxima-semana', 'mes', 'proximo-mes', 'vencidas'].includes(saved.period)) state.period = saved.period;
       if (/^\d{4}-\d\d-\d\d$/.test(saved.from || '')) state.from = saved.from;
       if (/^\d{4}-\d\d-\d\d$/.test(saved.to || '')) state.to = saved.to;
@@ -358,7 +367,28 @@
       if ([25, 50, 100].includes(Number(saved.pageSize))) state.pageSize = Number(saved.pageSize);
     } catch (_) {}
   }
+  function updateFilterPanel() {
+    const grid = el('filterGrid');
+    const btn = el('toggleFiltersBtn');
+    grid.hidden = state.filtersCollapsed;
+    btn.setAttribute('aria-expanded', String(!state.filtersCollapsed));
+    btn.textContent = state.filtersCollapsed ? '⌄ Expandir filtros' : '⌃ Recolher filtros';
+    const active = Object.values(state.selected).filter(function (values) { return values.length > 0; }).length
+      + Number(!!state.from) + Number(!!state.to) + Number(!!state.search)
+      + Number(state.statusMode !== 'all');
+    const statusLabel = state.statusMode === 'ABERTO' ? 'Só aberto' : state.statusMode === 'PAGO' ? 'Só pago' : 'Exibir tudo';
+    el('filterSummary').textContent = (active ? active + ' filtro(s) ativo(s)' : 'Sem filtros adicionais') + ' · ' + statusLabel;
+  }
+  function updateStatusControl() {
+    const segment = el('statusSegment');
+    segment.style.setProperty('--status-index', String(state.statusMode === 'ABERTO' ? 1 : state.statusMode === 'PAGO' ? 2 : 0));
+    segment.querySelectorAll('[data-status-mode]').forEach(function (btn) {
+      btn.setAttribute('aria-pressed', String(btn.dataset.statusMode === state.statusMode));
+    });
+  }
   function updateControls() {
+    updateFilterPanel();
+    updateStatusControl();
     el('dateFrom').value = state.from;
     el('dateTo').value = state.to;
     el('searchInput').value = state.search;
@@ -371,7 +401,7 @@
   function updatePickerLabels() {
     Object.keys(FILTERS).forEach(function (prop) {
       const values = state.selected[prop];
-      el('label-' + prop).textContent = values.length ? values.length === 1 ? values[0] : values.length + ' selecionados' : prop === 'status' ? 'Todas' : 'Todos';
+      el('label-' + prop).textContent = values.length ? values.length === 1 ? values[0] : values.length + ' selecionados' : 'Todos';
     });
   }
   function filterOptions(prop) {
@@ -612,9 +642,22 @@
     });
     el('refreshBtn').addEventListener('click', function () { refresh(); });
     el('exportBtn').addEventListener('click', exportRows);
+    el('toggleFiltersBtn').addEventListener('click', function () {
+      state.filtersCollapsed = !state.filtersCollapsed;
+      if (state.filtersCollapsed) closePickers();
+      updateFilterPanel();
+      persistFilters();
+    });
+    document.querySelectorAll('[data-status-mode]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (state.statusMode === btn.dataset.statusMode) return;
+        state.statusMode = btn.dataset.statusMode;
+        filterChanged();
+      });
+    });
     el('clearBtn').addEventListener('click', function () {
-      state.selected = {supplier: [], plan: [], account: [], type: [], status: []};
-      state.from = ''; state.to = ''; state.search = ''; state.period = 'geral';
+      state.selected = {supplier: [], plan: [], account: [], type: []};
+      state.from = ''; state.to = ''; state.search = ''; state.period = 'geral'; state.statusMode = 'all';
       closePickers(); filterChanged();
     });
     document.querySelectorAll('.period').forEach(function (btn) {
@@ -686,7 +729,7 @@
 
   // Exposição dos transformadores apenas para testes locais, sem dados reais.
   if (window.location && new URLSearchParams(window.location.search).has('teste_financeiro')) {
-    window.__financeiroTest = {numberStrict: numberStrict, toDateKey: toDateKey, statusOf: statusOf, normalizePayload: normalizePayload, rangeForPeriod: rangeForPeriod};
+    window.__financeiroTest = {numberStrict: numberStrict, toDateKey: toDateKey, statusOf: statusOf, matchesStatus: matchesStatus, normalizePayload: normalizePayload, rangeForPeriod: rangeForPeriod};
   }
   init();
 }());
