@@ -4,9 +4,10 @@ Integração no main.py existente:
     from portal_material_cliente import router as material_portal_router
     app.include_router(material_portal_router)
 
-Pré-requisitos: FastAPI existente, /permissoes/login, /permissoes/usuarios e
-/carteira_nf na mesma API. Não altera os endpoints já existentes.
+Pré-requisitos: FastAPI existente, /login, /me e /carteira_nf na mesma API.
+Usuários ativos com U_RS=1 podem criar portais; gestores podem gerenciar todos.
 """
+import hashlib
 import json
 import os
 import re
@@ -71,6 +72,11 @@ class MudarStatus(BaseModel):
     ativo: bool
 
 
+class LoginPortal(BaseModel):
+    usuario: str = Field(min_length=1, max_length=100)
+    senha: str = Field(min_length=1, max_length=255)
+
+
 @contextmanager
 def conn():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -86,34 +92,91 @@ def conn():
             permitir_excel INTEGER NOT NULL DEFAULT 0,
             qtd_acessos INTEGER NOT NULL DEFAULT 0, ultimo_acesso TEXT
         )""")
+        cx.execute("""CREATE TABLE IF NOT EXISTS sessoes_portal (
+            token_hash TEXT PRIMARY KEY, usuario TEXT NOT NULL,
+            expira_em TEXT NOT NULL
+        )""")
         yield cx
         cx.commit()
     finally:
         cx.close()
 
 
-def http_json(path: str, headers=None, timeout=35):
+def http_json(path: str, headers=None, timeout=35, body=None):
     url = INTERNAL_API + path
-    request = urllib.request.Request(url, headers=headers or {"Accept": "application/json"})
+    headers = dict(headers or {})
+    headers.setdefault("Accept", "application/json")
+    data = None
+    if body is not None:
+        data = json.dumps(body, ensure_ascii=False).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+    request = urllib.request.Request(url, headers=headers, data=data)
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             return json.loads(response.read())
     except urllib.error.HTTPError as exc:
-        if exc.code in (401, 403):
-            raise HTTPException(403, "Autenticação administrativa inválida ou expirada.") from exc
+        if exc.code in (401, 403, 404):
+            raise HTTPException(401 if exc.code == 401 else 403,
+                                "Credenciais inválidas, sessão expirada ou acesso não autorizado.") from exc
         raise HTTPException(502, "API interna indisponível.") from exc
     except (urllib.error.URLError, ValueError, TimeoutError) as exc:
         raise HTTPException(502, "Não foi possível consultar a API interna.") from exc
 
 
-def gestor(authorization: str | None) -> str:
-    """Valida o token existente de /permissoes/login em cada operação administrativa."""
-    if not authorization or not re.fullmatch(r"Bearer [A-Za-z0-9._~+\-=/]+", authorization):
-        raise HTTPException(401, "Entre com sua senha CPS para administrar os portais.")
-    payload = http_json("/permissoes/usuarios", {"Authorization": authorization, "Accept": "application/json"}, 12)
-    # O endpoint acima já exige U_GESTOR=1 no banco e valida a validade do token.
-    # O gestor é extraído do próprio token apenas para registro informativo.
-    return "GESTOR CPS"
+def flag(valor):
+    return str(valor if valor is not None else "0").strip().lower() in ("1", "true", "t")
+
+
+def autorizar_portal(authorization: str | None) -> tuple[str, bool]:
+    """Confere sessão criada após senha CPS e permissão U_RS atual no CPS."""
+    if not authorization or not re.fullmatch(r"Bearer [A-Za-z0-9._~+\\-=/]+", authorization):
+        raise HTTPException(401, "Informe sua senha CPS para gerenciar os portais.")
+    token_hash = hashlib.sha256(authorization[7:].encode("utf-8")).hexdigest()
+    with conn() as cx:
+        sessao = cx.execute(
+            "SELECT usuario, expira_em FROM sessoes_portal WHERE token_hash=?", (token_hash,)
+        ).fetchone()
+    if not sessao:
+        raise HTTPException(401, "Sessão não encontrada. Entre novamente.")
+    if datetime.fromisoformat(sessao["expira_em"]) <= now():
+        with conn() as cx:
+            cx.execute("DELETE FROM sessoes_portal WHERE token_hash=?", (token_hash,))
+        raise HTTPException(401, "Sessão expirada. Entre novamente.")
+
+    # A sessão prova quem entrou com a senha, mas a permissão é revalidada
+    # no CPS a cada operação. Revogação de U_RS tem efeito imediato.
+    usuario = str(sessao["usuario"]).strip().upper()
+    atual = http_json("/me", body={"usuario": usuario}, timeout=12)
+    if not isinstance(atual, dict) or str(atual.get("nome") or "").strip().upper() != usuario:
+        raise HTTPException(403, "Usuário inativo ou não encontrado no CPS.")
+    if not flag(atual.get("u_rs")):
+        raise HTTPException(403, "Acesso ao módulo RS não autorizado.")
+    return usuario, flag(atual.get("u_gestor"))
+
+
+@router.post("/sessao")
+def login_portal(payload: LoginPortal):
+    """Autentica com a senha CPS sem exigir U_GESTOR."""
+    dados = http_json("/login", body={
+        "usuario": payload.usuario.strip(), "senha": payload.senha
+    }, timeout=15)
+    if not isinstance(dados, dict) or not flag(dados.get("u_rs")):
+        raise HTTPException(403, "Somente usuários com acesso ao RS podem gerar links.")
+    usuario = str(dados.get("nome") or "").strip().upper()
+    if not usuario:
+        raise HTTPException(403, "Usuário CPS inválido.")
+    token = secrets.token_urlsafe(48)
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    expira_em = iso(now() + timedelta(minutes=30))
+    with conn() as cx:
+        cx.execute("DELETE FROM sessoes_portal WHERE expira_em <= ?", (iso(now()),))
+        cx.execute(
+            "INSERT INTO sessoes_portal(token_hash,usuario,expira_em) VALUES(?,?,?)",
+            (token_hash, usuario, expira_em),
+        )
+    return JSONResponse({
+        "access_token": token, "expires_in": 1800, "usuario": usuario
+    }, headers=NO_CACHE)
 
 
 def now():
@@ -187,7 +250,7 @@ def public_portal(row, include_url=False):
 
 @router.post("")
 def criar_portal(payload: NovoPortal, authorization: str | None = Header(default=None)):
-    usuario = gestor(authorization)
+    usuario, _gestor = autorizar_portal(authorization)
     if len(set(payload.colunas)) != len(payload.colunas) or any(col not in ALLOWED_COLS for col in payload.colunas):
         raise HTTPException(422, "Colunas inválidas ou duplicadas.")
     if len(payload.row_keys) > MAX_SELECTED:
@@ -222,20 +285,28 @@ def criar_portal(payload: NovoPortal, authorization: str | None = Header(default
 
 @router.get("")
 def listar_portais(authorization: str | None = Header(default=None)):
-    gestor(authorization)
+    usuario, gestor = autorizar_portal(authorization)
     with conn() as cx:
-        rows = cx.execute("SELECT * FROM portais ORDER BY criado_em DESC LIMIT 500").fetchall()
+        if gestor:
+            rows = cx.execute("SELECT * FROM portais ORDER BY criado_em DESC LIMIT 500").fetchall()
+        else:
+            rows = cx.execute(
+                "SELECT * FROM portais WHERE UPPER(criado_por)=? ORDER BY criado_em DESC LIMIT 500",
+                (usuario,),
+            ).fetchall()
     return [public_portal(dict(row), include_url=True) for row in rows]
 
 
 @router.patch("/{portal_id}/status")
 def alterar_status(portal_id: str, payload: MudarStatus, authorization: str | None = Header(default=None)):
-    gestor(authorization)
+    usuario, gestor = autorizar_portal(authorization)
     with conn() as cx:
-        changed = cx.execute("UPDATE portais SET ativo=? WHERE id=?",
-                             (int(payload.ativo), portal_id)).rowcount
-    if not changed:
-        raise HTTPException(404, "Portal não encontrado.")
+        portal = cx.execute("SELECT criado_por FROM portais WHERE id=?", (portal_id,)).fetchone()
+        if not portal:
+            raise HTTPException(404, "Portal não encontrado.")
+        if not gestor and str(portal["criado_por"]).strip().upper() != usuario:
+            raise HTTPException(403, "Somente quem criou o portal ou um gestor pode alterá-lo.")
+        cx.execute("UPDATE portais SET ativo=? WHERE id=?", (int(payload.ativo), portal_id))
     return {"portal": public_portal(get_portal(portal_id), include_url=True)}
 
 
