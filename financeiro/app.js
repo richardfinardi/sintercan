@@ -281,7 +281,8 @@
     const t = new Date();
     const start = new Date(t.getFullYear(), t.getMonth(), t.getDate());
     if (period === 'semana' || period === 'proxima-semana') {
-      const offset = (start.getDay() + 6) % 7;
+      // Semana financeira: domingo a sábado, inclusive.
+      const offset = start.getDay();
       start.setDate(start.getDate() - offset + (period === 'proxima-semana' ? 7 : 0));
       const end = new Date(start); end.setDate(start.getDate() + 6);
       return [localDateKey(start), localDateKey(end)];
