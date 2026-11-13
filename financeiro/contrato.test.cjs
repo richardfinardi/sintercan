@@ -104,3 +104,15 @@ test('Painel possui comando de recolher com controle de acessibilidade', () => {
   assert.match(html, /aria-expanded="true"/);
   assert.match(html, /id="filterSummary"/);
 });
+
+test('Situação fica ao lado dos períodos, fora do painel recolhível', () => {
+  const inicioPeriodo = html.indexOf('<section class="panel period-panel"');
+  const inicioSituacao = html.indexOf('id="statusSegment"');
+  const fimPeriodo = html.indexOf('</section>', inicioPeriodo);
+  const inicioFiltros = html.indexOf('<section class="panel filters-panel"');
+  const inicioGrid = html.indexOf('id="filterGrid"');
+  assert.ok(inicioPeriodo >= 0 && inicioSituacao > inicioPeriodo && inicioSituacao < fimPeriodo);
+  assert.ok(fimPeriodo < inicioFiltros && inicioFiltros < inicioGrid);
+  assert.ok(html.includes('app.css?v=20261113-4'));
+  assert.ok(html.includes('app.js?v=20261113-4'));
+});
