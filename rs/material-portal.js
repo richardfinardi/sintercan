@@ -1,5 +1,5 @@
 // Sintercan - Portal do Cliente para Materiais de Cliente (follow-up).
-// Reutiliza a seleção filtrada da aba e a autenticação administrativa CPS.
+// Reutiliza a seleção filtrada da aba e a autenticação CPS para usuários do RS.
 (function () {
     "use strict";
 
@@ -101,8 +101,9 @@
             '  </div><div class="bg-slate-50 dark:bg-slate-950 border-t dark:border-slate-800 px-5 py-3 flex justify-between gap-3"><button type="button" id="materialPortalManagerShortcut" class="font-bold text-xs text-slate-700 dark:text-slate-200">Gerenciar portais</button><button type="button" id="materialPortalSubmit" class="rounded-lg bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-slate-950 font-black text-xs">Gerar link</button></div>',
             ' </div></div>',
             '<div id="materialPortalManager" class="hidden fixed inset-0 z-[181] bg-slate-950/70 backdrop-blur-sm items-center justify-center p-3" role="dialog" aria-modal="true">',
-            ' <div class="w-full max-w-4xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">',
-            '  <div class="bg-slate-900 px-5 py-4 text-white flex items-center justify-between"><div><h2 class="text-base font-black">Portais de Materiais</h2><p class="text-xs text-slate-300">Links compartilhados, validade e ativação</p></div><button type="button" data-close="materialPortalManager" class="text-white text-xl px-3" aria-label="Fechar">&times;</button></div>',
+            ' <div class="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]" style="color:#0f172a;background-color:#fff">',
+            '  <div class="bg-slate-900 px-5 py-4 text-white flex items-center justify-between"><div><h2 class="text-base font-black" style="color:#fff">Portais de Materiais</h2><p class="text-xs" style="color:#cbd5e1">Links compartilhados, validade e ativação</p></div><button type="button" data-close="materialPortalManager" class="text-white text-xl px-3" aria-label="Fechar">&times;</button></div>',
+            '  <div id="materialPortalManagerMessage" class="hidden mx-5 mt-4 p-3 rounded-lg text-xs font-semibold" role="status" aria-live="polite"></div>',
             '  <div id="materialPortalManagerList" class="overflow-y-auto p-5 space-y-2 text-xs min-h-[180px]">Carregando...</div>',
             '  <div class="border-t px-5 py-3 flex justify-end"><button type="button" id="materialPortalManagerRefresh" class="bg-amber-500 rounded-lg px-4 py-2 text-xs font-black text-slate-950">Atualizar lista</button></div>',
             ' </div></div>',
@@ -255,6 +256,15 @@
         });
     }
 
+    function managerMessage(message, isError = false) {
+        const box = $("materialPortalManagerMessage");
+        box.textContent = message || "";
+        box.className = message
+            ? "mx-5 mt-4 p-3 rounded-lg text-xs font-semibold border " +
+              (isError ? "bg-rose-50 text-rose-800 border-rose-200" : "bg-emerald-50 text-emerald-800 border-emerald-200")
+            : "hidden mx-5 mt-4 p-3 rounded-lg text-xs font-semibold";
+    }
+
     async function loadManager() {
         const box = $("materialPortalManagerList");
         box.textContent = "Consultando portais...";
@@ -267,7 +277,7 @@
             box.innerHTML = list.map(p => {
                 const url = encodeURIComponent(p.url || "");
                 return '<article class="border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex flex-col md:flex-row md:justify-between gap-2 items-start md:items-center">' +
-                    '<div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><strong class="text-xs break-words">' + esc(p.nome) +
+                    '<div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><strong class="text-xs break-words" style="color:#0f172a">' + esc(p.nome) +
                     '</strong><span class="px-2 py-0.5 rounded-full text-[10px] font-black ' +
                     (p.ativo ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-700") + '">' +
                     (p.ativo ? "ATIVO" : "DESATIVADO") + '</span></div><p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">' +
@@ -284,22 +294,54 @@
             box.querySelectorAll("[data-portal-open]").forEach(btn =>
                 btn.addEventListener("click", () => window.open(decodeURIComponent(btn.dataset.portalOpen), "_blank", "noopener,noreferrer")));
             box.querySelectorAll("[data-portal-id]").forEach(btn =>
-                btn.addEventListener("click", () => changeStatus(btn.dataset.portalId, btn.dataset.portalActive === "1")));
+                btn.addEventListener("click", () => changeStatus(btn.dataset.portalId, btn.dataset.portalActive === "1", btn)));
         } catch (e) {
             box.innerHTML = '<p class="text-rose-700 font-bold">' + esc(e.message) + "</p>";
             if (!adminToken) pendingAction = loadManager;
         }
     }
 
-    async function changeStatus(id, ativo) {
-        if (!confirm((ativo ? "Reativar" : "Desativar") + " o portal selecionado?")) return;
+    async function changeStatus(id, ativo, button) {
+        const action = ativo ? "reativar" : "desativar";
+        const original = ativo ? "Reativar" : "Desativar";
+
+        // Confirmação dentro do próprio modal: navegadores podem bloquear
+        // window.confirm(), fazendo o primeiro clique parecer que não funciona.
+        if (button.dataset.confirmReady !== "1") {
+            document.querySelectorAll("#materialPortalManagerList [data-portal-id]").forEach(btn => {
+                btn.dataset.confirmReady = "";
+                btn.textContent = btn.dataset.portalActive === "1" ? "Reativar" : "Desativar";
+            });
+            button.dataset.confirmReady = "1";
+            button.textContent = ativo ? "Confirmar reativação" : "Confirmar desativação";
+            managerMessage("Clique novamente em ‘" + button.textContent + "’ para " + action + " este link.");
+            setTimeout(() => {
+                if (button.isConnected && button.dataset.confirmReady === "1") {
+                    button.dataset.confirmReady = "";
+                    button.textContent = original;
+                    managerMessage("");
+                }
+            }, 10000);
+            return;
+        }
+
+        button.disabled = true;
+        button.dataset.confirmReady = "";
+        button.textContent = ativo ? "Reativando..." : "Desativando...";
+        managerMessage("");
         try {
-            await request(PORTALS + "/" + encodeURIComponent(id) + "/status", {
+            const result = await request(PORTALS + "/" + encodeURIComponent(id) + "/status", {
                 method: "PATCH", body: JSON.stringify({ ativo })
             });
+            if (!result?.portal || result.portal.ativo !== ativo) {
+                throw new Error("A API não confirmou a alteração do portal.");
+            }
             await loadManager();
+            managerMessage(ativo ? "Portal reativado com sucesso." : "Portal desativado. O link não poderá mais consultar os dados.");
         } catch (e) {
-            alert(e.message);
+            managerMessage("Falha ao " + action + " o portal: " + (e.message || String(e)), true);
+            button.disabled = false;
+            button.textContent = original;
         }
     }
 
