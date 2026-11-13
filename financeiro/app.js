@@ -374,10 +374,8 @@
     btn.setAttribute('aria-expanded', String(!state.filtersCollapsed));
     btn.textContent = state.filtersCollapsed ? '⌄ Expandir filtros' : '⌃ Recolher filtros';
     const active = Object.values(state.selected).filter(function (values) { return values.length > 0; }).length
-      + Number(!!state.from) + Number(!!state.to) + Number(!!state.search)
-      + Number(state.statusMode !== 'all');
-    const statusLabel = state.statusMode === 'ABERTO' ? 'Só aberto' : state.statusMode === 'PAGO' ? 'Só pago' : 'Exibir tudo';
-    el('filterSummary').textContent = (active ? active + ' filtro(s) ativo(s)' : 'Sem filtros adicionais') + ' · ' + statusLabel;
+      + Number(!!state.from) + Number(!!state.to) + Number(!!state.search);
+    el('filterSummary').textContent = active ? active + ' filtro(s) ativo(s)' : 'Sem filtros adicionais';
   }
   function updateStatusControl() {
     const segment = el('statusSegment');
