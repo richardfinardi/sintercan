@@ -107,9 +107,9 @@
             '  <div class="border-t px-5 py-3 flex justify-end"><button type="button" id="materialPortalManagerRefresh" class="bg-amber-500 rounded-lg px-4 py-2 text-xs font-black text-slate-950">Atualizar lista</button></div>',
             ' </div></div>',
             '<div id="materialPortalLogin" class="hidden fixed inset-0 z-[190] bg-slate-950/85 backdrop-blur-sm items-center justify-center p-3" role="dialog" aria-modal="true">',
-            ' <form id="materialPortalLoginForm" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-sm p-6 rounded-2xl shadow-2xl space-y-4"><div class="flex justify-between items-center"><h2 class="font-black text-base">Confirmação CPS</h2><button type="button" data-close="materialPortalLogin" class="font-bold text-xl">&times;</button></div><p class="text-xs text-slate-500 dark:text-slate-400">Para gerar ou gerenciar links externos, confirme sua senha de gestor.</p>',
+            ' <form id="materialPortalLoginForm" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-sm p-6 rounded-2xl shadow-2xl space-y-4"><div class="flex justify-between items-center"><h2 class="font-black text-base">Confirmação CPS</h2><button type="button" data-close="materialPortalLogin" class="font-bold text-xl">&times;</button></div><p class="text-xs text-slate-500 dark:text-slate-400">Para gerar ou gerenciar links externos, confirme sua senha de acesso ao RS.</p>',
             ' <label class="block text-xs font-bold">Usuário <input id="materialPortalUsername" readonly class="mt-1 block w-full border rounded-lg p-2.5 bg-slate-100 text-slate-900"></label><label class="block text-xs font-bold">Senha CPS<input id="materialPortalPassword" type="password" required autocomplete="current-password" class="mt-1 block w-full border rounded-lg p-2.5 text-slate-900"></label>',
-            ' <div id="materialPortalLoginError" class="hidden p-2.5 text-xs text-rose-700 bg-rose-50 rounded-lg"></div><button id="materialPortalLoginSubmit" type="submit" class="w-full rounded-lg px-4 py-3 bg-amber-500 text-slate-950 font-black text-xs">Acessar gerenciamento</button>',
+            ' <div id="materialPortalLoginError" class="hidden p-2.5 text-xs text-rose-700 bg-rose-50 rounded-lg"></div><button id="materialPortalLoginSubmit" type="submit" class="w-full rounded-lg px-4 py-3 bg-amber-500 text-slate-950 font-black text-xs">Confirmar acesso</button>',
             ' </form></div>'
         ].join("");
         document.body.appendChild(target);
@@ -166,14 +166,14 @@
         button.disabled = true;
         error("materialPortalLoginError", "");
         try {
-            const result = await request(API + "/permissoes/login", {
+            const result = await request(API + "/material_cliente/portal/sessao", {
                 method: "POST",
                 body: JSON.stringify({
                     usuario: $("materialPortalUsername").value,
                     senha: $("materialPortalPassword").value
                 })
             }, false);
-            if (!result.access_token) throw new Error("A API não retornou uma sessão administrativa.");
+            if (!result.access_token) throw new Error("A API não retornou uma sessão de acesso.");
             adminToken = result.access_token;
             $("materialPortalPassword").value = "";
             show("materialPortalLogin", false);
@@ -305,7 +305,7 @@
 
     async function init() {
         const ready = await window.__SINTERCAN_AUTH_READY__;
-        if (!ready || Number(user().u_gestor) !== 1) return;
+        if (!ready || Number(user().u_rs) !== 1) return;
         inject();
         const toolbar = $("materialClearFiltersBtn")?.parentElement;
         if (!toolbar || $("materialPortalCreateBtn")) return;
