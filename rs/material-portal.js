@@ -91,7 +91,7 @@
             '  <div class="px-5 py-4 bg-slate-900 text-white flex justify-between items-center gap-2"><div><h2 class="font-black text-base">Gerar Portal do Cliente</h2><p class="text-xs text-slate-300 mt-1">Compartilhe apenas os materiais filtrados de um cliente.</p></div><button type="button" data-close="materialPortalCreate" class="text-white text-xl px-3" aria-label="Fechar">&times;</button></div>',
             '  <div class="overflow-y-auto p-5 space-y-4 text-xs">',
             '   <div class="grid sm:grid-cols-[1fr_155px] gap-3"><label class="block"><strong class="block mb-1">Nome do portal</strong><input id="materialPortalName" maxlength="120" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-slate-900 dark:text-slate-900" placeholder="Cliente - Materiais" /></label>',
-            '   <label class="block"><strong class="block mb-1">Validade</strong><select id="materialPortalValidity" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-slate-900"><option value="7">7 dias</option><option value="15">15 dias</option><option value="30" selected>30 dias</option><option value="60">60 dias</option><option value="90">90 dias</option></select></label></div>',
+            '   <label class="block"><strong class="block mb-1">Validade</strong><select id="materialPortalValidity" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-slate-900"><option value="7" selected>7 dias</option><option value="15">15 dias</option><option value="30">30 dias</option><option value="60">60 dias</option><option value="90">90 dias</option></select></label></div>',
             '   <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl px-4 py-3 flex flex-wrap gap-3 justify-between items-center"><div><strong id="materialPortalCount" class="text-xl block">0</strong><span>registros da seleção atual</span></div><span id="materialPortalClient" class="font-bold break-words"></span></div>',
             '   <label class="flex gap-2 items-center font-semibold"><input id="materialPortalExcel" type="checkbox" class="accent-amber-500 w-4 h-4">Permitir exportação para Excel ao cliente</label>',
             '   <div class="flex gap-3 justify-between items-center"><div><strong class="block">Colunas liberadas para o cliente</strong><span class="text-slate-500 dark:text-slate-400">Padrão: colunas atualmente visíveis na tabela.</span></div><div class="shrink-0 flex gap-2"><button type="button" id="materialPortalSelectAll" class="text-amber-700 dark:text-amber-300 font-bold">Todas</button><button type="button" id="materialPortalSelectNone" class="font-bold">Nenhuma</button></div></div>',
@@ -102,7 +102,7 @@
             ' </div></div>',
             '<div id="materialPortalManager" class="hidden fixed inset-0 z-[181] bg-slate-950/70 backdrop-blur-sm items-center justify-center p-3" role="dialog" aria-modal="true">',
             ' <div class="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]" style="color:#0f172a;background-color:#fff">',
-            '  <div class="bg-slate-900 px-5 py-4 text-white flex items-center justify-between"><div><h2 class="text-base font-black" style="color:#fff">Portais de Materiais</h2><p class="text-xs" style="color:#cbd5e1">Links compartilhados, validade e ativação</p></div><button type="button" data-close="materialPortalManager" class="text-white text-xl px-3" aria-label="Fechar">&times;</button></div>',
+            '  <div class="bg-slate-900 px-5 py-4 text-white flex items-center justify-between"><div><h2 class="text-base font-black" style="color:#fff">Portais de Materiais</h2><p class="text-xs" style="color:#cbd5e1">Links compartilhados, validade e exclusão</p></div><button type="button" data-close="materialPortalManager" class="text-white text-xl px-3" aria-label="Fechar">&times;</button></div>',
             '  <div id="materialPortalManagerMessage" class="hidden mx-5 mt-4 p-3 rounded-lg text-xs font-semibold" role="status" aria-live="polite"></div>',
             '  <div id="materialPortalManagerList" class="overflow-y-auto p-5 space-y-2 text-xs min-h-[180px]">Carregando...</div>',
             '  <div class="border-t px-5 py-3 flex justify-end"><button type="button" id="materialPortalManagerRefresh" class="bg-amber-500 rounded-lg px-4 py-2 text-xs font-black text-slate-950">Atualizar lista</button></div>',
@@ -200,7 +200,7 @@
         $("materialPortalClient").textContent = String(selectedSnapshot[0].cliente || clients[0]);
         $("materialPortalName").value = String(selectedSnapshot[0].cliente || clients[0]) + " - Materiais";
         $("materialPortalCount").textContent = selectedSnapshot.length.toLocaleString("pt-BR");
-        $("materialPortalValidity").value = "30";
+        $("materialPortalValidity").value = "7";
         $("materialPortalExcel").checked = false;
         $("materialPortalResult").classList.add("hidden");
         error("materialPortalCreateError", "");
@@ -285,36 +285,32 @@
                     " · " + Number(p.qtd_acessos || 0) + ' acessos</p></div><div class="flex flex-wrap gap-1.5 shrink-0">' +
                     '<button type="button" data-portal-copy="' + url + '" class="bg-slate-100 text-slate-800 rounded-lg px-3 py-2 text-[11px] font-bold">Copiar</button>' +
                     '<button type="button" data-portal-open="' + url + '" class="bg-slate-100 text-slate-800 rounded-lg px-3 py-2 text-[11px] font-bold">Abrir</button>' +
-                    '<button type="button" data-portal-id="' + esc(p.id) + '" data-portal-active="' + (p.ativo ? "0" : "1") +
-                    '" class="' + (p.ativo ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700") +
-                    ' rounded-lg px-3 py-2 text-[11px] font-bold">' + (p.ativo ? "Desativar" : "Reativar") + '</button></div></article>';
+                    '<button type="button" data-portal-id="' + esc(p.id) +
+                    '" class="bg-rose-50 text-rose-700 rounded-lg px-3 py-2 text-[11px] font-bold">Excluir</button></div></article>';
             }).join("");
             box.querySelectorAll("[data-portal-copy]").forEach(btn =>
                 btn.addEventListener("click", () => copy(decodeURIComponent(btn.dataset.portalCopy))));
             box.querySelectorAll("[data-portal-open]").forEach(btn =>
                 btn.addEventListener("click", () => window.open(decodeURIComponent(btn.dataset.portalOpen), "_blank", "noopener,noreferrer")));
             box.querySelectorAll("[data-portal-id]").forEach(btn =>
-                btn.addEventListener("click", () => changeStatus(btn.dataset.portalId, btn.dataset.portalActive === "1", btn)));
+                btn.addEventListener("click", () => deletePortal(btn.dataset.portalId, btn)));
         } catch (e) {
             box.innerHTML = '<p class="text-rose-700 font-bold">' + esc(e.message) + "</p>";
             if (!adminToken) pendingAction = loadManager;
         }
     }
 
-    async function changeStatus(id, ativo, button) {
-        const action = ativo ? "reativar" : "desativar";
-        const original = ativo ? "Reativar" : "Desativar";
-
-        // Confirmação dentro do próprio modal: navegadores podem bloquear
-        // window.confirm(), fazendo o primeiro clique parecer que não funciona.
+    async function deletePortal(id, button) {
+        const original = "Excluir";
+        // Confirmação dentro do modal, sem depender de window.confirm.
         if (button.dataset.confirmReady !== "1") {
             document.querySelectorAll("#materialPortalManagerList [data-portal-id]").forEach(btn => {
                 btn.dataset.confirmReady = "";
-                btn.textContent = btn.dataset.portalActive === "1" ? "Reativar" : "Desativar";
+                btn.textContent = original;
             });
             button.dataset.confirmReady = "1";
-            button.textContent = ativo ? "Confirmar reativação" : "Confirmar desativação";
-            managerMessage("Clique novamente em ‘" + button.textContent + "’ para " + action + " este link.");
+            button.textContent = "Confirmar exclusão";
+            managerMessage("ATENÇÃO: o portal será apagado definitivamente. O link do cliente deixará de funcionar. Clique novamente em ‘Confirmar exclusão’ para apagar.", true);
             setTimeout(() => {
                 if (button.isConnected && button.dataset.confirmReady === "1") {
                     button.dataset.confirmReady = "";
@@ -327,19 +323,19 @@
 
         button.disabled = true;
         button.dataset.confirmReady = "";
-        button.textContent = ativo ? "Reativando..." : "Desativando...";
+        button.textContent = "Excluindo...";
         managerMessage("");
         try {
-            const result = await request(PORTALS + "/" + encodeURIComponent(id) + "/status", {
-                method: "PATCH", body: JSON.stringify({ ativo })
+            const result = await request(PORTALS + "/" + encodeURIComponent(id), {
+                method: "DELETE"
             });
-            if (!result?.portal || result.portal.ativo !== ativo) {
-                throw new Error("A API não confirmou a alteração do portal.");
+            if (result?.ok !== true || result.excluido !== id) {
+                throw new Error("A API não confirmou a exclusão.");
             }
             await loadManager();
-            managerMessage(ativo ? "Portal reativado com sucesso." : "Portal desativado. O link não poderá mais consultar os dados.");
+            managerMessage("Portal excluído definitivamente. O link compartilhado foi invalidado.");
         } catch (e) {
-            managerMessage("Falha ao " + action + " o portal: " + (e.message || String(e)), true);
+            managerMessage("Falha ao excluir o portal: " + (e.message || String(e)), true);
             button.disabled = false;
             button.textContent = original;
         }
