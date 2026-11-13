@@ -358,12 +358,12 @@
         </div>
     </div>
 
-    <!-- MODAL DE HISTORICO DO ORCAMENTO (TORCAMENTO.U_OBS_FAT) -->
+    <!-- HISTORICO INDIVIDUAL DO ITEM E LEGADOS SOMENTE PARA CONSULTA -->
     <div id="fatHistModal" class="hidden fixed inset-0 z-[1000] items-center justify-center bg-slate-950/70 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="Historico do faturamento" onclick="if(event.target===this) fecharHistoricoFaturamento()">
         <div class="flex w-full max-w-2xl max-h-[88vh] flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl">
             <div class="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
                 <div>
-                    <h3 id="fatHistTitle" class="text-base font-extrabold text-slate-900 dark:text-white">Histórico do orçamento</h3>
+                    <h3 id="fatHistTitle" class="text-base font-extrabold text-slate-900 dark:text-white">Histórico do item</h3>
                     <p class="text-[11px] text-slate-500 dark:text-slate-400">Liberações, cancelamentos e renegociações</p>
                 </div>
                 <div class="flex gap-2">
@@ -372,6 +372,19 @@
                 </div>
             </div>
             <div id="fatHistList" class="custom-scroll min-h-[120px] overflow-y-auto p-3 sm:p-4 space-y-2 text-xs" aria-live="polite"></div>
+            <section id="fatHistLegados" class="hidden border-t border-amber-200 dark:border-amber-900 px-4 py-3 space-y-3 bg-amber-50/70 dark:bg-amber-950/20">
+                <h4 class="text-xs font-extrabold uppercase text-amber-900 dark:text-amber-200">Histórico anterior (somente leitura)</h4>
+                <p class="text-[11px] text-amber-800 dark:text-amber-300">Registros antigos do orçamento e da OS podem envolver outros itens. Foram preservados exatamente na origem.</p>
+                <div id="fatHistLegadoData" class="hidden text-xs font-semibold text-slate-700 dark:text-slate-200"></div>
+                <div id="fatHistLegadoOrcBox" class="hidden">
+                    <h5 class="text-[11px] font-bold text-slate-700 dark:text-slate-200">Histórico antigo do orçamento (compartilhado)</h5>
+                    <div id="fatHistLegadoOrc" class="max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900 p-3 text-xs"></div>
+                </div>
+                <div id="fatHistLegadoOsBox" class="hidden">
+                    <h5 class="text-[11px] font-bold text-slate-700 dark:text-slate-200">Histórico anterior da OS (compartilhado)</h5>
+                    <div id="fatHistLegadoOs" class="max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900 p-3 text-xs"></div>
+                </div>
+            </section>
             <section class="border-t border-slate-200 dark:border-slate-700 px-4 py-3 space-y-2 bg-slate-50 dark:bg-slate-950/60">
                 <label for="fatHistNewObs" class="block text-xs font-black text-slate-700 dark:text-slate-300">Nova observação</label>
                 <textarea id="fatHistNewObs" rows="2" maxlength="2000" placeholder="Digite uma observação a qualquer momento..." class="w-full resize-y rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
@@ -480,7 +493,7 @@
             if (!eventos.length) {
                 conteiner.appendChild(criarElementoHist('div',
                     'py-5 text-center text-slate-500 dark:text-slate-400',
-                    'Nenhum registro de histórico para este orçamento.'));
+                    'Nenhum registro individual para este item.'));
                 return;
             }
             eventos.slice(0, limite).forEach((evento, indice) => {
@@ -498,33 +511,49 @@
             }
         }
 
-        function chaveHistoricoFaturamento(empresa, orcamento) {
-            return String(empresa) + ':' + String(orcamento);
+        function chaveHistoricoFaturamento(empresa, orcamento, guid, os) {
+            return JSON.stringify([empresa, orcamento, String(guid), String(os || '')]);
         }
 
-        async function buscarHistoricoFaturamento(empresa, orcamento, atualizar=false) {
-            const chave = chaveHistoricoFaturamento(empresa, orcamento);
+        async function buscarHistoricoFaturamento(empresa, orcamento, guid, os, atualizar=false) {
+            const chave = chaveHistoricoFaturamento(empresa, orcamento, guid, os);
             const salvo = fatHistCache.get(chave);
-            if (!atualizar && salvo && salvo.expires > Date.now()) {
-                return salvo.eventos || salvo.promise;
-            }
+            if (!atualizar && salvo && salvo.expires > Date.now())
+                return salvo.dados || salvo.promise;
             const promise = (async () => {
-                const url = API_PATCH_URL + '/historico?cod_empresa=' +
-                    encodeURIComponent(empresa) + '&cod_orcamento=' + encodeURIComponent(orcamento);
-                const response = await fetch(url, {
-                    method:'GET',
-                    headers:{'ngrok-skip-browser-warning':'69420'},
-                    cache:'no-store'
+                const params = new URLSearchParams({
+                    cod_empresa:String(empresa), cod_orcamento:String(orcamento),
+                    guid_linha:String(guid), n_os:String(os || '')
+                });
+                const response = await fetch(API_PATCH_URL + '/historico?' + params, {
+                    method:'GET', headers:{'ngrok-skip-browser-warning':'69420'}, cache:'no-store'
                 });
                 const dados = await response.json().catch(() => ({}));
-                if (!response.ok) throw new Error(dados.detail || `HTTP ${response.status}`);
-                const eventos = eventosHistoricoFaturamento(dados.historico || '');
-                fatHistCache.set(chave, {eventos, expires:Date.now()+120000});
-                return eventos;
+                if (!response.ok) throw new Error(dados.detail || 'HTTP ' + response.status);
+                const resultado = {...dados, eventos:eventosHistoricoFaturamento(dados.historico || '')};
+                fatHistCache.set(chave, {dados:resultado,expires:Date.now()+120000});
+                return resultado;
             })();
-            fatHistCache.set(chave, {promise, expires:Date.now()+120000});
+            fatHistCache.set(chave, {promise,expires:Date.now()+120000});
             try { return await promise; }
             catch (e) { fatHistCache.delete(chave); throw e; }
+        }
+
+        function mostrarHistoricosLegadosFat(dados) {
+            const secao = document.getElementById('fatHistLegados');
+            const orc = String(dados.historico_legado_orcamento || '').trim();
+            const os = String(dados.historico_legado_os || '').trim();
+            const data = String(dados.data_renegociacao_legada_os || '').slice(0,10);
+            const dataBox = document.getElementById('fatHistLegadoData');
+            const boxOrc = document.getElementById('fatHistLegadoOrcBox');
+            const boxOs = document.getElementById('fatHistLegadoOsBox');
+            dataBox.classList.toggle('hidden',!data);
+            dataBox.textContent = data ? 'Data de renegociação antiga da OS: ' + formatDateOnly(data) : '';
+            boxOrc.classList.toggle('hidden',!orc);
+            boxOs.classList.toggle('hidden',!os);
+            document.getElementById('fatHistLegadoOrc').textContent = orc;
+            document.getElementById('fatHistLegadoOs').textContent = os;
+            secao.classList.toggle('hidden',!orc && !os && !data);
         }
 
         function obterPopupFatHist() {
@@ -569,113 +598,139 @@
             }, 180);
         }
 
+        function dadosChaveHistoricoAlvo(alvo) {
+            return {
+                empresa:Number(alvo?.dataset?.histEmpresa),
+                orcamento:Number(alvo?.dataset?.histOrc),
+                guid:decodeURIComponent(String(alvo?.dataset?.histGuid || '')),
+                os:decodeURIComponent(String(alvo?.dataset?.histOs || ''))
+            };
+        }
+
         function iniciarHoverFatHist(alvo) {
             if (alvo === fatHistHoverTarget) {
-                clearTimeout(fatHistExitTimer);
-                return;
+                clearTimeout(fatHistExitTimer); return;
             }
             fecharPopupFatHist();
             fatHistHoverTarget = alvo;
             fatHistEnterTimer = setTimeout(async () => {
+                const k = dadosChaveHistoricoAlvo(alvo);
                 if (fatHistHoverTarget !== alvo || !alvo.isConnected ||
-                    !alvo.matches(':hover') || !alvo.dataset.histOrc) return;
+                    !alvo.matches(':hover') || !k.guid || !k.orcamento) return;
                 try {
-                    const eventos = await buscarHistoricoFaturamento(
-                        Number(alvo.dataset.histEmpresa), Number(alvo.dataset.histOrc));
+                    const dados = await buscarHistoricoFaturamento(k.empresa,k.orcamento,k.guid,k.os);
+                    const legadoOrc=String(dados.historico_legado_orcamento || '').trim();
+                    const legadoOs=String(dados.historico_legado_os || '').trim();
+                    const legadoData=String(dados.data_renegociacao_legada_os || '').slice(0,10);
                     if (fatHistHoverTarget !== alvo || !alvo.isConnected ||
                         (!alvo.matches(':hover') && !fatHistPopup?.matches(':hover')) ||
-                        !eventos.length) return;
-                    const popup = obterPopupFatHist();
+                        (!dados.eventos.length && !legadoOrc && !legadoOs && !legadoData)) return;
+                    const popup=obterPopupFatHist();
                     popup.replaceChildren();
-                    const cab = criarElementoHist('div',
+                    if (dados.eventos.length) preencherHistoricoFaturamento(popup,dados.eventos,18);
+                    // Registros anteriores são compartilhados pelo orçamento/OS, nunca por GUID.
+                    const legados=[
+                        ['HISTÓRICO ANTERIOR DO ORÇAMENTO (COMPARTILHADO)',legadoOrc],
+                        ['HISTÓRICO ANTERIOR DA OS (COMPARTILHADO)',legadoOs]
+                    ];
+                    if (legadoData) popup.append(criarElementoHist('div',
+                        'bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-xs font-semibold',
+                        'Data antiga de renegociação da OS: '+formatDateOnly(legadoData)));
+                    legados.forEach(([titulo,conteudo])=>{
+                        if (!conteudo) return;
+                        const grupo=criarElementoHist('div',
+                            'border-t border-amber-200 dark:border-amber-800 px-3 py-2 text-xs whitespace-pre-wrap break-words','');
+                        grupo.append(criarElementoHist('div','mb-1 font-extrabold text-amber-800 dark:text-amber-300',titulo));
+                        grupo.append(criarElementoHist('div','text-slate-700 dark:text-slate-300',conteudo.slice(0,3000)+
+                            (conteudo.length>3000?'\n(Abra para ver o histórico completo)':'')));
+                        popup.append(grupo);
+                    });
+                    popup.prepend(criarElementoHist('div',
                         'sticky top-0 bg-slate-100 dark:bg-slate-950 px-3 py-2 text-xs font-black',
-                        'HISTÓRICO DO ORÇAMENTO ' + (alvo.textContent || '').trim());
-                    preencherHistoricoFaturamento(popup, eventos, 18);
-                    popup.prepend(cab);
+                        'HISTÓRICO · '+(alvo.textContent || '').trim()));
                     popup.classList.remove('hidden');
                     posicionarPopupFatHist(alvo);
-                } catch(e) { console.warn('Historico indisponivel:', e); }
-            }, 320);
+                } catch(e) {console.warn('Historico do item indisponivel:',e);}
+            },320);
         }
 
         async function abrirHistoricoFaturamento(alvo) {
-            const empresa = Number(alvo?.dataset?.histEmpresa);
-            const orcamento = Number(alvo?.dataset?.histOrc);
-            if (!empresa || !orcamento) return;
+            const k = dadosChaveHistoricoAlvo(alvo);
+            if (!k.empresa || !k.orcamento || !k.guid) return;
             fecharPopupFatHist();
-            fatHistModalTarget = {empresa, orcamento, numero:(alvo.textContent || '').trim()};
-            const modal = document.getElementById('fatHistModal');
-            document.getElementById('fatHistTitle').textContent =
-                'Histórico do orçamento ' + fatHistModalTarget.numero;
-            const area = document.getElementById('fatHistList');
-            document.getElementById('fatHistNewObs').value = '';
-            document.getElementById('fatHistObsAviso').textContent = '';
+            fatHistModalTarget = {...k,numero:(alvo.textContent || '').trim()};
+            const modal=document.getElementById('fatHistModal');
+            document.getElementById('fatHistTitle').textContent='Histórico do item · orçamento '+k.numero;
+            const area=document.getElementById('fatHistList');
+            document.getElementById('fatHistNewObs').value='';
+            document.getElementById('fatHistObsAviso').textContent='';
+            document.getElementById('fatHistLegados').classList.add('hidden');
             area.replaceChildren(criarElementoHist('div','py-5 text-center text-slate-500','Carregando histórico...'));
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
             lucide.createIcons();
-            try {
-                const eventos = await buscarHistoricoFaturamento(empresa, orcamento);
-                if (fatHistModalTarget?.empresa === empresa && fatHistModalTarget?.orcamento === orcamento)
-                    preencherHistoricoFaturamento(area, eventos);
-            } catch (e) {
-                area.replaceChildren(criarElementoHist('p','text-red-600 dark:text-red-400', 'Falha: ' + e.message));
+            try{
+                const dados=await buscarHistoricoFaturamento(k.empresa,k.orcamento,k.guid,k.os);
+                if(fatHistModalTarget?.guid===k.guid && fatHistModalTarget?.orcamento===k.orcamento) {
+                    preencherHistoricoFaturamento(area,dados.eventos);
+                    mostrarHistoricosLegadosFat(dados);
+                }
+            } catch(e) {
+                area.replaceChildren(criarElementoHist('p','text-red-600 dark:text-red-400','Falha: '+e.message));
             }
         }
 
         function fecharHistoricoFaturamento() {
-            if (isSavingObsFaturamento) return;
+            if(isSavingObsFaturamento)return;
             document.getElementById('fatHistModal').classList.add('hidden');
             document.getElementById('fatHistModal').classList.remove('flex');
-            fatHistModalTarget = null;
+            fatHistModalTarget=null;
         }
+
         async function recarregarHistoricoFaturamento() {
-            const alvo = fatHistModalTarget;
-            if (!alvo) return;
-            const area = document.getElementById('fatHistList');
+            const alvo=fatHistModalTarget;
+            if(!alvo)return;
+            const area=document.getElementById('fatHistList');
             area.replaceChildren(criarElementoHist('div','py-5 text-center text-slate-500','Atualizando...'));
             try {
-                const eventos = await buscarHistoricoFaturamento(alvo.empresa, alvo.orcamento, true);
-                if (fatHistModalTarget === alvo) preencherHistoricoFaturamento(area, eventos);
-            } catch (e) { area.textContent = 'Falha: ' + e.message; }
+                const dados=await buscarHistoricoFaturamento(alvo.empresa,alvo.orcamento,alvo.guid,alvo.os,true);
+                if(fatHistModalTarget===alvo) {
+                    preencherHistoricoFaturamento(area,dados.eventos);
+                    mostrarHistoricosLegadosFat(dados);
+                }
+            } catch(e) {area.textContent='Falha: '+e.message;}
         }
 
         async function salvarObservacaoFaturamento() {
-            if (isSavingObsFaturamento || !fatHistModalTarget) return;
-            const target = {...fatHistModalTarget};
-            const campo = document.getElementById('fatHistNewObs');
-            const texto = campo.value.trim();
-            const aviso = document.getElementById('fatHistObsAviso');
-            if (!texto) {
-                aviso.textContent = 'Digite uma observação.';
-                campo.focus(); return;
-            }
-            const botao = document.getElementById('btnSalvarFatHistObs');
-            isSavingObsFaturamento = true;
-            botao.disabled = true; campo.disabled = true; aviso.textContent = 'Registrando...';
+            if(isSavingObsFaturamento || !fatHistModalTarget)return;
+            const target={...fatHistModalTarget};
+            const campo=document.getElementById('fatHistNewObs');
+            const texto=campo.value.trim();
+            const aviso=document.getElementById('fatHistObsAviso');
+            if(!texto){aviso.textContent='Digite uma observação.';campo.focus();return;}
+            const botao=document.getElementById('btnSalvarFatHistObs');
+            isSavingObsFaturamento=true;
+            botao.disabled=true;campo.disabled=true;aviso.textContent='Registrando...';
             try {
-                const response = await fetch(API_PATCH_URL + '/observacao', {
-                    method:'POST',
-                    headers:headersFaturamentoHist(),
+                const response=await fetch(API_PATCH_URL+'/observacao',{
+                    method:'POST',headers:headersFaturamentoHist(),
                     body:JSON.stringify({
-                        cod_empresa:target.empresa, cod_orcamento:target.orcamento,
-                        usuario:getUsuarioLogado(), observacao:texto
+                        cod_empresa:target.empresa,cod_orcamento:target.orcamento,
+                        guid_linha:target.guid,usuario:getUsuarioLogado(),observacao:texto
                     })
                 });
-                const resultado = await response.json().catch(() => ({}));
-                if (!response.ok) throw new Error(resultado.detail || 'HTTP ' + response.status);
-                campo.value = '';
-                fatHistCache.delete(chaveHistoricoFaturamento(target.empresa,target.orcamento));
-                const lista = document.getElementById('fatHistList');
-                try {
-                    const eventos = await buscarHistoricoFaturamento(target.empresa,target.orcamento,true);
-                    if (fatHistModalTarget?.empresa === target.empresa &&
-                        fatHistModalTarget?.orcamento === target.orcamento)
-                        preencherHistoricoFaturamento(lista,eventos);
-                } catch(e) { console.warn('Observação salva; falha ao atualizar histórico:', e); }
-                aviso.textContent = 'Observação registrada.';
-            } catch(e) { aviso.textContent = 'Erro: ' + e.message; }
-            finally { isSavingObsFaturamento = false; botao.disabled = false; campo.disabled = false; }
+                const resultado=await response.json().catch(()=>({}));
+                if(!response.ok || resultado.status!=='ok')
+                    throw new Error(resultado.detail || 'API não confirmou o registro.');
+                campo.value='';
+                fatHistCache.delete(chaveHistoricoFaturamento(target.empresa,target.orcamento,target.guid,target.os));
+                const dados=await buscarHistoricoFaturamento(target.empresa,target.orcamento,target.guid,target.os,true);
+                if(fatHistModalTarget?.guid===target.guid && fatHistModalTarget?.orcamento===target.orcamento){
+                    preencherHistoricoFaturamento(document.getElementById('fatHistList'),dados.eventos);
+                    mostrarHistoricosLegadosFat(dados);
+                }
+                aviso.textContent='Observação registrada no item.';
+            }catch(e){aviso.textContent='Erro: '+e.message;}
+            finally{isSavingObsFaturamento=false;botao.disabled=false;campo.disabled=false;}
         }
 
         function ativarHoverFaturamento() {
@@ -1335,12 +1390,7 @@
             return selectedStatuses.some(status => status === 'a_faturar' ? key !== 'faturado' : key === status);
         }
 
-        function canRenegotiate(item) {
-            const os = item && item.n_os;
-            return !!item && parseValue(item.vl_faturado) <= 0 && os !== null
-                && os !== undefined && String(os).trim() !== ''
-                && String(os).trim().toLowerCase() !== 'none';
-        }
+        function canRenegotiate(item) { return isBudgetPendingItem(item); }
 
         function isBudgetPendingItem(item) {
             return !!item && parseValue(item.vl_faturado) <= 0 &&
@@ -1818,7 +1868,7 @@
                                             </td>
                                             <td class="p-3 font-bold font-mono text-amber-600 dark:text-amber-400 align-middle whitespace-nowrap">
                                                 ${Number(item.cod_orcamento || 0) > 0
-                                                    ? `<button type="button" data-hist-empresa="${empresaFaturamentoOS(item)}" data-hist-orc="${Number(item.cod_orcamento)}"
+                                                    ? `<button type="button" data-hist-empresa="${empresaFaturamentoOS(item)}" data-hist-orc="${Number(item.cod_orcamento)}" data-hist-guid="${encodeURIComponent(String(item.guid_linha ?? item.GUID_LINHA ?? '')).replace(/'/g, '%27')}" data-hist-os="${encodeURIComponent(String(item.n_os ?? '')).replace(/'/g, '%27')}"
                                                         onclick="abrirHistoricoFaturamento(this)"
                                                         class="inline-flex items-center gap-1 rounded-md p-1 -m-1 hover:bg-amber-500/10 focus:outline-none focus:ring-2 focus:ring-amber-500">
                                                         ${item.n_orcamento || '-'} <i data-lucide="history" class="w-3.5 h-3.5 shrink-0"></i>
@@ -1966,44 +2016,47 @@
             if (item && canRenegotiate(item)) openEditModal(item);
         }
 
+        function chaveItemFaturamento(item) {
+            return JSON.stringify([empresaFaturamentoOS(item),
+                Number(item.cod_orcamento ?? item.COD_ORCAMENTO ?? 0),
+                String(item.guid_linha ?? item.GUID_LINHA ?? '').trim()]);
+        }
+        function alvoRenegociacaoItem(item) {
+            return {
+                cod_empresa:empresaFaturamentoOS(item),
+                cod_orcamento:Number(item.cod_orcamento ?? item.COD_ORCAMENTO),
+                guid_linha:String(item.guid_linha ?? item.GUID_LINHA).trim()
+            };
+        }
         function openEditModal(item) {
-            if (!canRenegotiate(item) || isSavingRenegociacao) return;
-            selectedItemModal = item;
-            editTargets = [{
-                os:String(item.n_os).trim(), empresa:empresaFaturamentoOS(item),
-                cod_orcamentos:Number(item.cod_orcamento || 0)>0 ? [Number(item.cod_orcamento)] : []
-            }];
-            document.getElementById('mModalOS').textContent = `OS #${item.n_os}`;
-            document.getElementById('mModalTitle').textContent = item.descricao || item.cliente || '';
-            document.getElementById('mModalInfo').textContent = 'Renegociação individual';
-            const dtAtual = item.dt_prevista_fat || item.u_data_renegociacao || item.entrega_normalizada || '';
-            document.getElementById('inputNewDate').value = String(dtAtual).slice(0, 10);
-            document.getElementById('inputJustification').value = '';
+            if(!canRenegotiate(item) || isSavingRenegociacao)return;
+            selectedItemModal=item;
+            editTargets=[alvoRenegociacaoItem(item)];
+            document.getElementById('mModalOS').textContent=
+                'Orçamento '+(item.n_orcamento || '-')+' · '+(item.cod_interno || 'Item');
+            document.getElementById('mModalTitle').textContent=item.descricao || item.cliente || '';
+            document.getElementById('mModalInfo').textContent='Renegociação individual do item';
+            // Nunca herdar como data individual a data legada de TOS.U_DATA_RENEGOCIACAO.
+            const atual=item.u_data_renegociacao_item || item.u_data_renegociacao || '';
+            document.getElementById('inputNewDate').value=String(atual).slice(0,10);
+            document.getElementById('inputJustification').value='';
             showEditModal();
         }
-
         function openBulkEditModal() {
-            if (isSavingRenegociacao) return;
-            const rows = visibleSelectableKeys.filter(key => selectedRows.has(key))
-                .map(key => rowByKey.get(key)).filter(canRenegotiate);
-            if (!rows.length) return;
-            // O endpoint PATCH grava a renegociação da OS; cada OS recebe somente uma chamada.
-            const targetsPorOS = new Map();
-            rows.forEach(item => {
-                const os = String(item.n_os).trim(), empresa = empresaFaturamentoOS(item);
-                const key = empresa + ':' + os;
-                if (!targetsPorOS.has(key)) targetsPorOS.set(key, {os, empresa, cod_orcamentos:[]});
-                const orc = Number(item.cod_orcamento || 0);
-                if (orc > 0 && !targetsPorOS.get(key).cod_orcamentos.includes(orc))
-                    targetsPorOS.get(key).cod_orcamentos.push(orc);
-            });
-            editTargets = [...targetsPorOS.values()];
-            selectedItemModal = null;
-            document.getElementById('mModalOS').textContent = 'RENEGOCIAÇÃO EM LOTE';
-            document.getElementById('mModalTitle').textContent = `${rows.length} item(ns) selecionado(s)`;
-            document.getElementById('mModalInfo').textContent = `${editTargets.length} OS distinta(s). A nova data será aplicada a todas elas.`;
-            document.getElementById('inputNewDate').value = '';
-            document.getElementById('inputJustification').value = '';
+            if(isSavingRenegociacao)return;
+            const rows=visibleSelectableKeys.filter(key=>selectedRows.has(key))
+                .map(key=>rowByKey.get(key)).filter(canRenegotiate);
+            if(!rows.length)return;
+            editTargets=[...new Map(rows.map(item=>
+                [chaveItemFaturamento(item),alvoRenegociacaoItem(item)])).values()];
+            selectedItemModal=null;
+            document.getElementById('mModalOS').textContent='RENEGOCIAÇÃO EM LOTE';
+            document.getElementById('mModalTitle').textContent=
+                editTargets.length+' item(ns) selecionado(s)';
+            document.getElementById('mModalInfo').textContent=
+                'Somente os itens marcados terão a data alterada.';
+            document.getElementById('inputNewDate').value='';
+            document.getElementById('inputJustification').value='';
             showEditModal();
         }
 
@@ -2029,112 +2082,79 @@
         }
 
         async function saveRenegociacao() {
-            if (!editTargets.length || isSavingRenegociacao) return;
-            const newDate = document.getElementById('inputNewDate').value;
-            const userTexto = document.getElementById('inputJustification').value.trim();
-            if (!newDate && !selectedItemModal) {
-                alert('Informe a nova data para renegociar os itens selecionados.');
-                return;
+            if(!editTargets.length || isSavingRenegociacao)return;
+            const novaData=document.getElementById('inputNewDate').value;
+            const justificativa=document.getElementById('inputJustification').value.trim();
+            if(!novaData && !selectedItemModal){
+                alert('Informe a nova data dos itens selecionados.');return;
             }
-            if (!userTexto) {
-                alert('A justificativa é obrigatória para registrar a alteração.');
-                return;
+            if(!justificativa){
+                alert('A justificativa é obrigatória.');return;
             }
-            const targets = [...editTargets];
-            if (targets.length > 1 && !confirm(`Confirmar renegociação de ${targets.length} OS para ${formatDateOnly(newDate)}?`)) return;
-            const justificativa = userTexto; // Histórico usa o usuário da sessão atual do portal.
-            const btn = document.getElementById('btnSaveData');
-            const successOS = new Set(), failures = [];
-            let next = 0, finished = 0;
-            isSavingRenegociacao = true;
-            btn.disabled = true;
-            document.getElementById('inputNewDate').disabled = true;
-            document.getElementById('inputJustification').disabled = true;
+            const itens=[...editTargets];
+            if(itens.length>1 && !confirm('Renegociar '+itens.length+' itens selecionados?'))return;
+            const botao=document.getElementById('btnSaveData');
+            isSavingRenegociacao=true;
+            botao.disabled=true;
+            document.getElementById('inputNewDate').disabled=true;
+            document.getElementById('inputJustification').disabled=true;
             updateSelectionUi();
-
-            // Limita a três requisições simultâneas, sem exigir endpoint novo na API.
-            const worker = async () => {
-                while (next < targets.length) {
-                    const target = targets[next++];
-                    const os = target.os;
-                    const empresa = target.empresa;
-                    try {
-                        const response = await fetch(`${API_PATCH_URL}/renegociar-os/${encodeURIComponent(os)}`, {
-                            method: 'PATCH',
-                            headers: {...headersFaturamentoHist(), 'X-Idempotency-Key': uuidFaturamento()},
-                            body: JSON.stringify({
-                                cod_empresa: empresa,
-                                u_data_renegociacao: newDate || null,
-                                U_JUST_ALT_DT_REN: justificativa,
-                                usuario: getUsuarioLogado(),
-                                cod_orcamentos: target.cod_orcamentos
-                            })
-                        });
-                        const details = await response.json().catch(() => ({}));
-                        if (!response.ok) {
-                            throw new Error(typeof details.detail === 'string' ? details.detail : `HTTP ${response.status}`);
-                        }
-                        // Nao anunciar sucesso se a API nao confirmar o valor atualizado.
-                        if (details.status !== 'ok' ||
-                            String(details.nova_data || '').slice(0,10) !== String(newDate || '')) {
-                            throw new Error('API nao confirmou a data gravada no CPS.');
-                        }
-                        if (details.alterou && Number(details.historicos_registrados || 0) < 1) {
-                            throw new Error('A data mudou, mas nao houve registro no historico do orcamento.');
-                        }
-                        successOS.add(empresa + ':' + os);
-                    } catch (err) {
-                        console.error(`Falha ao renegociar OS ${os}:`, err);
-                        failures.push(`OS ${os}: ${err.message}`);
-                    } finally {
-                        finished++;
-                        btn.textContent = `Salvando ${finished}/${targets.length}...`;
-                    }
-                }
-            };
+            let sucesso=false;
             try {
-                await Promise.all(Array.from({length: Math.min(3, targets.length)}, worker));
-            } finally {
-                isSavingRenegociacao = false;
-                btn.disabled = false;
-                document.getElementById('inputNewDate').disabled = false;
-                document.getElementById('inputJustification').disabled = false;
-                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Salvar';
+                // Uma transação atômica no banco, por item, sem agrupamento de OS.
+                const resposta=await fetch(API_PATCH_URL+'/renegociar-itens',{
+                    method:'POST',
+                    headers:{...headersFaturamentoHist(),'X-Idempotency-Key':uuidFaturamento()},
+                    body:JSON.stringify({
+                        itens,u_data_renegociacao:novaData || null,
+                        U_JUST_ALT_DT_REN:justificativa,usuario:getUsuarioLogado()
+                    })
+                });
+                const dados=await resposta.json().catch(()=>({}));
+                if(!resposta.ok)throw new Error(dados.detail || 'HTTP '+resposta.status);
+                if(dados.status!=='ok' || String(dados.nova_data || '')!==String(novaData || ''))
+                    throw new Error('A API não confirmou a gravação por item.');
+                const chaves=new Set(itens.map(x=>JSON.stringify([
+                    x.cod_empresa,x.cod_orcamento,x.guid_linha])));
+                const agora=new Date();
+                const hoje=[agora.getFullYear(),String(agora.getMonth()+1).padStart(2,'0'),
+                    String(agora.getDate()).padStart(2,'0')].join('-');
+                rawData.forEach(item=>{
+                    if(!chaves.has(chaveItemFaturamento(item)) || parseValue(item.vl_faturado)>0)return;
+                    item.u_data_renegociacao_item=novaData || null;
+                    item.u_data_renegociacao=novaData || null;
+                    if(novaData){
+                        item.dt_prevista_fat=novaData;
+                        item.entrega_normalizada=novaData>hoje?novaData:hoje;
+                    }
+                });
+                fatHistCache.clear(); fecharPopupFatHist();
+                const salvoEm=new Date().toISOString();
+                try{await writeFaturamentoCache(rawData,salvoEm);}
+                catch(e){console.warn('Falha ao atualizar cache local:',e);}
+                selectedRows=new Set([...selectedRows].filter(key=>{
+                    const item=rowByKey.get(key);
+                    return item && !chaves.has(chaveItemFaturamento(item));
+                }));
+                sucesso=true;
+                document.getElementById('editModal').classList.add('hidden');
+                document.getElementById('editModal').classList.remove('flex');
+                selectedItemModal=null;
+                editTargets=[];
+                renderCalendar();
+                await fetchData(false,true);
+                alert('Renegociação concluída. '+itens.length+' item(ns) processado(s), '+
+                    dados.quantidade+' alterado(s).');
+            }catch(e){alert('Erro ao renegociar: '+e.message);}
+            finally{
+                isSavingRenegociacao=false;
+                botao.disabled=false;
+                document.getElementById('inputNewDate').disabled=false;
+                document.getElementById('inputJustification').disabled=false;
+                botao.innerHTML='<i data-lucide="check" class="w-4 h-4"></i> Salvar';
                 updateSelectionUi();
                 lucide.createIcons();
-            }
-
-            if (successOS.size) {
-                fatHistCache.clear();
-                fecharPopupFatHist();
-                // Aplica no cache imediatamente a data CONFIRMADA pelo backend.
-                // A antiga API retornava objeto de erro com HTTP 200; enquanto houver
-                // erro no GET a tela nao pode voltar silenciosamente a data velha.
-                const agora = new Date();
-                const y = agora.getFullYear(), m = String(agora.getMonth()+1).padStart(2,'0');
-                const d = String(agora.getDate()).padStart(2,'0');
-                const hoje = `${y}-${m}-${d}`;
-                rawData.forEach(item => {
-                    const key = empresaFaturamentoOS(item) + ':' + String(item.n_os ?? '').trim();
-                    if (!successOS.has(key) || parseValue(item.vl_faturado) > 0) return;
-                    item.u_data_renegociacao = newDate;
-                    item.dt_prevista_fat = newDate;
-                    item.entrega_normalizada = newDate ? (newDate > hoje ? newDate : hoje) : hoje;
-                });
-                try { await writeFaturamentoCache(rawData, new Date().toISOString()); }
-                catch(e) { console.warn('Cache nao atualizado:', e); }
-                selectedRows = new Set([...selectedRows].filter(key => {
-                    const item = rowByKey.get(key);
-                    return item && !successOS.has(empresaFaturamentoOS(item) + ':' + String(item.n_os).trim());
-                }));
-                closeEditModal();
-                renderCalendar();
-                await fetchData(false, true);
-            }
-            if (!failures.length) {
-                alert(`Renegociação concluída: ${successOS.size} OS atualizada(s).`);
-            } else {
-                alert(`${successOS.size} OS atualizada(s). Falharam ${failures.length}:\n\n${failures.join('\n').slice(0, 1400)}\n\nAs OS com erro não foram marcadas como concluídas.`);
+                if(sucesso)document.getElementById('editModal').classList.remove('flex');
             }
         }
 
