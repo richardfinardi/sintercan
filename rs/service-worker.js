@@ -1,5 +1,5 @@
-const CACHE_NAME = 'sintercan-rs-v1.6.7';
-const APP_SHELL = ['./', './index.html', './material-cliente.js?v=1.6.7', './manifest.webmanifest', './icons/icon-32.png', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-192.png', './icons/icon-maskable-512.png'];
+const CACHE_NAME = 'sintercan-rs-v1.6.8';
+const APP_SHELL = ['./', './index.html', './material-cliente.js?v=1.6.8', './manifest.webmanifest', './icons/icon-32.png', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-192.png', './icons/icon-maskable-512.png'];
 const OPTIONAL_CDN = [
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/lucide@latest',
