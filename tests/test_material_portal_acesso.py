@@ -81,14 +81,43 @@ class PortalPermissoesTest(unittest.TestCase):
         self.assertEqual(len(portal.listar_portais(authorization=bob)), 0)
         self.assertEqual(len(portal.listar_portais(authorization=admin)), 1)
         with self.assertRaises(HTTPException) as ex:
-            portal.alterar_status(link["id"], portal.MudarStatus(ativo=False), authorization=bob)
+            portal.excluir_portal(link["id"], authorization=bob)
         self.assertEqual(ex.exception.status_code, 403)
-        self.assertFalse(portal.alterar_status(
+        self.assertEqual(portal.excluir_portal(link["id"], authorization=alice)["ok"], True)
+        self.assertEqual(len(portal.listar_portais(authorization=admin)), 0)
+        with self.assertRaises(HTTPException) as ex:
+            portal.get_portal(link["id"])
+        self.assertEqual(ex.exception.status_code, 404)
+
+    def test_gestor_pode_excluir_portal_de_outro_usuario(self):
+        alice = self.login("ALICE")
+        admin = self.login("GESTOR")
+        link = self.create(alice)
+        self.assertEqual(portal.excluir_portal(link["id"], authorization=admin)["excluido"], link["id"])
+        with self.assertRaises(HTTPException) as ex:
+            portal.dados_portal(link["id"], token=link["url"].split("token=")[-1])
+        self.assertEqual(ex.exception.status_code, 404)
+
+    def test_compatibilidade_patch_desativar_exclui_efetivamente(self):
+        alice = self.login("ALICE")
+        link = self.create(alice)
+        with self.assertRaises(HTTPException) as ex:
+            portal.alterar_status(link["id"], portal.MudarStatus(ativo=True), authorization=alice)
+        self.assertEqual(ex.exception.status_code, 409)
+        self.assertEqual(portal.alterar_status(
             link["id"], portal.MudarStatus(ativo=False), authorization=alice
-        )["portal"]["ativo"])
-        self.assertTrue(portal.alterar_status(
-            link["id"], portal.MudarStatus(ativo=True), authorization=admin
-        )["portal"]["ativo"])
+        )["ok"], True)
+        with self.assertRaises(HTTPException) as ex:
+            portal.get_portal(link["id"])
+        self.assertEqual(ex.exception.status_code, 404)
+
+    def test_validade_padrao_sete_dias(self):
+        alice = self.login("ALICE")
+        link = self.create(alice)
+        from datetime import datetime, timedelta
+        criado = datetime.fromisoformat(link["criado_em"])
+        validade = datetime.fromisoformat(link["validade_ate"])
+        self.assertEqual((validade - criado).days, 7)
 
     def test_permissao_revogada_bloqueia_sessao_antiga(self):
         alice = self.login("ALICE")

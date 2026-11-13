@@ -9,14 +9,15 @@ Esta implementação replica o fluxo **Portal Cliente** da Carteira PSTEC na aba
 - O link contempla **somente as linhas filtradas naquele momento**, inclusive
   filtros de coluna, busca e período; não depende do cache do navegador do cliente.
 - Exige **apenas um cliente** por link para evitar envio cruzado de dados.
-- Seleção de colunas, validade (7, 15, 30, 60 ou 90 dias) e permissão de Excel.
-- A janela **Gerenciar portais** permite copiar, abrir, desativar e reativar links.
-  Usuários comuns gerenciam os links que criaram; gestores visualizam e gerenciam todos.
+- Seleção de colunas, validade (padrão **7 dias**, opções 7, 15, 30, 60 ou 90 dias) e permissão de Excel.
+- A janela **Gerenciar portais** permite copiar, abrir e **excluir permanentemente** links.
+  Usuários comuns excluem os links que criaram; gestores podem excluir qualquer um.
 - O destinatário abre o link diretamente, sem usuário CPS; o token dá acesso
   **somente às linhas/colunas permitidas**.
 - Em cada acesso, a API consulta **/carteira_nf** e reaplica a seleção salva;
   alterações de status, previsão e outros campos atualizam no portal.
-- Links vencidos/desativados deixam de entregar dados imediatamente.
+- Links vencidos deixam de entregar dados; ao excluir um portal seu registro e token
+  são removidos do SQLite e o link deixa de funcionar imediatamente.
 - A criação exige nova confirmação de senha CPS por **POST /material_cliente/portal/sessao**,
   que valida /login e U_RS=1. A API revalida /me a cada ação e mantém sessão
   temporária de 30 minutos, com token armazenado apenas como hash no SQLite.
@@ -58,14 +59,15 @@ Não tornar a tela /sintercan/rs ou a API /carteira_nf uma tela pública de clie
    - POST /material_cliente/portal/sessao
    - POST /material_cliente/portal
    - GET /material_cliente/portal
-   - PATCH /material_cliente/portal/{portal_id}/status
+   - DELETE /material_cliente/portal/{portal_id} (exclusão definitiva)
+   - PATCH /material_cliente/portal/{portal_id}/status (compatibilidade: ativo=false exclui)
    - GET /material_cliente/portal/{portal_id}/dados
    - GET /material_cliente/portal/{portal_id} (página do cliente)
 6. Entrar em https://consultoriarf.net/sintercan/rs/, abrir Materiais de Cliente,
    filtrar 1 cliente, clicar **Portal Cliente**, gerar um link de teste e abrir em
    uma janela anônima. Não utilizar dados de clientes reais no teste sem autorização.
-7. Depois, confirmar que **Desativar** interrompe o acesso e que a validade é
-   respeitada.
+7. Depois, confirmar que **Excluir** apaga o registro, invalida o link e que
+   a validade padrão começa em 7 dias.
 
 ## Persistência e configuração
 

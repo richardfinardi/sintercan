@@ -62,7 +62,7 @@ NO_CACHE = {"Cache-Control": "no-store, private", "Referrer-Policy": "no-referre
 
 class NovoPortal(BaseModel):
     nome: str = Field(min_length=3, max_length=120)
-    validade_dias: int = Field(default=30, ge=1, le=365)
+    validade_dias: int = Field(default=7, ge=1, le=365)
     permitir_excel: bool = False
     colunas: list[str] = Field(min_length=1, max_length=13)
     row_keys: dict[str, int] = Field(min_length=1)
@@ -271,8 +271,9 @@ def criar_portal(payload: NovoPortal, authorization: str | None = Header(default
         raise HTTPException(422, "Filtre um único cliente antes de gerar o portal.")
     identificador = secrets.token_urlsafe(10).replace("-", "").replace("_", "")
     token = secrets.token_urlsafe(32)
-    criado = iso(now())
-    vence = iso(now() + timedelta(days=payload.validade_dias))
+    agora = now()
+    criado = iso(agora)
+    vence = iso(agora + timedelta(days=payload.validade_dias))
     with conn() as cx:
         cx.execute("""INSERT INTO portais
             (id,token,nome,criado_em,criado_por,validade_ate,ativo,colunas,row_keys,qtd_itens,permitir_excel)
@@ -297,17 +298,37 @@ def listar_portais(authorization: str | None = Header(default=None)):
     return [public_portal(dict(row), include_url=True) for row in rows]
 
 
-@router.patch("/{portal_id}/status")
-def alterar_status(portal_id: str, payload: MudarStatus, authorization: str | None = Header(default=None)):
+def _excluir_portal_autorizado(portal_id: str, authorization: str | None):
+    """Exclui permanentemente portal e token. O link deixa de funcionar de imediato."""
     usuario, gestor = autorizar_portal(authorization)
     with conn() as cx:
-        portal = cx.execute("SELECT criado_por FROM portais WHERE id=?", (portal_id,)).fetchone()
+        portal = cx.execute(
+            "SELECT criado_por FROM portais WHERE id=?", (portal_id,)
+        ).fetchone()
         if not portal:
-            raise HTTPException(404, "Portal não encontrado.")
+            raise HTTPException(404, "Portal não encontrado ou já excluído.")
         if not gestor and str(portal["criado_por"]).strip().upper() != usuario:
-            raise HTTPException(403, "Somente quem criou o portal ou um gestor pode alterá-lo.")
-        cx.execute("UPDATE portais SET ativo=? WHERE id=?", (int(payload.ativo), portal_id))
-    return {"portal": public_portal(get_portal(portal_id), include_url=True)}
+            raise HTTPException(
+                403, "Somente quem criou o portal ou um gestor pode excluí-lo."
+            )
+        resultado = cx.execute("DELETE FROM portais WHERE id=?", (portal_id,))
+        if resultado.rowcount != 1:
+            raise HTTPException(409, "A exclusão não foi confirmada.")
+    return {"ok": True, "excluido": portal_id}
+
+
+@router.delete("/{portal_id}")
+def excluir_portal(portal_id: str, authorization: str | None = Header(default=None)):
+    return _excluir_portal_autorizado(portal_id, authorization)
+
+
+@router.patch("/{portal_id}/status", deprecated=True)
+def alterar_status(portal_id: str, payload: MudarStatus, authorization: str | None = Header(default=None)):
+    # Compatibilidade: navegadores com frontend antigo ainda chamam PATCH
+    # para "desativar". Agora isso exclui o portal, não apenas marca como inativo.
+    if payload.ativo:
+        raise HTTPException(409, "O portal excluído não pode ser reativado. Gere um novo link.")
+    return _excluir_portal_autorizado(portal_id, authorization)
 
 
 @router.get("/{portal_id}/dados")
