@@ -541,6 +541,29 @@ function materialVisibleColumns() {
     return materialColumnOrder.filter(key=>!materialColumnHidden.has(key)).map(key=>materialColsByKey[key]);
 }
 
+// Ocultar diretamente no cabeçalho, com recuperação em Personalizar colunas.
+function materialSetColumnVisibility(key, visible) {
+    materialLoadPreferences();
+    if (!materialColsByKey[key]) return false;
+    if (!visible && !materialColumnHidden.has(key) && materialVisibleColumns().length <= 1) {
+        showDataToast('É necessário manter pelo menos uma coluna visível.', 'warning');
+        return false;
+    }
+    if (visible) materialColumnHidden.delete(key);
+    else materialColumnHidden.add(key);
+    materialSaveLayout();
+    materialCloseColumnFilter();
+    if (materialClienteDataReady) renderMaterialClienteView();
+    materialRenderLayoutModal();
+    return true;
+}
+
+function materialHideColumn(key) {
+    if (materialSetColumnVisibility(key, false)) {
+        showDataToast('Coluna ocultada. Para exibi-la novamente, abra Personalizar colunas.', 'success');
+    }
+}
+
 function materialColumnDragStart(event, key) {
     if (materialResizeState) {event.preventDefault();return;}
     materialColumnDrag=key;
@@ -633,10 +656,16 @@ function materialRenderTableHeader() {
             '<span draggable="true" data-material-drag="'+col.key+'" class="flex-shrink-0 cursor-grab active:cursor-grabbing text-slate-500 dark:text-slate-400 hover:text-amber-600 text-base px-0.5 touch-none" title="Arraste para mudar a posição da coluna" aria-label="Arrastar coluna '+escapeHtml(col.title)+'">⠿</span>'+
             '<button type="button" data-material-sort="'+col.key+'" class="text-left truncate flex-1 min-w-0 hover:text-amber-600 dark:hover:text-amber-400 font-bold" title="Ordenar '+escapeHtml(col.title)+'">'+escapeHtml(col.title)+'<span class="mat-sort-indicator"></span></button>'+
             '<button type="button" data-material-filter="'+col.key+'" class="material-col-filter flex-shrink-0 rounded p-1 hover:bg-white/60 dark:hover:bg-slate-700 '+(materialColumnSelections[col.key] instanceof Set?'bg-amber-400 text-slate-950':'text-slate-500 dark:text-slate-400')+'" title="Filtrar esta coluna" aria-label="Filtrar '+escapeHtml(col.title)+'">'+
-            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M7 12h10m-7 5h4"/></svg></button></div>'+
+            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M7 12h10m-7 5h4"/></svg></button>'+
+            '<button type="button" data-material-hide="'+col.key+'" class="flex-shrink-0 rounded p-1 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400" title="Ocultar coluna '+escapeHtml(col.title)+'" aria-label="Ocultar coluna '+escapeHtml(col.title)+'">'+
+            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.1A10 10 0 0 1 12 5c4.6 0 8 3 10 7a15.8 15.8 0 0 1-3.1 4.1"/><path d="M6.7 6.7A16 16 0 0 0 2 12c2 4 5.4 7 10 7 1.3 0 2.6-.3 3.7-.7"/></svg></button></div>'+
             '<span data-material-resize="'+col.key+'" class="absolute -right-1.5 top-0 bottom-0 w-3 z-20 cursor-col-resize hover:bg-amber-400/60 touch-none" title="Arraste para ajustar largura"></span>';
         th.querySelector('[data-material-sort]').addEventListener('click',()=>sortMaterialCliente(col.key));
         th.querySelector('[data-material-filter]').addEventListener('click',event=>materialOpenColumnFilter(event,col.key));
+        th.querySelector('[data-material-hide]').addEventListener('click',event=>{
+            event.stopPropagation();
+            materialHideColumn(col.key);
+        });
         th.querySelector('[data-material-resize]').addEventListener('pointerdown',event=>materialResizeStart(event,col.key));
         th.querySelector('[data-material-drag]').addEventListener('dragstart',event=>materialColumnDragStart(event,col.key));
         th.addEventListener('dragover',materialColumnDragOver);
@@ -675,8 +704,16 @@ function renderMaterialClienteView() {
     const filteredBadge=document.getElementById('materialActiveColumnFilters');
     const activeCount=Object.keys(materialColumnSelections).filter(key=>materialColumnSelections[key] instanceof Set).length;
     if(filteredBadge) {
-        filteredBadge.textContent=activeCount?(activeCount+' filtros de coluna ativos'):'Arraste o ícone ⠿ para mover colunas';
-        filteredBadge.classList.toggle('text-amber-600',activeCount>0);
+        const hiddenCount = materialColumnHidden.size;
+        filteredBadge.textContent=(activeCount ? activeCount+' filtros de coluna ativos' : 'Arraste ⠿ para mover colunas')+
+            (hiddenCount ? ' • '+hiddenCount+' coluna(s) oculta(s)' : '');
+        filteredBadge.classList.toggle('text-amber-600',activeCount>0 || hiddenCount>0);
+    }
+    const hiddenBtn=document.getElementById('materialShowHiddenColumnsBtn');
+    if(hiddenBtn) {
+        hiddenBtn.classList.toggle('hidden',materialColumnHidden.size===0);
+        const label=hiddenBtn.querySelector('[data-hidden-count]');
+        if(label) label.textContent=String(materialColumnHidden.size);
     }
     materialRenderTableHeader();
     const visible=materialVisibleColumns();
@@ -842,12 +879,8 @@ function materialRenderLayoutModal() {
             '<button type="button" data-mat-col-up title="Mover para esquerda" class="rounded border border-slate-300 dark:border-slate-700 px-2 py-1">↑</button>'+
             '<button type="button" data-mat-col-down title="Mover para direita" class="rounded border border-slate-300 dark:border-slate-700 px-2 py-1">↓</button>';
         row.querySelector('input').addEventListener('change',e=>{
-            if(!e.target.checked && materialVisibleColumns().length===1){
-                e.target.checked=true;showDataToast('Mantenha pelo menos uma coluna visível.','warning');return;
-            }
-            if(e.target.checked)materialColumnHidden.delete(key);
-            else materialColumnHidden.add(key);
-            materialSaveLayout();renderMaterialClienteView();
+            const updated=materialSetColumnVisibility(key,e.target.checked);
+            if(!updated)e.target.checked=!e.target.checked;
         });
         const move=direction=>{
             const to=index+direction;
