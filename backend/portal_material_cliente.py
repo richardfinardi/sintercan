@@ -288,14 +288,22 @@ def criar_portal(payload: NovoPortal, authorization: str | None = Header(default
 def listar_portais(authorization: str | None = Header(default=None)):
     usuario, gestor = autorizar_portal(authorization)
     with conn() as cx:
+        # Limpa registros legados que foram apenas DESATIVADOS antes da
+        # exclusão definitiva. Seus links já estavam bloqueados.
+        cx.execute("DELETE FROM portais WHERE ativo = 0")
         if gestor:
-            rows = cx.execute("SELECT * FROM portais ORDER BY criado_em DESC LIMIT 500").fetchall()
+            rows = cx.execute(
+                "SELECT * FROM portais WHERE ativo = 1 ORDER BY criado_em DESC LIMIT 500"
+            ).fetchall()
         else:
             rows = cx.execute(
-                "SELECT * FROM portais WHERE UPPER(criado_por)=? ORDER BY criado_em DESC LIMIT 500",
+                "SELECT * FROM portais WHERE ativo = 1 AND UPPER(criado_por)=? ORDER BY criado_em DESC LIMIT 500",
                 (usuario,),
             ).fetchall()
-    return [public_portal(dict(row), include_url=True) for row in rows]
+    return JSONResponse(
+        [public_portal(dict(row), include_url=True) for row in rows],
+        headers=NO_CACHE,
+    )
 
 
 def _excluir_portal_autorizado(portal_id: str, authorization: str | None):
@@ -306,7 +314,9 @@ def _excluir_portal_autorizado(portal_id: str, authorization: str | None):
             "SELECT criado_por FROM portais WHERE id=?", (portal_id,)
         ).fetchone()
         if not portal:
-            raise HTTPException(404, "Portal não encontrado ou já excluído.")
+            # Repetição do DELETE após exclusão em outra aba/dispositivo:
+            # manter operação idempotente e não deixar o item preso na tela.
+            return {"ok": True, "excluido": portal_id, "ja_excluido": True}
         if not gestor and str(portal["criado_por"]).strip().upper() != usuario:
             raise HTTPException(
                 403, "Somente quem criou o portal ou um gestor pode excluí-lo."
