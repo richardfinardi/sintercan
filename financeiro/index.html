@@ -6,10 +6,10 @@
   <meta name="color-scheme" content="light dark">
   <title>Financeiro | Sintercan</title>
   <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
-  <link rel="stylesheet" href="./app.css?v=20261113-1">
+  <link rel="stylesheet" href="./app.css?v=20261113-3">
   <script src="https://unpkg.com/lucide@latest" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-  <script src="./app.js?v=20261113-2" defer></script>
+  <script src="./app.js?v=20261113-3" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -55,9 +55,15 @@
       </section>
 
       <section class="panel filters-panel" aria-label="Filtros">
-        <div class="section-head">
-          <h2>Filtros</h2>
-          <button type="button" id="clearBtn" class="text-btn">Limpar filtros</button>
+        <div class="section-head filters-head">
+          <div class="filters-title">
+            <h2>Filtros</h2>
+            <span id="filterSummary" class="muted">Sem filtros adicionais</span>
+          </div>
+          <div class="filter-actions">
+            <button type="button" id="clearBtn" class="text-btn">Limpar filtros</button>
+            <button type="button" id="toggleFiltersBtn" class="btn collapse-btn" aria-controls="filterGrid" aria-expanded="true">⌃ Recolher filtros</button>
+          </div>
         </div>
         <div class="filter-grid" id="filterGrid">
           <label class="date-field"><span>VENCIMENTO DE</span><input id="dateFrom" type="date"></label>
@@ -66,7 +72,14 @@
           <div class="picker" data-filter="plan"><label>PLANO DE CONTAS</label><button type="button" class="picker-button" data-open="plan"><span id="label-plan">Todos</span><span>⌄</span></button><div id="menu-plan" class="picker-menu" hidden></div></div>
           <div class="picker" data-filter="account"><label>CONTA</label><button type="button" class="picker-button" data-open="account"><span id="label-account">Todos</span><span>⌄</span></button><div id="menu-account" class="picker-menu" hidden></div></div>
           <div class="picker" data-filter="type"><label>TIPO</label><button type="button" class="picker-button" data-open="type"><span id="label-type">Todos</span><span>⌄</span></button><div id="menu-type" class="picker-menu" hidden></div></div>
-          <div class="picker" data-filter="status"><label>SITUAÇÃO</label><button type="button" class="picker-button" data-open="status"><span id="label-status">Todas</span><span>⌄</span></button><div id="menu-status" class="picker-menu" hidden></div></div>
+          <div class="status-field">
+            <label id="statusLabel">SITUAÇÃO</label>
+            <div id="statusSegment" class="status-segment" role="group" aria-labelledby="statusLabel">
+              <button type="button" data-status-mode="all" aria-pressed="true">Exibir tudo</button>
+              <button type="button" data-status-mode="ABERTO" aria-pressed="false">Só aberto</button>
+              <button type="button" data-status-mode="PAGO" aria-pressed="false">Só pago</button>
+            </div>
+          </div>
           <label class="date-field search-field"><span>BUSCA GERAL</span><input id="searchInput" type="search" placeholder="Fornecedor, conta, documento..."></label>
         </div>
       </section>
