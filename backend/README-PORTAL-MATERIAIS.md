@@ -5,19 +5,21 @@ Esta implementação replica o fluxo **Portal Cliente** da Carteira PSTEC na aba
 
 ## Comportamento
 
-- Gestores (CSENHA.U_GESTOR=1) veem **Portal Cliente** na barra da tabela.
+- Todos os usuários com acesso ao módulo RS (CSENHA.U_RS=1) veem **Portal Cliente**.
 - O link contempla **somente as linhas filtradas naquele momento**, inclusive
   filtros de coluna, busca e período; não depende do cache do navegador do cliente.
 - Exige **apenas um cliente** por link para evitar envio cruzado de dados.
 - Seleção de colunas, validade (7, 15, 30, 60 ou 90 dias) e permissão de Excel.
 - A janela **Gerenciar portais** permite copiar, abrir, desativar e reativar links.
+  Usuários comuns gerenciam os links que criaram; gestores visualizam e gerenciam todos.
 - O destinatário abre o link diretamente, sem usuário CPS; o token dá acesso
   **somente às linhas/colunas permitidas**.
 - Em cada acesso, a API consulta **/carteira_nf** e reaplica a seleção salva;
   alterações de status, previsão e outros campos atualizam no portal.
 - Links vencidos/desativados deixam de entregar dados imediatamente.
-- A administração exige uma autenticação CPS real por **/permissoes/login** e a
-  API verifica o token em **/permissoes/usuarios** em cada ação administrativa.
+- A criação exige nova confirmação de senha CPS por **POST /material_cliente/portal/sessao**,
+  que valida /login e U_RS=1. A API revalida /me a cada ação e mantém sessão
+  temporária de 30 minutos, com token armazenado apenas como hash no SQLite.
 - A configuração é gravada em SQLite privado no servidor, não em LocalStorage
   nem no GitHub. Não exige novos pacotes Python.
 
@@ -53,6 +55,7 @@ Não tornar a tela /sintercan/rs ou a API /carteira_nf uma tela pública de clie
    ficar junto delas; include_router deve acontecer após app = FastAPI(...).
 4. Reiniciar **somente** a API no servidor; o tunnel atual permanece o mesmo.
 5. Confirmar no Swagger /docs:
+   - POST /material_cliente/portal/sessao
    - POST /material_cliente/portal
    - GET /material_cliente/portal
    - PATCH /material_cliente/portal/{portal_id}/status
@@ -78,8 +81,8 @@ Variáveis opcionais, caso a API não use porta 8000 ou a pasta padrão:
 - SINTERCAN_PUBLIC_API = domínio público (padrão https://sintercan.consultoriarf.net)
 - SINTERCAN_MATERIAL_PORTAL_DB = caminho completo para o SQLite
 
-A API precisa manter /permissoes/login, /permissoes/usuarios e
-/carteira_nf operacionais. Nenhum endpoint antigo é alterado pelo módulo.
+A API precisa manter /login, /me e /carteira_nf operacionais.
+Nenhum endpoint antigo é alterado pelo módulo.
 
 ## Regra de segurança adicional
 
