@@ -1,0 +1,29 @@
+name: Sintercan Material Portal - Syntax check
+
+on:
+  push:
+    paths:
+      - 'backend/portal_material_cliente.py'
+      - 'rs/material-portal.js'
+      - '.github/workflows/material-portal-tests.yml'
+  pull_request:
+    paths:
+      - 'backend/portal_material_cliente.py'
+      - 'rs/material-portal.js'
+      - '.github/workflows/material-portal-tests.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Python syntax
+        run: python -m py_compile backend/portal_material_cliente.py
+      - name: Check JavaScript syntax
+        run: node --check rs/material-portal.js
