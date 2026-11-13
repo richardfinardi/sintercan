@@ -133,6 +133,7 @@
       if (Array.isArray(p)) return {list: p, envelope: payload};
       if (!p || typeof p !== 'object') break;
       if (p.status === 'error' || p.status === 'erro' || p.success === false) throw new Error(clean(p.message || p.error || p.detail) || 'A API retornou erro.');
+      let nextObject = null;
       for (const name of ['contas_pagar', 'dados', 'data', 'rows', 'results', 'result', 'registros', 'items', 'itens']) {
         const arr = field(p, [name]);
         if (Array.isArray(arr)) {
@@ -148,13 +149,12 @@
           }
           return {list: arr, envelope: payload};
         }
-        if (arr && typeof arr === 'object') { p = arr; break; }
+        if (arr && typeof arr === 'object') { nextObject = arr; break; }
       }
+      if (nextObject) { p = nextObject; continue; }
       const nested = Object.values(p).filter(Array.isArray);
       if (nested.length === 1) return {list: nested[0], envelope: payload};
-      const next = field(p, ['dados', 'data', 'result', 'results']);
-      if (!next || next === p || typeof next !== 'object') break;
-      p = next;
+      break;
     }
     throw new Error('O endpoint não retornou uma lista de contas reconhecível. Nenhum total foi substituído.');
   }
@@ -408,14 +408,14 @@
     menu.querySelector('[data-clear]').addEventListener('click', function () {
       state.selected[prop] = []; renderPicker(prop, searchBox.value); filterChanged();
     });
-    menu.addEventListener('change', function onChange(e) {
+    menu.onchange = function onChange(e) {
       if (e.target && e.target.matches('input[data-pick="' + prop + '"]')) {
         const val = e.target.value, arr = new Set(state.selected[prop]);
         e.target.checked ? arr.add(val) : arr.delete(val);
         state.selected[prop] = Array.from(arr);
         filterChanged();
       }
-    }, {once: true});
+    };
   }
   function closePickers() {
     state.openPicker = '';
