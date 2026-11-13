@@ -2145,7 +2145,7 @@
             dataReady = true;
             currentCacheSavedAt = savedAt || currentCacheSavedAt;
             rsLastSourceMode = source === 'cache' ? 'cache' : 'api';
-            if (activeTab !== 'Pedidos') {
+            if (activeTab !== 'Pedidos' && activeTab !== 'MaterialCliente') {
                 applyFilters();
                 switchMainTab(activeTab, false);
                 updateDataStatus(rsLastSourceMode, savedAt);
@@ -2165,7 +2165,7 @@
                     'Buscando a versão mais recente diretamente da API.',
                     false
                 );
-            } else if (activeTab !== 'Pedidos') {
+            } else if (activeTab !== 'Pedidos' && activeTab !== 'MaterialCliente') {
                 updateDataStatus('updating', currentCacheSavedAt);
             }
 
@@ -2187,23 +2187,23 @@
                 try {
                     await writeRsCache(data, savedAt);
                     currentCacheSavedAt = savedAt;
-                    if (activeTab !== 'Pedidos') updateDataStatus('api', savedAt);
+                    if (activeTab !== 'Pedidos' && activeTab !== 'MaterialCliente') updateDataStatus('api', savedAt);
                 } catch (cacheErr) {
                     console.warn('Não foi possível atualizar o cache local:', cacheErr);
-                    if (activeTab !== 'Pedidos') updateDataStatus('api', savedAt);
+                    if (activeTab !== 'Pedidos' && activeTab !== 'MaterialCliente') updateDataStatus('api', savedAt);
                 }
 
                 if (manual) showDataToast('Dados atualizados pela API e cache local renovado.', 'success');
-                if (activeTab !== 'Pedidos' || manual) setLoadingOverlay(false);
+                if (activeTab !== 'Pedidos' && activeTab !== 'MaterialCliente' || manual) setLoadingOverlay(false);
             } catch (err) {
                 console.error('Erro ao carregar RS pela API:', err);
 
                 if (dataReady) {
-                    if (activeTab !== 'Pedidos') updateDataStatus('cache', currentCacheSavedAt, 'A API não respondeu; mantendo o cache local na tela.');
-                    if (activeTab !== 'Pedidos' || manual) setLoadingOverlay(false);
+                    if (activeTab !== 'Pedidos' && activeTab !== 'MaterialCliente') updateDataStatus('cache', currentCacheSavedAt, 'A API não respondeu; mantendo o cache local na tela.');
+                    if (activeTab !== 'Pedidos' && activeTab !== 'MaterialCliente' || manual) setLoadingOverlay(false);
                     if (!quiet) showDataToast('API indisponível. Mantendo os dados do cache local.', 'warning');
                 } else {
-                    if (activeTab !== 'Pedidos') updateDataStatus('error', null, err.message);
+                    if (activeTab !== 'Pedidos' && activeTab !== 'MaterialCliente') updateDataStatus('error', null, err.message);
                     setLoadingOverlay(true,
                         'Não foi possível carregar os dados',
                         'A API não respondeu e não existe cache local disponível neste computador.',
@@ -2219,7 +2219,7 @@
         async function loadRsData() {
             if (rsLoadStarted && (dataReady || isRefreshingData)) return;
             rsLoadStarted = true;
-            if (activeTab !== 'Pedidos') updateDataStatus('loading');
+            if (activeTab !== 'Pedidos' && activeTab !== 'MaterialCliente') updateDataStatus('loading');
             setLoadingOverlay(true, 'Carregando dados...', 'Verificando o cache local deste computador.', false);
 
             let cacheRecord = null;
@@ -2233,12 +2233,12 @@
                 currentCacheSavedAt = cacheRecord.savedAt || null;
                 rsLastApiSyncAtMs = currentCacheSavedAt ? (new Date(currentCacheSavedAt).getTime() || 0) : 0;
                 applyDataset(cacheRecord.data, 'cache', currentCacheSavedAt);
-                setLoadingOverlay(false);
+                if (activeTab !== 'MaterialCliente') setLoadingOverlay(false);
 
                 // Cache-first: libera a tela imediatamente e atualiza a API em segundo plano.
                 refreshRsData(false);
             } else {
-                setLoadingOverlay(true, 'Carregando dados...', 'Cache local não encontrado. Buscando dados da API.', false);
+                if (activeTab !== 'MaterialCliente') setLoadingOverlay(true, 'Carregando dados...', 'Cache local não encontrado. Buscando dados da API.', false);
                 await refreshRsData(false);
             }
         }
@@ -2442,10 +2442,10 @@
                 pedidoCacheSavedAt = cacheRecord.savedAt || null;
                 pedidoLastApiSyncAtMs = pedidoCacheSavedAt ? (new Date(pedidoCacheSavedAt).getTime() || 0) : 0;
                 applyPedidoDataset(cacheRecord.data, 'cache', pedidoCacheSavedAt);
-                setLoadingOverlay(false);
+                if (isPedidoBasedTab()) setLoadingOverlay(false);
                 refreshPedidoData(false);
             } else {
-                setLoadingOverlay(true, 'Carregando pedidos...', 'Cache local de pedidos não encontrado. Buscando dados da API /pedido.', false);
+                if (isPedidoBasedTab()) setLoadingOverlay(true, 'Carregando pedidos...', 'Cache local de pedidos não encontrado. Buscando dados da API /pedido.', false);
                 await refreshPedidoData(false);
             }
         }
