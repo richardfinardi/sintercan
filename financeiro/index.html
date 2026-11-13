@@ -1,82 +1,121 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financeiro - Sintercan</title>
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
-    <!-- Tailwind CSS e Configuração Dark Mode -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' }
-    </script>
-    <!-- Script para carregar o tema dinâmico salvo na index -->
-    <script>
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    </script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Financeiro | Sintercan</title>
+  <link rel="icon" type="image/png" href="../LOGO MINIMALISTA.png">
+  <link rel="stylesheet" href="./app.css?v=20261113-1">
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+  <script src="./app.js?v=20261113-1" defer></script>
 </head>
-<body class="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-hidden transition-colors duration-200">
+<body>
+  <header class="topbar">
+    <div class="wrap top-inner">
+      <div class="brand">
+        <a href="../" class="icon-btn" title="Voltar ao portal" aria-label="Voltar ao portal">←</a>
+        <div class="logo"><img src="../logo.png" alt="Sintercan"></div>
+        <div><strong>Sintercan</strong><small>Financeiro · Contas a pagar e pagas</small></div>
+      </div>
+      <div class="head-actions">
+        <span id="userName" class="muted hide-sm"></span>
+        <button type="button" id="themeBtn" class="icon-btn" title="Alternar tema">◐</button>
+        <button type="button" id="refreshBtn" class="btn primary" disabled>↻ Atualizar</button>
+      </div>
+    </div>
+  </header>
 
-    <!-- HEADER -->
-    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center gap-4">
-            <div class="flex items-center gap-4">
-                <a href="../" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-300 dark:border-slate-700 flex items-center justify-center" title="Voltar ao Menu">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                </a>
-                
-                <!-- CONTAINER DA LOGO EM FUNDO ESCURO FIXO -->
-                <div class="flex items-center justify-center p-1 bg-slate-950 rounded-xl border border-slate-800 shadow-inner">
-                    <img src="../logo.png" alt="Logo" class="h-9 max-h-10 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <div class="hidden p-2 bg-amber-500 rounded-xl text-slate-950 font-bold items-center justify-center">
-                        <i data-lucide="dollar-sign" class="w-5 h-5"></i>
-                    </div>
-                </div>
-
-                <div>
-                    <h1 class="text-lg font-extrabold tracking-wide text-slate-900 dark:text-white">Sintercan</h1>
-                    <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Dashboard Financeiro (Contas a Pagar)</p>
-                </div>
-            </div>
+  <main class="wrap page">
+    <section id="startup" class="panel startup" role="status">Validando sua permissão no financeiro...</section>
+    <div id="app" hidden>
+      <div class="page-heading">
+        <div>
+          <h1>Contas a pagar e pagas</h1>
+          <p>Dados do CPS · Vencimento, fornecedores, plano de contas e situação dos pagamentos.</p>
         </div>
-    </header>
+        <div class="head-actions">
+          <span id="syncStatus" class="sync-status" role="status">Aguardando dados...</span>
+          <button id="exportBtn" type="button" class="btn" disabled>↓ Exportar Excel</button>
+        </div>
+      </div>
+      <div id="errorBanner" class="banner danger" role="alert" hidden></div>
+      <div id="warningBanner" class="banner warning" role="status" hidden></div>
 
-    <!-- CONTEÚDO PRINCIPAL (POWER BI TELA CHEIA) -->
-    <main class="flex-1 w-full h-full bg-slate-100 dark:bg-slate-950 transition-colors duration-200">
-        <iframe 
-            title="CONTAS PAGAR" 
-            class="w-full h-full border-0" 
-            src="https://app.powerbi.com/view?r=eyJrIjoiMDE0YmIyM2EtYzQ5MS00ZTBmLWFhMTAtNWE0NDY2ODUzMDcwIiwidCI6ImQ2OWIzZmE3LTBhMGEtNDhhZC1hNDZmLWVhYmM5YzFiMDRjOCJ9" 
-            allowFullScreen="true">
-        </iframe>
-    </main>
+      <section class="panel period-panel" aria-label="Períodos">
+        <div class="period-buttons" id="periodButtons">
+          <button class="period active" data-period="geral">Geral</button>
+          <button class="period" data-period="semana">Esta semana</button>
+          <button class="period" data-period="proxima-semana">Próxima semana</button>
+          <button class="period" data-period="mes">Este mês</button>
+          <button class="period" data-period="proximo-mes">Próximo mês</button>
+          <button class="period overdue" data-period="vencidas">Vencidas</button>
+        </div>
+      </section>
 
-    <script>
-        // VALIDAÇÃO DE SESSÃO E PERMISSÃO DE ACESSO
-        const sessionData = localStorage.getItem('sintercan_user');
-        if (!sessionData) {
-            window.location.href = '../';
-        }
+      <section class="panel filters-panel" aria-label="Filtros">
+        <div class="section-head">
+          <h2>Filtros</h2>
+          <button type="button" id="clearBtn" class="text-btn">Limpar filtros</button>
+        </div>
+        <div class="filter-grid" id="filterGrid">
+          <label class="date-field"><span>VENCIMENTO DE</span><input id="dateFrom" type="date"></label>
+          <label class="date-field"><span>VENCIMENTO ATÉ</span><input id="dateTo" type="date"></label>
+          <div class="picker" data-filter="supplier"><label>FORNECEDOR</label><button type="button" class="picker-button" data-open="supplier"><span id="label-supplier">Todos</span><span>⌄</span></button><div id="menu-supplier" class="picker-menu" hidden></div></div>
+          <div class="picker" data-filter="plan"><label>PLANO DE CONTAS</label><button type="button" class="picker-button" data-open="plan"><span id="label-plan">Todos</span><span>⌄</span></button><div id="menu-plan" class="picker-menu" hidden></div></div>
+          <div class="picker" data-filter="account"><label>CONTA</label><button type="button" class="picker-button" data-open="account"><span id="label-account">Todos</span><span>⌄</span></button><div id="menu-account" class="picker-menu" hidden></div></div>
+          <div class="picker" data-filter="type"><label>TIPO</label><button type="button" class="picker-button" data-open="type"><span id="label-type">Todos</span><span>⌄</span></button><div id="menu-type" class="picker-menu" hidden></div></div>
+          <div class="picker" data-filter="status"><label>SITUAÇÃO</label><button type="button" class="picker-button" data-open="status"><span id="label-status">Todas</span><span>⌄</span></button><div id="menu-status" class="picker-menu" hidden></div></div>
+          <label class="date-field search-field"><span>BUSCA GERAL</span><input id="searchInput" type="search" placeholder="Fornecedor, conta, documento..."></label>
+        </div>
+      </section>
 
-        const currentUser = JSON.parse(sessionData);
-        if (Number(currentUser.u_financeiro) !== 1) {
-            alert("Acesso negado para este módulo.");
-            window.location.href = '../';
-        }
+      <section class="kpis" aria-label="Indicadores">
+        <article class="panel kpi"><span>Total no período</span><strong id="kpiTotal">—</strong><small id="kpiRows">—</small></article>
+        <article class="panel kpi red"><span>A pagar</span><strong id="kpiOpen">—</strong><small id="kpiOpenRows">—</small></article>
+        <article class="panel kpi green"><span>Pagas</span><strong id="kpiPaid">—</strong><small id="kpiPaidRows">—</small></article>
+        <article class="panel kpi orange"><span>Vencidas em aberto</span><strong id="kpiOverdue">—</strong><small id="kpiOverdueRows">—</small></article>
+        <article class="panel kpi blue"><span>Próximos 30 dias</span><strong id="kpiNext">—</strong><small>Em aberto, por vencimento</small></article>
+      </section>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-        });
-    </script>
+      <section class="visuals">
+        <article class="panel visual">
+          <div class="section-head"><h2>Por fornecedor</h2><small>Participação no total filtrado</small></div>
+          <div id="bySupplier" class="bar-list"></div>
+        </article>
+        <article class="panel visual">
+          <div class="section-head"><h2>Por plano de contas</h2><small>Participação no total filtrado</small></div>
+          <div id="byPlan" class="bar-list"></div>
+        </article>
+        <article class="panel visual">
+          <div class="section-head"><h2>Por tipo</h2><small>Valores das contas</small></div>
+          <div id="byType" class="bar-list"></div>
+        </article>
+      </section>
+
+      <section class="panel list-panel">
+        <div class="section-head table-heading"><div><h2>Relação de contas</h2><p id="tableSummary">—</p></div><div class="head-actions"><span id="pageInfo" class="muted"></span><label class="page-size-label">Linhas <select id="pageSize"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option></select></label></div></div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th><button data-sort="supplier">Fornecedor ↕</button></th>
+              <th><button data-sort="plan">Plano de contas ↕</button></th>
+              <th><button data-sort="dateKey">Vencimento ↕</button></th>
+              <th class="num"><button data-sort="value">Valor ↕</button></th>
+              <th class="num">% ↕</th>
+              <th><button data-sort="account">Conta ↕</button></th>
+              <th><button data-sort="status">Pago ↕</button></th>
+              <th><button data-sort="type">Tipo ↕</button></th>
+            </tr></thead>
+            <tbody id="detailBody"><tr><td colspan="8" class="empty">Aguardando dados...</td></tr></tbody>
+            <tfoot><tr><th colspan="3">TOTAL FILTRADO</th><th id="tableTotal" class="num">—</th><th id="tablePct" class="num">100%</th><th colspan="3"></th></tr></tfoot>
+          </table>
+        </div>
+        <div class="table-footer"><span id="tableFooterStatus">—</span><div class="head-actions"><button id="prevBtn" class="btn" disabled>← Anterior</button><button id="nextBtn" class="btn" disabled>Próxima →</button></div></div>
+      </section>
+      <p class="fineprint">Os indicadores e percentuais são calculados sobre os mesmos registros filtrados, sem duplicar lançamentos para construir os agrupamentos. Somente leitura.</p>
+    </div>
+  </main>
 </body>
 </html>

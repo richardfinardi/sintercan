@@ -1,0 +1,27 @@
+name: Financeiro - testes de contrato
+on:
+  pull_request:
+    paths:
+      - 'financeiro/**'
+      - '.github/workflows/financeiro-tests.yml'
+  push:
+    paths:
+      - 'financeiro/**'
+      - '.github/workflows/financeiro-tests.yml'
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rodar testes
+        run: node --test financeiro/contrato.test.cjs
+      - name: Validar contrato com o endpoint ao vivo
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+        run: node financeiro/live-smoke.cjs
