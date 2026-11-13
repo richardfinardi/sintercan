@@ -25,8 +25,6 @@ header .username{font-weight:700;color:#e6edf6;font-size:12px}
 main{max-width:1540px;margin:auto;padding:25px 22px 50px}
 .eyebrow{color:var(--accent);font-size:11px;text-transform:uppercase;font-weight:900;letter-spacing:1.4px}
 h1{margin:6px 0;font-size:29px}p{margin:0;color:var(--muted);line-height:1.5}
-.notice{background:var(--accent2);color:var(--ink);border:1px solid var(--border);padding:13px 15px;border-radius:13px;margin:18px 0;display:flex;gap:12px;align-items:flex-start}
-.notice svg{flex:none;width:20px;height:20px;color:var(--accent)}
 .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:20px 0 13px;flex-wrap:wrap}
 .toolbar-right{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
 .search{display:flex;gap:9px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0 12px;width:min(100%,370px)}
@@ -80,7 +78,6 @@ footer{text-align:center;color:var(--muted);font-size:11px;margin-top:26px}
 <div class="eyebrow">Administração · Gestor</div>
 <h1>Gerenciar acessos</h1>
 <p>Consulte os usuários ativos e altere os módulos autorizados. As marcações são gravadas diretamente em CSENHA.</p>
-<div class="notice"><i data-lucide="shield-check"></i><div><b>U_GESTOR = 1 libera todos os módulos.</b> Apenas gestores podem consultar e alterar permissões. O campo Compras foi mantido para compatibilidade com a CSENHA, mas a aba Compras não aparece no portal. Alterações de acesso são atualizadas no próximo login ou atualização da sessão.</div></div>
 <div class="msg" id="message" role="alert"></div>
 <div class="toolbar">
 <label class="search"><i data-lucide="search"></i><input id="filter" type="search" placeholder="Pesquisar usuário..." aria-label="Pesquisar usuário"></label>
