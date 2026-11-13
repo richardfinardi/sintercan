@@ -744,14 +744,17 @@ function materialColumnFilterPopover() {
     popup.className='fixed hidden z-[180] w-[305px] max-w-[calc(100vw-16px)] rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-2xl p-3 text-slate-800 dark:text-slate-100';
     popup.innerHTML='<div class="flex items-center justify-between gap-2 mb-2"><strong id="materialColumnFilterTitle" class="text-xs font-extrabold"></strong><button id="materialColumnFilterClose" title="Fechar" class="text-slate-500 hover:text-rose-500 p-1">✕</button></div>'+
         '<input id="materialColumnFilterSearch" type="search" placeholder="Buscar opções..." class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-2 text-xs outline-none focus:border-amber-500 mb-2">'+
-        '<div class="flex items-center justify-between gap-1 mb-2"><button id="materialColumnAll" class="rounded border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-[11px]">Selecionar todos</button><button id="materialColumnNone" class="rounded border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-[11px]">Desmarcar</button><span id="materialColumnFilterCount" class="text-[10px] text-slate-500"></span></div>'+
+        '<div class="flex items-center justify-between gap-1 mb-2"><button id="materialColumnAll" type="button" class="rounded border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-[11px] font-semibold disabled:opacity-40">Selecionar tudo</button><span id="materialColumnFilterCount" class="text-[10px] text-slate-500"></span></div>'+
         '<div id="materialColumnFilterOptions" class="overflow-y-auto max-h-[240px] border-t border-b border-slate-200 dark:border-slate-800 py-1 text-xs"></div>'+
         '<div class="mt-3 flex gap-2"><button id="materialColumnFilterClear" class="flex-1 rounded-lg border border-slate-300 dark:border-slate-700 px-2 py-2 text-xs">Limpar filtro</button><button id="materialColumnFilterApply" class="flex-1 rounded-lg bg-amber-500 text-slate-950 font-bold px-2 py-2 text-xs">Aplicar</button></div>';
     document.body.appendChild(popup);
     popup.querySelector('#materialColumnFilterClose').addEventListener('click',materialCloseColumnFilter);
-    popup.querySelector('#materialColumnFilterSearch').addEventListener('input',materialRenderColumnFilterOptions);
-    popup.querySelector('#materialColumnAll').addEventListener('click',()=>{materialFilterWorking=null;materialRenderColumnFilterOptions();});
-    popup.querySelector('#materialColumnNone').addEventListener('click',()=>{materialFilterWorking=new Set();materialRenderColumnFilterOptions();});
+    popup.querySelector('#materialColumnFilterSearch').addEventListener('input',()=>{
+        // Ao iniciar ou alterar pesquisa, nenhuma opção fica pré-selecionada.
+        materialFilterWorking=new Set();
+        materialRenderColumnFilterOptions();
+    });
+    popup.querySelector('#materialColumnAll').addEventListener('click',materialToggleAllColumnFilterOptions);
     popup.querySelector('#materialColumnFilterClear').addEventListener('click',()=>{
         delete materialColumnSelections[materialFilterColumn];
         materialSaveColumnFilters();materialCloseColumnFilter();applyMaterialClienteFilters();
@@ -771,7 +774,7 @@ function materialColumnFilterPopover() {
         if(materialFilterWorking===null)materialFilterWorking=new Set(materialFilterOptions);
         if(checkbox.checked)materialFilterWorking.add(value);
         else materialFilterWorking.delete(value);
-        popup.querySelector('#materialColumnFilterCount').textContent=materialFilterWorking.size+'/'+materialFilterOptions.length;
+        materialUpdateColumnFilterToggle();
     });
     return popup;
 }
@@ -799,11 +802,43 @@ function materialOpenColumnFilter(event,key) {
     popover.querySelector('#materialColumnFilterSearch').focus();
 }
 
+function materialVisibleColumnFilterEntries() {
+    const popup=materialColumnFilterPopover();
+    const search=normalizeSearchText(popup.querySelector('#materialColumnFilterSearch').value||'');
+    return materialFilterOptions.map((value,index)=>({value,index}))
+        .filter(item=>!search || normalizeSearchText(item.value).includes(search));
+}
+
+function materialUpdateColumnFilterToggle() {
+    const popup=materialColumnFilterPopover();
+    const visible=materialVisibleColumnFilterEntries();
+    const selected=visible.filter(item=>materialFilterWorking===null || materialFilterWorking.has(item.value)).length;
+    const button=popup.querySelector('#materialColumnAll');
+    if(button) {
+        button.textContent=visible.length>0 && selected===visible.length ? 'Desmarcar tudo' : 'Selecionar tudo';
+        button.disabled=visible.length===0;
+    }
+    const counter=popup.querySelector('#materialColumnFilterCount');
+    if(counter) counter.textContent=selected+' de '+visible.length+' selecionados';
+}
+
+function materialToggleAllColumnFilterOptions() {
+    const visible=materialVisibleColumnFilterEntries();
+    if(!visible.length)return;
+    const allChecked=visible.every(item=>materialFilterWorking===null || materialFilterWorking.has(item.value));
+    if(materialFilterWorking===null) materialFilterWorking=new Set(materialFilterOptions);
+    // Seleciona/desmarca somente as opções encontradas na pesquisa.
+    visible.forEach(item=>{
+        if(allChecked) materialFilterWorking.delete(item.value);
+        else materialFilterWorking.add(item.value);
+    });
+    materialRenderColumnFilterOptions();
+}
+
 function materialRenderColumnFilterOptions() {
     const popup=materialColumnFilterPopover();
     if(!materialFilterColumn)return;
-    const search=normalizeSearchText(popup.querySelector('#materialColumnFilterSearch').value||'');
-    const entries=materialFilterOptions.map((value,index)=>({value,index})).filter(x=>!search || normalizeSearchText(x.value).includes(search));
+    const entries=materialVisibleColumnFilterEntries();
     const shown=entries.slice(0,350);
     const options=popup.querySelector('#materialColumnFilterOptions');
     if(!shown.length)options.innerHTML='<p class="px-2 py-3 text-slate-500">Nenhuma opção encontrada.</p>';
@@ -812,8 +847,7 @@ function materialRenderColumnFilterOptions() {
         '<input type="checkbox" data-material-option="'+index+'" '+(materialFilterWorking===null||materialFilterWorking.has(value)?'checked':'')+' class="mt-0.5 accent-amber-500 flex-shrink-0">'+
         '<span class="break-words min-w-0" title="'+escapeHtml(value)+'">'+escapeHtml(value)+'</span></label>'
     ).join('');
-    const count=materialFilterWorking===null?materialFilterOptions.length:materialFilterWorking.size;
-    popup.querySelector('#materialColumnFilterCount').textContent=count+'/'+materialFilterOptions.length;
+    materialUpdateColumnFilterToggle();
     if(entries.length>shown.length)options.insertAdjacentHTML('beforeend','<p class="text-[10px] px-2 py-2 text-slate-500">Exibindo '+shown.length+' de '+entries.length+'. Use a busca para refinar.</p>');
 }
 
