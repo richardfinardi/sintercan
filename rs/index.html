@@ -732,6 +732,33 @@
                 </div>
             </div>
         </div>
+
+        <div id="materialClienteFilterPanel" class="hidden w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-2.5 text-xs mt-2.5">
+            <div>
+                <label for="materialFilterCliente" class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Cliente</label>
+                <select id="materialFilterCliente" onchange="applyMaterialClienteFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"><option value="">Todos</option></select>
+            </div>
+            <div>
+                <label for="materialFilterMaterial" class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Status do material</label>
+                <select id="materialFilterMaterial" onchange="applyMaterialClienteFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"><option value="">Todos</option></select>
+            </div>
+            <div>
+                <label for="materialFilterOs" class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Status da OS</label>
+                <select id="materialFilterOs" onchange="applyMaterialClienteFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"><option value="">Todos</option></select>
+            </div>
+            <div>
+                <label for="materialFilterOsLista" class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Status OS (lista)</label>
+                <select id="materialFilterOsLista" onchange="applyMaterialClienteFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"><option value="">Todos</option></select>
+            </div>
+            <div>
+                <label for="materialFilterDe" class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Previsão de entrega: de</label>
+                <input id="materialFilterDe" type="date" onchange="applyMaterialClienteFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+                <label for="materialFilterAte" class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Previsão de entrega: até</label>
+                <input id="materialFilterAte" type="date" onchange="applyMaterialClienteFilters()" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+        </div>
     </section>
 
     <main class="flex-1 w-full h-full overflow-hidden relative bg-slate-100 dark:bg-slate-950 p-2">
@@ -1608,6 +1635,65 @@
             </div>
         </div>
 
+
+        <div id="viewTabMaterialCliente" class="h-full w-full hidden flex flex-col gap-2 overflow-hidden">
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 flex-shrink-0">
+                <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm">
+                    <p class="text-[10px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Materiais / registros</p>
+                    <p id="materialKpiRegistros" class="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">-</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm">
+                    <p class="text-[10px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Quantidade (peças / un.)</p>
+                    <p id="materialKpiQuantidade" class="mt-1 text-xl font-extrabold text-sky-700 dark:text-sky-400">-</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm">
+                    <p class="text-[10px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Notas fiscais distintas</p>
+                    <p id="materialKpiNotas" class="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">-</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm">
+                    <p class="text-[10px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Prazo de entrega vencido</p>
+                    <p id="materialKpiVencidos" class="mt-1 text-xl font-extrabold text-rose-700 dark:text-rose-400">-</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm">
+                    <p class="text-[10px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Dias desde NF (média)</p>
+                    <p id="materialKpiDias" class="mt-1 text-xl font-extrabold text-amber-700 dark:text-amber-400">-</p>
+                </div>
+            </div>
+            <div class="flex-1 min-h-0 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-xl flex flex-col overflow-hidden">
+                <div class="flex-shrink-0 px-3 py-2 border-b border-slate-200 dark:border-slate-800 flex flex-wrap gap-2 justify-between items-center">
+                    <div>
+                        <h2 class="text-sm font-extrabold text-slate-900 dark:text-white">Material de Cliente (follow-up)</h2>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Origem: carteira_nf • Clique nos títulos para ordenar • Pesquisa e filtros acima</p>
+                    </div>
+                </div>
+                <div class="flex-1 min-h-0 overflow-auto">
+                    <table class="text-left text-[11px] w-max min-w-full border-separate border-spacing-0 text-slate-700 dark:text-slate-200">
+                        <thead class="sticky top-0 z-20 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold shadow-sm">
+                            <tr>
+                                <th class="px-3 py-2 min-w-[205px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="cliente" onclick="sortMaterialCliente('cliente')">Cliente / CNPJ<span class="mat-sort-indicator"></span></button></th>
+                                <th class="px-3 py-2 min-w-[115px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="n_nf" onclick="sortMaterialCliente('n_nf')">NF / Emissão<span class="mat-sort-indicator"></span></button></th>
+                                <th class="px-3 py-2 min-w-[220px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="codigo_interno" onclick="sortMaterialCliente('codigo_interno')">Código / Item<span class="mat-sort-indicator"></span></button></th>
+                                <th class="px-3 py-2 min-w-[95px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="ncm" onclick="sortMaterialCliente('ncm')">NCM / Un.<span class="mat-sort-indicator"></span></button></th>
+                                <th class="px-3 py-2 min-w-[75px] text-right border-r border-slate-300 dark:border-slate-700"><button data-material-sort="qtde" onclick="sortMaterialCliente('qtde')">Qtde<span class="mat-sort-indicator"></span></button></th>
+                                <th class="px-3 py-2 min-w-[140px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="status_material" onclick="sortMaterialCliente('status_material')">Status material<span class="mat-sort-indicator"></span></button></th>
+                                <th class="px-3 py-2 min-w-[160px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="status_os" onclick="sortMaterialCliente('status_os')">Status OS / Lista<span class="mat-sort-indicator"></span></button></th>
+                                <th class="px-3 py-2 min-w-[180px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="os_utilizada" onclick="sortMaterialCliente('os_utilizada')">OS utilizada / OS<span class="mat-sort-indicator"></span></button></th>
+                                <th class="px-3 py-2 min-w-[100px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="n_pedido" onclick="sortMaterialCliente('n_pedido')">Pedido<span class="mat-sort-indicator"></span></button></th>
+                                <th class="px-3 py-2 min-w-[125px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="orcamento" onclick="sortMaterialCliente('orcamento')">Orçamento<span class="mat-sort-indicator"></span></button></th>
+                                <th class="px-3 py-2 min-w-[105px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="dt_aprovacao" onclick="sortMaterialCliente('dt_aprovacao')">Aprovação<span class="mat-sort-indicator"></span></button></th>
+                                <th class="px-3 py-2 min-w-[110px] border-r border-slate-300 dark:border-slate-700"><button data-material-sort="previsao_entrega" onclick="sortMaterialCliente('previsao_entrega')">Previsão entrega<span class="mat-sort-indicator"></span></button></th>
+                                <th class="px-3 py-2 min-w-[75px] text-right"><button data-material-sort="dias_nf" onclick="sortMaterialCliente('dias_nf')">Dias NF<span class="mat-sort-indicator"></span></button></th>
+                            </tr>
+                        </thead>
+                        <tbody id="materialClienteTableBody"><tr><td colspan="13" class="p-8 text-center text-slate-500">Carregando materiais...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="flex-shrink-0 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 flex flex-wrap items-center gap-3">
+                <span>Exibindo <strong id="materialExibindoRegistros" class="text-amber-600 dark:text-amber-400">0</strong> de <strong id="materialTotalRegistros" class="text-amber-600 dark:text-amber-400">0</strong> registros</span>
+                <button id="materialLoadMore" onclick="loadMoreMaterialCliente()" class="hidden rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1 text-amber-700 dark:text-amber-400">Carregar +120</button>
+            </div>
+        </div>
     </main>
 
     <nav class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 py-1 flex gap-1 overflow-x-auto text-xs font-medium flex-shrink-0">
@@ -1620,6 +1706,7 @@
         <button id="navBtnNotasFiscais" onclick="switchMainTab('NotasFiscais')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Notas Fiscais</button>
         <button id="navBtnPedidoCarteira" onclick="switchMainTab('PedidoCarteira')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Pedidos em carteira</button>
         <button id="navBtnPrazoEntrega" onclick="switchMainTab('PrazoEntrega')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Valores por prazo de entrega</button>
+        <button id="navBtnMaterialCliente" onclick="switchMainTab('MaterialCliente')" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer">Material de Cliente (follow-up)</button>
     </nav>
 
     <script>
@@ -1636,7 +1723,7 @@
             }
         }
 
-        const APP_VERSION = 'V1.6.5';
+        const APP_VERSION = 'V1.6.6';
         const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
         let autoRefreshTimer = null;
         let appHiddenAt = null;
@@ -1653,7 +1740,7 @@
         const ACTIVE_TAB_STORAGE_KEY = 'sintercan_rs_active_tab';
         const MENSAL_CLIENTE_SORT_STORAGE_KEY = 'sintercan_rs_mensal_cliente_sort_v1';
         const MOBILE_FILTER_STORAGE_KEY = 'sintercan_rs_mobile_filters_open';
-        const VALID_TABS = ['RS', 'Grafico', 'Mensal', 'MensalCliente', 'Classificacao', 'Pedidos', 'NotasFiscais', 'PedidoCarteira', 'PrazoEntrega'];
+        const VALID_TABS = ['RS', 'Grafico', 'Mensal', 'MensalCliente', 'Classificacao', 'Pedidos', 'NotasFiscais', 'PedidoCarteira', 'PrazoEntrega', 'MaterialCliente'];
 
         let fullData = [];
         let filteredData = [];
@@ -2125,7 +2212,7 @@
                 }
             } finally {
                 isRefreshingData = false;
-                setRefreshButtonBusy(isRefreshingPedidoData);
+                setRefreshButtonBusy(isRefreshingPedidoData || isRefreshingMaterialClienteData);
             }
         }
 
@@ -2162,17 +2249,19 @@
         }
 
         function refreshCurrentData(manual = false, quiet = false) {
+            if (activeTab === 'MaterialCliente') return refreshMaterialClienteData(manual, quiet);
             if (isPedidoBasedTab()) return refreshPedidoData(manual, quiet);
             return refreshRsData(manual, quiet);
         }
 
         function getActiveLastApiSyncAt() {
+            if (activeTab === 'MaterialCliente') return materialClienteLastApiSyncAtMs;
             return isPedidoBasedTab() ? pedidoLastApiSyncAtMs : rsLastApiSyncAtMs;
         }
 
         async function autoRefreshActiveData(reason = 'interval', force = false) {
             if (document.visibilityState && document.visibilityState !== 'visible') return;
-            if (isRefreshingData || isRefreshingPedidoData) return;
+            if (isRefreshingData || isRefreshingPedidoData || isRefreshingMaterialClienteData) return;
 
             const now = Date.now();
             const lastSync = getActiveLastApiSyncAt();
@@ -2183,7 +2272,7 @@
             if (!force && elapsedFromSync < AUTO_REFRESH_INTERVAL_MS) return;
             if (!force && elapsedFromAttempt < 10000) return;
 
-            const ready = isPedidoBasedTab() ? pedidoDataReady : dataReady;
+            const ready = activeTab === 'MaterialCliente' ? materialClienteDataReady : (isPedidoBasedTab() ? pedidoDataReady : dataReady);
             if (!ready) {
                 ensureActiveDatasetLoaded();
                 return;
@@ -2225,6 +2314,19 @@
         }
 
         function ensureActiveDatasetLoaded() {
+            if (activeTab === 'MaterialCliente') {
+                document.getElementById('advancedFilterPanel')?.classList.add('hidden');
+                document.getElementById('pedidoFilterPanel')?.classList.add('hidden');
+                document.getElementById('materialClienteFilterPanel')?.classList.remove('hidden');
+                if (materialClienteDataReady) {
+                    updateDataStatus(materialClienteLastSourceMode, materialClienteCacheSavedAt);
+                    applyMaterialClienteFilters();
+                } else if (!materialClienteLoadStarted) {
+                    loadMaterialClienteData();
+                }
+                return;
+            }
+            document.getElementById('materialClienteFilterPanel')?.classList.add('hidden');
             if (isPedidoBasedTab()) {
                 document.getElementById('advancedFilterPanel')?.classList.add('hidden');
                 document.getElementById('pedidoFilterPanel')?.classList.remove('hidden');
@@ -2319,7 +2421,7 @@
                 }
             } finally {
                 isRefreshingPedidoData = false;
-                setRefreshButtonBusy(isRefreshingData);
+                setRefreshButtonBusy(isRefreshingData || isRefreshingMaterialClienteData);
             }
         }
 
@@ -3483,6 +3585,7 @@
             const tabNotasFiscais = document.getElementById('viewTabNotasFiscais');
             const tabPedidoCarteira = document.getElementById('viewTabPedidoCarteira');
             const tabPrazoEntrega = document.getElementById('viewTabPrazoEntrega');
+            const tabMaterialCliente = document.getElementById('viewTabMaterialCliente');
 
             const btnRS = document.getElementById('navBtnRS');
             const btnGrafico = document.getElementById('navBtnGrafico');
@@ -3493,17 +3596,18 @@
             const btnNotasFiscais = document.getElementById('navBtnNotasFiscais');
             const btnPedidoCarteira = document.getElementById('navBtnPedidoCarteira');
             const btnPrazoEntrega = document.getElementById('navBtnPrazoEntrega');
+            const btnMaterialCliente = document.getElementById('navBtnMaterialCliente');
 
             const headerSubtitle = document.getElementById('headerSubtitle');
 
             const inactiveClass = "px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap cursor-pointer";
             const activeClass = "px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap cursor-pointer";
 
-            [btnRS, btnGrafico, btnMensal, btnMensalCliente, btnClassificacao, btnPedidos, btnNotasFiscais, btnPedidoCarteira, btnPrazoEntrega].forEach(btn => {
+            [btnRS, btnGrafico, btnMensal, btnMensalCliente, btnClassificacao, btnPedidos, btnNotasFiscais, btnPedidoCarteira, btnPrazoEntrega, btnMaterialCliente].forEach(btn => {
                 if (btn) btn.className = inactiveClass;
             });
 
-            [tabRS, tabGrafico, tabMensal, tabMensalCliente, tabClassificacao, tabPedidos, tabNotasFiscais, tabPedidoCarteira, tabPrazoEntrega].forEach(tab => {
+            [tabRS, tabGrafico, tabMensal, tabMensalCliente, tabClassificacao, tabPedidos, tabNotasFiscais, tabPedidoCarteira, tabPrazoEntrega, tabMaterialCliente].forEach(tab => {
                 if (tab) tab.classList.add('hidden');
             });
 
@@ -3556,23 +3660,37 @@
                 if (pedidoDataReady) renderPrazoEntregaView();
             }
 
+            if (tabName === 'MaterialCliente') {
+                tabMaterialCliente.classList.remove('hidden');
+                btnMaterialCliente.className = activeClass;
+                headerSubtitle.textContent = 'Material de Cliente (follow-up)';
+                if (materialClienteDataReady) renderMaterialClienteView();
+            }
+
             if (isPedidoBasedTab(tabName)) {
                 document.getElementById('advancedFilterPanel')?.classList.add('hidden');
                 document.getElementById('pedidoFilterPanel')?.classList.remove('hidden');
+                document.getElementById('materialClienteFilterPanel')?.classList.add('hidden');
+            } else if (tabName === 'MaterialCliente') {
+                document.getElementById('advancedFilterPanel')?.classList.add('hidden');
+                document.getElementById('pedidoFilterPanel')?.classList.add('hidden');
+                document.getElementById('materialClienteFilterPanel')?.classList.remove('hidden');
             } else {
                 document.getElementById('pedidoFilterPanel')?.classList.add('hidden');
                 document.getElementById('advancedFilterPanel')?.classList.remove('hidden');
+                document.getElementById('materialClienteFilterPanel')?.classList.add('hidden');
             }
 
             ensureActiveDatasetLoaded();
 
             if (window.innerWidth < 640) {
-                const activeBtn = { RS: btnRS, Grafico: btnGrafico, Mensal: btnMensal, MensalCliente: btnMensalCliente, Classificacao: btnClassificacao, Pedidos: btnPedidos, NotasFiscais: btnNotasFiscais, PedidoCarteira: btnPedidoCarteira, PrazoEntrega: btnPrazoEntrega }[tabName];
+                const activeBtn = { RS: btnRS, Grafico: btnGrafico, Mensal: btnMensal, MensalCliente: btnMensalCliente, Classificacao: btnClassificacao, Pedidos: btnPedidos, NotasFiscais: btnNotasFiscais, PedidoCarteira: btnPedidoCarteira, PrazoEntrega: btnPrazoEntrega, MaterialCliente: btnMaterialCliente }[tabName];
                 requestAnimationFrame(() => activeBtn?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }));
             }
         }
 
         function resetAllFilters() {
+            if (activeTab === 'MaterialCliente') return resetMaterialClienteFilters();
             document.getElementById('filterGlobal').value = '';
             document.getElementById('filterClienteInput').value = '';
             document.getElementById('filterDataDe').value = '';
@@ -4632,6 +4750,7 @@
         }
 
         function applyFilters() {
+            if (activeTab === 'MaterialCliente') { applyMaterialClienteFilters(); return; }
             if (isPedidoBasedTab()) { applyPedidoFilters(); return; }
             const globalVal = document.getElementById('filterGlobal').value;
             const clienteVal = normalizeSearchText(document.getElementById('filterClienteInput').value);
@@ -4748,6 +4867,7 @@
         }
 
         function exportToExcel() {
+            if (activeTab === 'MaterialCliente') return exportMaterialClienteExcel();
             const activeExportData = activeTab === 'NotasFiscais' ? filteredNotaData : (isPedidoBasedTab() ? filteredPedidoData : filteredData);
             if (!activeExportData || activeExportData.length === 0) {
                 alert("Sem dados para exportar.");
@@ -5039,5 +5159,6 @@
             }, 160);
         });
     </script>
+    <script src="./material-cliente.js?v=1.6.6"></script>
 </body>
 </html>
