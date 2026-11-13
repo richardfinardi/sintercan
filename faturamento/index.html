@@ -2118,7 +2118,10 @@
                     return item && !chaves.has(chaveItemFaturamento(item));
                 }));
                 sucesso=true;
-                closeEditModal();
+                document.getElementById('editModal').classList.add('hidden');
+                document.getElementById('editModal').classList.remove('flex');
+                selectedItemModal=null;
+                editTargets=[];
                 renderCalendar();
                 await fetchData(false,true);
                 alert('Renegociação concluída. '+itens.length+' item(ns) processado(s), '+
@@ -2132,7 +2135,7 @@
                 botao.innerHTML='<i data-lucide="check" class="w-4 h-4"></i> Salvar';
                 updateSelectionUi();
                 lucide.createIcons();
-                if(sucesso)document.getElementById('editModal').classList.add('hidden');
+                if(sucesso)document.getElementById('editModal').classList.remove('flex');
             }
         }
 
