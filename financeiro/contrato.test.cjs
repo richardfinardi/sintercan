@@ -66,3 +66,20 @@ test('Não exige valores em campos não críticos', () => {
   assert.equal(r.supplier, 'Não informado');
   assert.equal(r.status, 'DESCONHECIDO');
 });
+
+test('Semana atual é de domingo a sábado, e a próxima começa no domingo seguinte', () => {
+  const [inicio, fim] = Array.from(u.rangeForPeriod('semana'));
+  const [inicioProxima, fimProxima] = Array.from(u.rangeForPeriod('proxima-semana'));
+  const date = str => new Date(str + 'T12:00:00');
+  const days = (from, to) => Math.round((date(to) - date(from)) / 86400000);
+  const hoje = new Date();
+  const diaAtual = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 12);
+  assert.equal(date(inicio).getDay(), 0, 'Início da semana deve ser domingo');
+  assert.equal(date(fim).getDay(), 6, 'Fim da semana deve ser sábado');
+  assert.equal(days(inicio, fim), 6);
+  assert.ok(date(inicio) <= diaAtual && diaAtual <= date(fim), 'Hoje precisa estar na semana atual');
+  assert.equal(date(inicioProxima).getDay(), 0);
+  assert.equal(date(fimProxima).getDay(), 6);
+  assert.equal(days(inicio, inicioProxima), 7);
+  assert.equal(days(inicioProxima, fimProxima), 6);
+});
