@@ -364,7 +364,6 @@ function exportMaterialClienteExcel() {
 // MATERIAL CLIENTE PERSONALIZAÇÃO V1.6.7
 // Preferências exclusivamente locais: filtros, colunas, larguras, ordenação e linhas.
 const MATERIAL_LAYOUT_KEY = 'sintercan_rs_material_layout_v2';
-const MATERIAL_ROW_ORDER_KEY = 'sintercan_rs_material_rows_v2';
 const MATERIAL_COLUMN_FILTER_KEY = 'sintercan_rs_material_column_filters_v2';
 const MATERIAL_SORT_KEY = 'sintercan_rs_material_sort_v2';
 const MATERIAL_PANEL_KEY = 'sintercan_rs_material_panel_collapsed_v2';
@@ -389,13 +388,10 @@ let materialColumnOrder = materialCols.map(col => col.key);
 let materialColumnHidden = new Set();
 let materialColumnWidths = {};
 let materialColumnSelections = {};
-let materialRowOrder = [];
-let materialRowDataset = null;
 let materialFilterColumn = null;
 let materialFilterWorking = null;
 let materialFilterOptions = [];
 let materialColumnDrag = null;
-let materialRowDrag = null;
 let materialResizeState = null;
 let materialPreferencesLoaded = false;
 
@@ -439,12 +435,10 @@ function materialLoadPreferences() {
         }
     }
     const sort = materialReadLocal(MATERIAL_SORT_KEY, {});
-    if (sort && (materialColsByKey[sort.key] || sort.key === '__manual__')) {
+    if (sort && materialColsByKey[sort.key]) {
         materialClienteSortColumn = sort.key;
         materialClienteSortAsc = sort.asc === true;
     }
-    const savedOrder = materialReadLocal(MATERIAL_ROW_ORDER_KEY, []);
-    materialRowOrder = Array.isArray(savedOrder) ? [...new Set(savedOrder.filter(v => typeof v === 'string'))] : [];
 }
 
 function materialSaveLayout() {
@@ -463,44 +457,6 @@ function materialSaveColumnFilters() {
 }
 function materialSaveSort() {
     materialWriteLocal(MATERIAL_SORT_KEY, {key:materialClienteSortColumn, asc:materialClienteSortAsc});
-}
-
-// IDs estáveis por nota, material e OS para preservar a posição das linhas após atualizar a API.
-function materialRowIdentity(item) {
-    const source = [
-        item.cnpj, item.cliente, item.n_nf, item.dt_emissao_nf,
-        item.codigo_interno, item.item, item.ncm, item.qtde,
-        item.os_utilizada, item.os, item.orcamento, item.n_pedido
-    ].map(v => String(v ?? '')).join('\u001f');
-    let hash1 = 2166136261, hash2 = 5381;
-    for (let i=0; i<source.length; i++) {
-        const n = source.charCodeAt(i);
-        hash1 = Math.imul(hash1 ^ n, 16777619);
-        hash2 = Math.imul(hash2, 33) ^ n;
-    }
-    return 'm'+(hash1>>>0).toString(36)+'_'+(hash2>>>0).toString(36);
-}
-
-function materialPrepareRows() {
-    materialLoadPreferences();
-    if (materialRowDataset === materialClienteData) return;
-    materialRowDataset = materialClienteData;
-    const counts = new Map();
-    materialClienteData.forEach(item => {
-        const base = materialRowIdentity(item);
-        const sequence = counts.get(base) || 0;
-        counts.set(base, sequence + 1);
-        Object.defineProperty(item, '__materialRowKey', {value:base+'_'+sequence, configurable:true, enumerable:false});
-    });
-    const keys = new Set(materialClienteData.map(row => row.__materialRowKey));
-    materialRowOrder = [...materialRowOrder.filter(key => keys.has(key))];
-    const known = new Set(materialRowOrder);
-    materialClienteData.forEach(row => {
-        if (!known.has(row.__materialRowKey)) {
-            materialRowOrder.push(row.__materialRowKey);
-            known.add(row.__materialRowKey);
-        }
-    });
 }
 
 function materialColumnValue(row, key) {
@@ -543,7 +499,7 @@ function materialRowMatchesAll(row, excludedColumn = null) {
 
 function applyMaterialClienteFilters() {
     if (!materialClienteDataReady) return;
-    materialPrepareRows();
+    materialLoadPreferences();
     filteredMaterialClienteData = materialClienteData.filter(row => materialRowMatchesAll(row));
     materialClienteRenderLimit = 120;
     materialClienteSortData();
@@ -552,11 +508,6 @@ function applyMaterialClienteFilters() {
 }
 
 function materialClienteSortData() {
-    if (materialClienteSortColumn === '__manual__') {
-        const lookup = new Map(materialRowOrder.map((id,idx) => [id,idx]));
-        filteredMaterialClienteData.sort((a,b) => (lookup.get(a.__materialRowKey) ?? Infinity) - (lookup.get(b.__materialRowKey) ?? Infinity));
-        return;
-    }
     const key = materialClienteSortColumn;
     const numeric = key === 'qtde' || key === 'dias_nf' || key === 'n_nf';
     const date = ['dt_emissao_nf','dt_aprovacao','previsao_entrega'].includes(key);
@@ -584,78 +535,6 @@ function sortMaterialCliente(key) {
     materialClienteSortData();
     materialClienteRenderLimit = 120;
     renderMaterialClienteView();
-}
-
-function useMaterialManualOrder() {
-    if (!materialClienteDataReady) return;
-    if (materialClienteSortColumn !== '__manual__') {
-        const visibleKeys = filteredMaterialClienteData.map(r => r.__materialRowKey);
-        const seen = new Set(visibleKeys);
-        materialRowOrder = [...visibleKeys, ...materialRowOrder.filter(key => !seen.has(key))];
-        materialWriteLocal(MATERIAL_ROW_ORDER_KEY, materialRowOrder);
-    }
-    materialClienteSortColumn = '__manual__';
-    materialClienteSortAsc = true;
-    materialSaveSort();
-    materialClienteSortData();
-    renderMaterialClienteView();
-}
-
-function materialMoveRow(key, direction) {
-    const source = filteredMaterialClienteData.findIndex(row => row.__materialRowKey === key);
-    const target = source + direction;
-    if (source < 0 || target < 0 || target >= filteredMaterialClienteData.length) return;
-    materialReorderRows(key, filteredMaterialClienteData[target].__materialRowKey);
-}
-
-function materialReorderRows(from, to) {
-    if (from === to) return;
-    const visible = filteredMaterialClienteData.map(row => row.__materialRowKey);
-    const fromPos = visible.indexOf(from), toPos = visible.indexOf(to);
-    if (fromPos < 0 || toPos < 0) return;
-    visible.splice(fromPos,1);
-    visible.splice(toPos,0,from);
-    const included = new Set(visible);
-    materialRowOrder = [...visible, ...materialRowOrder.filter(key => !included.has(key))];
-    materialClienteSortColumn = '__manual__';
-    materialClienteSortAsc = true;
-    materialSaveSort();
-    materialWriteLocal(MATERIAL_ROW_ORDER_KEY, materialRowOrder);
-    materialClienteSortData();
-    renderMaterialClienteView();
-}
-
-function materialRowDragStart(event) {
-    const row = event.target.closest('tr[data-material-row]');
-    if (!row) return;
-    materialRowDrag = row.dataset.materialRow;
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain',materialRowDrag);
-    row.classList.add('opacity-45');
-}
-function materialRowDragOver(event) {
-    if (!materialRowDrag) return;
-    const row=event.target.closest('tr[data-material-row]');
-    if (!row) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-    row.classList.add('ring-2','ring-amber-400');
-}
-function materialRowDragLeave(event) {
-    const row=event.target.closest('tr[data-material-row]');
-    if (row) row.classList.remove('ring-2','ring-amber-400');
-}
-function materialRowDrop(event) {
-    event.preventDefault();
-    const target=event.target.closest('tr[data-material-row]')?.dataset.materialRow;
-    const source=materialRowDrag;
-    materialRowDrag=null;
-    if (source && target) materialReorderRows(source,target);
-    else renderMaterialClienteView();
-}
-function materialRowDragEnd() {
-    materialRowDrag=null;
-    document.querySelectorAll('#materialClienteTableBody tr').forEach(r => r.classList.remove('opacity-45','ring-2','ring-amber-400'));
 }
 
 function materialVisibleColumns() {
@@ -704,7 +583,7 @@ function materialResizeMove(event) {
     if(col)col.style.width=materialColumnWidths[key]+'px';
     const visible=materialVisibleColumns();
     const table=document.getElementById('materialClienteTable');
-    if(table)table.style.width=(49+visible.reduce((sum,c)=>sum+(materialColumnWidths[c.key]||c.width),0))+'px';
+    if(table)table.style.width=(visible.reduce((sum,c)=>sum+(materialColumnWidths[c.key]||c.width),0))+'px';
 }
 function materialResizeEnd() {
     document.removeEventListener('pointermove',materialResizeMove);
@@ -742,25 +621,27 @@ function materialRenderTableHeader() {
     if(!table||!head||!group)return;
     const visible=materialVisibleColumns();
     table.style.tableLayout='fixed';
-    table.style.width=(49+visible.reduce((sum,c)=>sum+(materialColumnWidths[c.key]||c.width),0))+'px';
-    group.innerHTML='<col style="width:49px">'+visible.map(col=>'<col data-material-col="'+col.key+'" style="width:'+(materialColumnWidths[col.key]||col.width)+'px">').join('');
-    head.innerHTML='<th class="px-2 py-2.5 text-center border-r border-slate-300 dark:border-slate-700 sticky left-0 z-30 bg-slate-200 dark:bg-slate-800" title="Mover linhas manualmente">↕</th>';
+    table.style.width=(visible.reduce((sum,c)=>sum+(materialColumnWidths[c.key]||c.width),0))+'px';
+    group.innerHTML=visible.map(col=>'<col data-material-col="'+col.key+'" style="width:'+(materialColumnWidths[col.key]||col.width)+'px">').join('');
+    head.replaceChildren();
     visible.forEach(col=>{
         const th=document.createElement('th');
-        th.draggable=true;
+        th.draggable=false;
         th.className='relative px-2 py-2 border-r border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800 align-middle select-none';
         th.title='Arraste o título para mudar a posição da coluna';
-        th.innerHTML='<div class="flex items-center justify-between gap-1"><button type="button" data-material-sort="'+col.key+'" class="text-left truncate flex-1 min-w-0 hover:text-amber-600 dark:hover:text-amber-400 font-bold" title="Ordenar '+escapeHtml(col.title)+'">'+escapeHtml(col.title)+'<span class="mat-sort-indicator"></span></button>'+
+        th.innerHTML='<div class="flex items-center justify-between gap-1">'+
+            '<span draggable="true" data-material-drag="'+col.key+'" class="flex-shrink-0 cursor-grab active:cursor-grabbing text-slate-500 dark:text-slate-400 hover:text-amber-600 text-base px-0.5 touch-none" title="Arraste para mudar a posição da coluna" aria-label="Arrastar coluna '+escapeHtml(col.title)+'">⠿</span>'+
+            '<button type="button" data-material-sort="'+col.key+'" class="text-left truncate flex-1 min-w-0 hover:text-amber-600 dark:hover:text-amber-400 font-bold" title="Ordenar '+escapeHtml(col.title)+'">'+escapeHtml(col.title)+'<span class="mat-sort-indicator"></span></button>'+
             '<button type="button" data-material-filter="'+col.key+'" class="material-col-filter flex-shrink-0 rounded p-1 hover:bg-white/60 dark:hover:bg-slate-700 '+(materialColumnSelections[col.key] instanceof Set?'bg-amber-400 text-slate-950':'text-slate-500 dark:text-slate-400')+'" title="Filtrar esta coluna" aria-label="Filtrar '+escapeHtml(col.title)+'">'+
             '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M7 12h10m-7 5h4"/></svg></button></div>'+
             '<span data-material-resize="'+col.key+'" class="absolute -right-1.5 top-0 bottom-0 w-3 z-20 cursor-col-resize hover:bg-amber-400/60 touch-none" title="Arraste para ajustar largura"></span>';
         th.querySelector('[data-material-sort]').addEventListener('click',()=>sortMaterialCliente(col.key));
         th.querySelector('[data-material-filter]').addEventListener('click',event=>materialOpenColumnFilter(event,col.key));
         th.querySelector('[data-material-resize]').addEventListener('pointerdown',event=>materialResizeStart(event,col.key));
-        th.addEventListener('dragstart',event=>materialColumnDragStart(event,col.key));
+        th.querySelector('[data-material-drag]').addEventListener('dragstart',event=>materialColumnDragStart(event,col.key));
         th.addEventListener('dragover',materialColumnDragOver);
         th.addEventListener('drop',event=>materialColumnDrop(event,col.key));
-        th.addEventListener('dragend',()=>{materialColumnDrag=null;});
+        th.querySelector('[data-material-drag]').addEventListener('dragend',()=>{materialColumnDrag=null;});
         head.appendChild(th);
     });
     const index = head.querySelector('[data-material-sort="'+materialClienteSortColumn+'"] .mat-sort-indicator');
@@ -791,39 +672,22 @@ function renderMaterialClienteView() {
         if(el)el.textContent=value;
     });
     document.getElementById('materialLoadMore')?.classList.toggle('hidden', data.length<=materialClienteRenderLimit);
-    const manualBtn=document.getElementById('materialManualSortBtn');
-    if(manualBtn) {
-        manualBtn.classList.toggle('bg-amber-500',materialClienteSortColumn==='__manual__');
-        manualBtn.classList.toggle('text-slate-950',materialClienteSortColumn==='__manual__');
-        manualBtn.title=materialClienteSortColumn==='__manual__'?'Ordenação personalizada ativa':'Reativar ordenação personalizada de linhas';
-    }
     const filteredBadge=document.getElementById('materialActiveColumnFilters');
     const activeCount=Object.keys(materialColumnSelections).filter(key=>materialColumnSelections[key] instanceof Set).length;
     if(filteredBadge) {
-        filteredBadge.textContent=activeCount?(activeCount+' filtros de coluna ativos'):'Arraste colunas e linhas para reorganizar';
+        filteredBadge.textContent=activeCount?(activeCount+' filtros de coluna ativos'):'Arraste o ícone ⠿ para mover colunas';
         filteredBadge.classList.toggle('text-amber-600',activeCount>0);
     }
     materialRenderTableHeader();
     const visible=materialVisibleColumns();
     if (!data.length) {
-        tbody.innerHTML='<tr><td colspan="'+(1+visible.length)+'" class="p-8 text-center text-slate-500 dark:text-slate-400">Nenhum material encontrado para os filtros selecionados.</td></tr>';
+        tbody.innerHTML='<tr><td colspan="'+visible.length+'" class="p-8 text-center text-slate-500 dark:text-slate-400">Nenhum material encontrado para os filtros selecionados.</td></tr>';
         return;
     }
     const fragment=document.createDocumentFragment();
-    data.slice(0,materialClienteRenderLimit).forEach((row,index)=>{
+    data.slice(0,materialClienteRenderLimit).forEach(row=>{
         const tr=document.createElement('tr');
-        const rowKey=row.__materialRowKey || '';
-        tr.dataset.materialRow=rowKey;
-        tr.draggable=true;
         tr.className='hover:bg-amber-50/60 dark:hover:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 align-top';
-        const handle=document.createElement('td');
-        handle.className='sticky left-0 z-10 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 px-1 py-2 text-center';
-        handle.innerHTML='<div class="flex flex-col items-center gap-0.5"><span class="text-slate-400 cursor-grab select-none" title="Arraste a linha">⠿</span>'+
-            '<button type="button" data-mat-up title="Subir linha" aria-label="Subir linha" class="text-slate-500 dark:text-slate-400 hover:text-amber-500 leading-none">▲</button>'+
-            '<button type="button" data-mat-down title="Descer linha" aria-label="Descer linha" class="text-slate-500 dark:text-slate-400 hover:text-amber-500 leading-none">▼</button></div>';
-        handle.querySelector('[data-mat-up]').addEventListener('click',()=>materialMoveRow(rowKey,-1));
-        handle.querySelector('[data-mat-down]').addEventListener('click',()=>materialMoveRow(rowKey,1));
-        tr.appendChild(handle);
         visible.forEach(col=>{
             const td=document.createElement('td');
             td.className='px-2.5 py-2.5 border-r border-slate-100 dark:border-slate-800/70 break-words overflow-hidden';
@@ -937,7 +801,6 @@ function resetMaterialClienteFilters() {
 function materialToggleFilters(force = null) {
     const section=document.getElementById('filterSection');
     if(!section)return;
-    const next=force===null?!section.classList.contains('hidden'):!force; // true significa recolhido
     // force representa "mostrar filtros": force true abre, false fecha
     const hidden=force===null?!section.classList.contains('hidden'):!force;
     section.classList.toggle('hidden',hidden);
@@ -1023,15 +886,6 @@ function materialResetLayout(){
     materialRenderLayoutModal();
     showDataToast('Colunas restauradas neste terminal.','success');
 }
-function materialResetRowOrder(){
-    materialRowOrder=materialClienteData.map(row=>row.__materialRowKey);
-    materialWriteLocal(MATERIAL_ROW_ORDER_KEY,materialRowOrder);
-    materialClienteSortColumn='dias_nf';
-    materialClienteSortAsc=false;
-    materialSaveSort();materialClienteSortData();renderMaterialClienteView();
-    showDataToast('Ordem das linhas restaurada neste terminal.','success');
-}
-
 document.addEventListener('click',event=>{
     const popup=document.getElementById('materialColumnFilterPopup');
     if(popup && !popup.classList.contains('hidden') && !popup.contains(event.target) && !event.target.closest('[data-material-filter]'))
@@ -1046,12 +900,5 @@ document.addEventListener('scroll',event=>{
 document.addEventListener('DOMContentLoaded',()=>{
     materialLoadPreferences();
     materialApplyFilterVisibility();
-    const table=document.getElementById('materialClienteTableBody');
-    if(table) {
-        table.addEventListener('dragstart',materialRowDragStart);
-        table.addEventListener('dragover',materialRowDragOver);
-        table.addEventListener('dragleave',materialRowDragLeave);
-        table.addEventListener('drop',materialRowDrop);
-        table.addEventListener('dragend',materialRowDragEnd);
-    }
+
 });
