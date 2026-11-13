@@ -348,6 +348,7 @@ function exportMaterialClienteExcel() {
         'OS': row.os ?? '',
         'Nº Pedido': row.n_pedido ?? '',
         'Orçamento': row.orcamento ?? '',
+        'Descrição do Orçamento': row.descricao_orcamento ?? '',
         'Aprovação': formatDateBR(row.dt_aprovacao),
         'Previsão Entrega': formatDateBR(row.previsao_entrega),
         'Dias NF': row.dias_nf == null ? '' : materialClienteNumber(row.dias_nf)
@@ -378,7 +379,7 @@ const materialCols = [
     { key:'status_os',        title:'Status OS / Lista',     width:185 },
     { key:'os_utilizada',     title:'OS utilizada / OS',     width:235 },
     { key:'n_pedido',         title:'Pedido',                width:135 },
-    { key:'orcamento',        title:'Orçamento',             width:145 },
+    { key:'orcamento',        title:'Orçamento / Descrição', width:245 },
     { key:'dt_aprovacao',     title:'Aprovação',             width:120 },
     { key:'previsao_entrega', title:'Previsão entrega',      width:135 },
     { key:'dias_nf',          title:'Dias NF',               width:90 }
@@ -467,6 +468,7 @@ function materialColumnValue(row, key) {
     if (key === 'ncm') return String(row.ncm ?? '') + (row.unidade ? ' | ' + row.unidade : '');
     if (key === 'status_os') return String(row.status_os ?? '') + (row.status_os_listam ? ' | ' + row.status_os_listam : '');
     if (key === 'os_utilizada') return String(row.os_utilizada ?? '') + (row.os ? ' | ' + row.os : '');
+    if (key === 'orcamento') return String(row.orcamento ?? '') + (row.descricao_orcamento ? ' | ' + row.descricao_orcamento : '');
     if (key === 'dt_aprovacao' || key === 'previsao_entrega') return raw ? formatDateBR(raw) : '(Vazio)';
     if (key === 'qtde' || key === 'dias_nf') return raw == null || raw === '' ? '(Vazio)' : materialClienteFormatNumber(raw);
     return raw == null || String(raw).trim() === '' ? '(Vazio)' : String(raw).trim();
@@ -629,7 +631,7 @@ function materialClientCell(row,key) {
         case 'status_os':return materialClienteBadge(row.status_os)+'<div class="'+muted+'">Lista: '+n(row.status_os_listam)+'</div>';
         case 'os_utilizada':return '<div class="font-semibold break-words">'+n(row.os_utilizada)+'</div><div class="'+muted+'">'+n(row.os)+'</div>';
         case 'n_pedido':return '<span class="break-all">'+n(row.n_pedido)+'</span>';
-        case 'orcamento':return '<span class="break-words">'+n(row.orcamento)+'</span>';
+        case 'orcamento':return '<div class="font-semibold break-words">'+n(row.orcamento)+'</div>'+ (row.descricao_orcamento ? '<div class="'+muted+'">'+n(row.descricao_orcamento)+'</div>' : '');
         case 'dt_aprovacao':return '<span class="whitespace-nowrap">'+n(formatDateBR(row.dt_aprovacao))+'</span>';
         case 'previsao_entrega':return '<span class="whitespace-nowrap '+(materialClienteIsOverdue(row)?'font-extrabold text-rose-700 dark:text-rose-400':'')+'">'+n(formatDateBR(row.previsao_entrega))+'</span>';
         case 'dias_nf':return '<div class="text-right font-bold font-mono '+(materialClienteNumber(row.dias_nf)>365?'text-rose-700 dark:text-rose-400':'')+'">'+(row.dias_nf==null?'-':materialClienteFormatNumber(row.dias_nf,0))+'</div>';
