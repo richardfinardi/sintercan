@@ -172,7 +172,7 @@
     if (original.some(function (x) { return !x || typeof x !== 'object' || Array.isArray(x); })) throw new Error('A API retornou registros que não são objetos.');
     const valid = original.map(normalizedRow);
     const missingAmounts = valid.reduce(function (s, r) { return s + (r.value === null ? 1 : 0); }, 0);
-    if (missingAmounts) throw new Error(nfmt(missingAmounts) + ' registro(s) sem valor monetário reconhecível. Para evitar totais incorretos, a atualização foi bloqueada.');
+    if (missingAmounts) throw new Error(nfmt(missingAmounts) + ' registro(s) sem valor monetário reconhecível. Para evitar totais incorretos, a atualização foi bloqueada. Campos disponíveis: ' + (original.length ? Object.keys(original[0]).join(', ') : '(nenhum)') + '.');
     const badDates = valid.filter(function (r) { return r.badDate && !r.missingDate; }).length;
     if (badDates) throw new Error(nfmt(badDates) + ' registro(s) com data de vencimento inválida. A atualização foi bloqueada.');
     const sourceFields = original.length ? Object.keys(original[0]) : [];
@@ -490,6 +490,18 @@
   }
   function render() {
     updateControls(); updatePickerLabels();
+    if (state.from && state.to && state.from > state.to) {
+      el('warningBanner').hidden = false;
+      el('warningBanner').textContent = 'Período inválido: a data inicial é maior que a data final. Os totais não serão calculados até corrigir o filtro.';
+      ['kpiTotal', 'kpiOpen', 'kpiPaid', 'kpiOverdue', 'kpiNext', 'tableTotal'].forEach(function (id) { el(id).textContent = '—'; });
+      ['kpiRows', 'kpiOpenRows', 'kpiPaidRows', 'kpiOverdueRows', 'tableSummary', 'tableFooterStatus'].forEach(function (id) { el(id).textContent = 'Corrija o período'; });
+      ['bySupplier', 'byPlan', 'byType'].forEach(function (id) { el(id).innerHTML = '<div class="empty">Filtro de período inválido.</div>'; });
+      el('detailBody').innerHTML = '<tr><td colspan="8" class="empty">Corrija a data inicial ou final para consultar as contas.</td></tr>';
+      el('tablePct').textContent = '—'; el('pageInfo').textContent = '—';
+      el('exportBtn').disabled = true; el('nextBtn').disabled = true; el('prevBtn').disabled = true;
+      return;
+    }
+    showWarnings();
     const rows = visibleRows();
     const m = metrics(rows);
     el('kpiTotal').textContent = brl(m.total);
