@@ -1,5 +1,5 @@
-const CACHE_NAME = 'sintercan-rs-v1.6.5';
-const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-32.png', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-192.png', './icons/icon-maskable-512.png'];
+const CACHE_NAME = 'sintercan-rs-v1.6.6';
+const APP_SHELL = ['./', './index.html', './material-cliente.js', './manifest.webmanifest', './icons/icon-32.png', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-192.png', './icons/icon-maskable-512.png'];
 const OPTIONAL_CDN = [
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/lucide@latest',
@@ -30,7 +30,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-  if (url.pathname.endsWith('/rs') || url.pathname.endsWith('/pedido')) return; // IndexedDB do app cuida do cache de dados.
+  if (url.pathname.endsWith('/rs') || url.pathname.endsWith('/pedido') || url.pathname.endsWith('/carteira_nf')) return; // IndexedDB do app cuida do cache de dados.
 
   if (event.request.mode === 'navigate') {
     event.respondWith((async () => {
