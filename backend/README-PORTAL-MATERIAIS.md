@@ -10,7 +10,9 @@ Esta implementação replica o fluxo **Portal Cliente** da Carteira PSTEC na aba
   filtros de coluna, busca e período; não depende do cache do navegador do cliente.
 - Exige **apenas um cliente** por link para evitar envio cruzado de dados.
 - Seleção de colunas, validade (padrão **7 dias**, opções 7, 15, 30, 60 ou 90 dias) e permissão de Excel.
-- A janela **Gerenciar portais** permite copiar, abrir e **excluir permanentemente** links.
+- A janela **Gerenciar portais** mostra apenas portais ativos; ao consultar, registros
+  antigos marcados como desativados são eliminados definitivamente do SQLite.
+  É possível copiar, abrir e **excluir permanentemente** os links ativos.
   Usuários comuns excluem os links que criaram; gestores podem excluir qualquer um.
 - O destinatário abre o link diretamente, sem usuário CPS; o token dá acesso
   **somente às linhas/colunas permitidas**.
