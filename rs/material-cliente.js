@@ -368,6 +368,7 @@ const MATERIAL_LAYOUT_KEY = 'sintercan_rs_material_layout_v2';
 const MATERIAL_COLUMN_FILTER_KEY = 'sintercan_rs_material_column_filters_v2';
 const MATERIAL_SORT_KEY = 'sintercan_rs_material_sort_v2';
 const MATERIAL_PANEL_KEY = 'sintercan_rs_material_panel_collapsed_v2';
+const MATERIAL_MOBILE_FILTER_KEY = 'sintercan_rs_material_mobile_filters_open_v1';
 
 const materialCols = [
     { key:'cliente',          title:'Cliente / CNPJ',        width:225 },
@@ -871,29 +872,59 @@ function resetMaterialClienteFilters() {
     applyMaterialClienteFilters();
 }
 
+function materialSyncFilterToggleButton() {
+    const section=document.getElementById('filterSection');
+    const btn=document.getElementById('materialToggleFiltersBtn');
+    if(!section||!btn)return;
+    const mobile=window.innerWidth<640;
+    const expanded=mobile
+        ? !section.classList.contains('mobile-collapsed') && !section.classList.contains('hidden')
+        : !section.classList.contains('hidden');
+    btn.textContent=expanded?'Recolher filtros':'Mostrar filtros';
+    btn.setAttribute('aria-expanded',expanded?'true':'false');
+}
+
 function materialToggleFilters(force = null) {
     const section=document.getElementById('filterSection');
     if(!section)return;
-    // force representa "mostrar filtros": force true abre, false fecha
-    const hidden=force===null?!section.classList.contains('hidden'):!force;
-    section.classList.toggle('hidden',hidden);
-    const btn=document.getElementById('materialToggleFiltersBtn');
-    if(btn)btn.innerHTML=hidden?
-       '<span aria-hidden="true">⚑</span> Mostrar filtros':
-       '<span aria-hidden="true">⚑</span> Recolher filtros';
-    if(btn)btn.setAttribute('aria-expanded',hidden?'false':'true');
-    try{localStorage.setItem(MATERIAL_PANEL_KEY,hidden?'1':'0');}catch(_){}
+    if(window.innerWidth<640) {
+        // O campo de busca continua acessível; apenas os seis filtros extras recolhem.
+        section.classList.remove('hidden');
+        const currentlyOpen=!section.classList.contains('mobile-collapsed');
+        const nextOpen=force===null?!currentlyOpen:Boolean(force);
+        section.classList.toggle('mobile-collapsed',!nextOpen);
+        const mobileBtn=document.getElementById('btnMobileFilters');
+        mobileBtn?.setAttribute('aria-expanded',nextOpen?'true':'false');
+        mobileBtn?.classList.toggle('text-amber-500',nextOpen);
+        try{localStorage.setItem(MATERIAL_MOBILE_FILTER_KEY,nextOpen?'1':'0');}catch(_){}
+    } else {
+        const currentlyOpen=!section.classList.contains('hidden');
+        const nextOpen=force===null?!currentlyOpen:Boolean(force);
+        section.classList.toggle('hidden',!nextOpen);
+        try{localStorage.setItem(MATERIAL_PANEL_KEY,nextOpen?'0':'1');}catch(_){}
+    }
+    materialSyncFilterToggleButton();
     materialCloseColumnFilter();
 }
+
 function materialApplyFilterVisibility() {
     const section=document.getElementById('filterSection');
     if(!section)return;
     if(activeTab==='MaterialCliente') {
-        const hidden=localStorage.getItem(MATERIAL_PANEL_KEY)==='1';
-        section.classList.toggle('hidden',hidden);
-        const btn=document.getElementById('materialToggleFiltersBtn');
-        if(btn)btn.textContent=hidden?'Mostrar filtros':'Recolher filtros';
-        if(btn)btn.setAttribute('aria-expanded',hidden?'false':'true');
+        if(window.innerWidth<640) {
+            // Primeiro acesso no celular: filtros recolhidos, com busca visível.
+            const open=localStorage.getItem(MATERIAL_MOBILE_FILTER_KEY)==='1';
+            section.classList.remove('hidden');
+            section.classList.toggle('mobile-collapsed',!open);
+            const mobileBtn=document.getElementById('btnMobileFilters');
+            mobileBtn?.setAttribute('aria-expanded',open?'true':'false');
+            mobileBtn?.classList.toggle('text-amber-500',open);
+        } else {
+            section.classList.remove('mobile-collapsed');
+            const hidden=localStorage.getItem(MATERIAL_PANEL_KEY)==='1';
+            section.classList.toggle('hidden',hidden);
+        }
+        materialSyncFilterToggleButton();
     } else {
         section.classList.remove('hidden');
     }
