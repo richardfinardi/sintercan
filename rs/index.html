@@ -515,6 +515,163 @@
         }
         .dark #prazoEntregaDetalhePopup th, .dark #prazoEntregaDetalhePopup td { border-bottom-color: #334155; }
         #prazoEntregaDetalhePopup tbody tr:nth-child(even) { background: rgba(148,163,184,.10); }
+
+        /* V1.6.18: Material de Cliente / uso por toque no celular.
+           Escopo exclusivo desta aba. Outras telas RS permanecem intactas. */
+        @media (max-width: 639px) {
+            body.rs-material-active main {
+                flex: 1 1 0% !important;
+                min-height: 0 !important;
+                height: auto !important;
+                overflow: hidden !important;
+            }
+            body.rs-material-active #filterSection:not(.hidden) {
+                max-height: min(40dvh, 275px);
+                overflow-y: auto;
+                overscroll-behavior-y: contain;
+                -webkit-overflow-scrolling: touch;
+            }
+            body.rs-material-active #filterSection.mobile-collapsed #materialClienteFilterPanel {
+                display: none !important;
+            }
+            body.rs-material-active #materialClienteFilterPanel {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: .4rem !important;
+                margin-top: .45rem !important;
+                min-width: 0;
+            }
+            body.rs-material-active #materialClienteFilterPanel > div { min-width: 0; }
+            body.rs-material-active #materialClienteFilterPanel label { font-size: 10px !important; }
+            body.rs-material-active #materialClienteFilterPanel select,
+            body.rs-material-active #materialClienteFilterPanel input {
+                display: block;
+                width: 100%;
+                min-width: 0;
+                max-width: 100%;
+                min-height: 38px;
+                font-size: 12px !important;
+            }
+
+            /* A aba inteira pode rolar verticalmente quando a altura da tela é pequena. */
+            body.rs-material-active #viewTabMaterialCliente {
+                min-height: 0 !important;
+                min-width: 0 !important;
+                height: 100% !important;
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                overscroll-behavior-y: contain;
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-y;
+                gap: .4rem !important;
+                padding-bottom: .35rem;
+            }
+            /* KPIs em faixa lateral: deixam espaço útil para a tabela. */
+            body.rs-material-active #viewTabMaterialCliente > div:first-child {
+                display: flex !important;
+                flex: 0 0 auto !important;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                width: 100%;
+                min-width: 0;
+                gap: .4rem !important;
+                scroll-snap-type: x proximity;
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-x;
+                padding-bottom: .2rem;
+            }
+            body.rs-material-active #viewTabMaterialCliente > div:first-child > div {
+                flex: 0 0 144px !important;
+                width: 144px !important;
+                min-width: 144px !important;
+                scroll-snap-align: start;
+                padding: .48rem .55rem !important;
+            }
+            body.rs-material-active #viewTabMaterialCliente > div:first-child p:first-child {
+                font-size: 9px !important;
+                line-height: 1.2 !important;
+            }
+            body.rs-material-active #viewTabMaterialCliente > div:first-child p:last-child {
+                font-size: 17px !important;
+                margin-top: .2rem !important;
+            }
+
+            /* A área de dados mantém altura mínima e rolagem própria nos dois eixos. */
+            body.rs-material-active #viewTabMaterialCliente > div:nth-child(2) {
+                min-height: 340px !important;
+                flex: 1 0 340px !important;
+                width: 100%;
+                min-width: 0;
+                overflow: hidden !important;
+            }
+            body.rs-material-active #viewTabMaterialCliente > div:nth-child(2) > div:first-child {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: .3rem !important;
+                padding: .45rem .5rem !important;
+                min-width: 0;
+            }
+            body.rs-material-active #viewTabMaterialCliente > div:nth-child(2) h2 { font-size: 12px !important; }
+            body.rs-material-active #materialActiveColumnFilters { font-size: 9px !important; line-height: 1.25; }
+            body.rs-material-active #viewTabMaterialCliente > div:nth-child(2) > div:first-child > div:last-child {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                min-width: 0;
+                width: 100%;
+                max-width: 100%;
+                padding-bottom: .2rem;
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-x;
+            }
+            body.rs-material-active #viewTabMaterialCliente > div:nth-child(2) > div:first-child > div:last-child button {
+                flex: 0 0 auto !important;
+                white-space: nowrap;
+                font-size: 10px !important;
+                min-height: 34px;
+                padding: .35rem .55rem !important;
+            }
+            body.rs-material-active #materialClienteTableScroll {
+                display: block;
+                flex: 1 1 auto !important;
+                min-height: 210px !important;
+                width: 100%;
+                min-width: 0;
+                overflow-x: auto !important;
+                overflow-y: auto !important;
+                overscroll-behavior-x: contain;
+                overscroll-behavior-y: auto;
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-x pan-y;
+                position: relative;
+            }
+            body.rs-material-active #materialClienteTable {
+                min-width: max-content;
+                font-size: 10px !important;
+            }
+            body.rs-material-active #materialClienteTable th,
+            body.rs-material-active #materialClienteTable td {
+                padding: .43rem .4rem !important;
+            }
+            body.rs-material-active #viewTabMaterialCliente > div:last-child {
+                flex: 0 0 auto !important;
+                min-width: 0;
+                gap: .25rem !important;
+                font-size: 10px !important;
+                padding: .42rem .5rem !important;
+            }
+            #materialColumnFilterPopup {
+                max-width: calc(100vw - 16px) !important;
+                max-height: min(72dvh, 540px);
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-y;
+            }
+            #materialLayoutModal { padding: .45rem !important; }
+            #materialLayoutModal > div { max-height: calc(100dvh - .9rem) !important; }
+            #materialLayoutOptions { -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-hidden transition-colors duration-200">
@@ -3564,7 +3721,10 @@
             btn?.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
             btn?.classList.toggle('text-amber-500', nextOpen);
             btn?.classList.toggle('dark:text-amber-400', nextOpen);
-            try { localStorage.setItem(MOBILE_FILTER_STORAGE_KEY, nextOpen ? '1' : '0'); } catch (_) {}
+            try {
+                localStorage.setItem(activeTab === 'MaterialCliente' ? MATERIAL_MOBILE_FILTER_KEY : MOBILE_FILTER_STORAGE_KEY, nextOpen ? '1' : '0');
+            } catch (_) {}
+            if (activeTab === 'MaterialCliente') materialSyncFilterToggleButton();
         }
 
         function configureMobileLayout() {
@@ -3578,12 +3738,13 @@
             }
             // Pesquisa geral permanece sempre visível; apenas os filtros complementares recolhem.
             let open = false;
-            try { open = localStorage.getItem(MOBILE_FILTER_STORAGE_KEY) === '1'; } catch (_) {}
+            try { open = localStorage.getItem(activeTab === 'MaterialCliente' ? MATERIAL_MOBILE_FILTER_KEY : MOBILE_FILTER_STORAGE_KEY) === '1'; } catch (_) {}
             toggleMobileFilters(open);
         }
         function switchMainTab(tabName, persist = true) {
             if (!VALID_TABS.includes(tabName)) tabName = 'RS';
             activeTab = tabName;
+            document.body.classList.toggle('rs-material-active', activeTab === 'MaterialCliente');
             if (persist) localStorage.setItem(ACTIVE_TAB_STORAGE_KEY, activeTab);
 
             const tabRS = document.getElementById('viewTabRS');
@@ -3692,6 +3853,7 @@
             }
 
             ensureActiveDatasetLoaded();
+            if (window.innerWidth < 640) configureMobileLayout();
             materialApplyFilterVisibility();
 
             if (window.innerWidth < 640) {
@@ -5160,6 +5322,8 @@
             clearTimeout(mobileResizeTimer);
             mobileResizeTimer = setTimeout(() => {
                 configureMobileLayout();
+                materialApplyFilterVisibility();
+                if (activeTab === 'MaterialCliente' && materialClienteDataReady) renderMaterialClienteView();
                 if (!dataReady) return;
                 if (activeTab === 'Grafico') renderGraficoView();
                 if (activeTab === 'Mensal') renderMensalView();
@@ -5170,7 +5334,7 @@
             }, 160);
         });
     </script>
-    <script src="./material-cliente.js?v=1.6.12"></script>
+    <script src="./material-cliente.js?v=1.6.18"></script>
     <script src="./material-portal.js?v=20261113-5"></script>
 </body>
 </html>
