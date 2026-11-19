@@ -235,6 +235,7 @@
     const RETIRADAS_STORAGE_KEY = 'sintercan_sc_retiradas_v3';
     const RETIRADAS_LEGACY_KEY = 'sintercan_sc_retiradas_v2';
     let retiradas = {}; // Apenas o servidor define o estado compartilhado.
+    let retiradasIndexadas = new Map(); // ID estável -> IDs antigos/atuais salvos na API.
     let versaoRetiradas = 0;
     const MARCACAO_MIGRADA = 'sintercan_sc_v2_migrado';
     let retiradasSincronizadas = false;
@@ -380,6 +381,37 @@ function idRetirada(item) {
   return item._idRetirada || '';
 }
 
+// IDs antigos incluíam datas e quantidades; elas mudam sem trocar o item.
+function normalizarIdRetirada(id) {
+  if (typeof id !== 'string') return '';
+  const separador = id.lastIndexOf('#');
+  if (separador < 0) return id;
+  try {
+    const partes = JSON.parse(id.slice(0, separador));
+    if (Array.isArray(partes) && partes[0] === 'detalhes' && partes.length === 12) {
+      return JSON.stringify(partes.slice(0, 8)) + id.slice(separador);
+    }
+  } catch (err) {
+    // IDs que não seguem o formato antigo permanecem intactos.
+  }
+  return id;
+}
+
+function indexarRetiradas() {
+  const indexadas = new Map();
+  for (const [id, registro] of Object.entries(retiradas)) {
+    if (!registro) continue;
+    const estavel = normalizarIdRetirada(id);
+    if (!indexadas.has(estavel)) indexadas.set(estavel, new Set());
+    indexadas.get(estavel).add(id);
+  }
+  retiradasIndexadas = indexadas;
+}
+
+function retiradaMarcada(item) {
+  return retiradasIndexadas.has(idRetirada(item));
+}
+
 // TORCAMENTO_ITENS.GUID_LINHA identifica individualmente a linha do orçamento.
 function atribuirIdsRetirada(linhas) {
   const ocorrencias = new Map();
@@ -401,12 +433,11 @@ function atribuirIdsRetirada(linhas) {
     if (identificador) {
       base = JSON.stringify(['linha', empresa, orcamento, identificador[0], identificador[1]]);
     } else {
-      // Sem GUID da linha, diferencia por data, descrição e quantidade.
+      // Sem GUID da linha, usa somente atributos estáveis do item.
+      // Quantidade e datas não podem desmarcar uma retirada já confirmada.
       base = JSON.stringify(['detalhes', empresa, orcamento,
         valor(item, 'cod_produto'), valor(item, 'codigo_interno'),
-        valor(item, 'nome'), valor(item, 'descricao'), valor(item, 'item'),
-        valor(item, 'dt_previsao_entrega'), valor(item, 'dt_aprovacao'),
-        valor(item, 'qtde_reservada'), valor(item, 'qtde')
+        valor(item, 'nome'), valor(item, 'descricao'), valor(item, 'item')
       ]);
     }
     // Garante independência mesmo para registros completamente idênticos.
@@ -458,7 +489,8 @@ async function migrarRetiradasLocaisAntigas(estadoRemoto) {
   // estiver vazio. Nunca sobrescreve o trabalho de outro funcionário.
   if (Object.keys(estadoRemoto).length === 0) {
     const idsValidos = new Set(rawDataOrcamento.filter(i => !orcamentoJaFaturado(i)).map(idRetirada));
-    for (const [id, registro] of Object.entries(antigas)) {
+    for (const [idAntigo, registro] of Object.entries(antigas)) {
+      const id = normalizarIdRetirada(idAntigo);
       if (!registro || !idsValidos.has(id)) continue;
       const res = await fetch(API_RETIRADAS, {
         method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
@@ -493,6 +525,7 @@ async function sincronizarRetiradas() {
 
     if (salvandoRetirada || versaoAntes !== versaoRetiradas) return;
     retiradas = dados.retiradas;
+    indexarRetiradas();
     retiradasSincronizadas = true;
     persistirRetiradas(); // Cache opcional; API é a única fonte oficial.
     statusCompartilhamentoSc(true);
@@ -520,18 +553,26 @@ async function toggleRetirada(checkbox) {
   salvandoRetirada = true;
   versaoRetiradas++;
   try {
-    const resposta = await fetch(API_RETIRADAS, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      cache:'no-store',
-      body:JSON.stringify({id,retirado:marcado,usuario:currentUser.nome || ''})
-    });
-    if (!resposta.ok) throw new Error('Não foi possível salvar: HTTP ' + resposta.status);
-    const resultado = await resposta.json();
-    if (resultado.ok !== true || resultado.id !== id || resultado.retirado !== marcado)
-      throw new Error('O servidor não confirmou a gravação.');
-    if (marcado) retiradas[id] = resultado.registro || {usuario:currentUser.nome || ''};
-    else delete retiradas[id];
+    // Ao desmarcar, apaga também as chaves antigas (com quantidade/data)
+    // para que a marcação não reapareça na próxima sincronização.
+    const ids = marcado ? [id] : [...new Set([id, ...(retiradasIndexadas.get(id) || [])])];
+    let registroConfirmado = null;
+    for (const idAtual of ids) {
+      const resposta = await fetch(API_RETIRADAS, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        cache:'no-store',
+        body:JSON.stringify({id:idAtual,retirado:marcado,usuario:currentUser.nome || ''})
+      });
+      if (!resposta.ok) throw new Error('Não foi possível salvar: HTTP ' + resposta.status);
+      const resultado = await resposta.json();
+      if (resultado.ok !== true || resultado.id !== idAtual || resultado.retirado !== marcado)
+        throw new Error('O servidor não confirmou a gravação.');
+      if (marcado) registroConfirmado = resultado.registro;
+    }
+    if (marcado) retiradas[id] = registroConfirmado || {usuario:currentUser.nome || ''};
+    else ids.forEach(idAtual => delete retiradas[idAtual]);
+    indexarRetiradas();
     persistirRetiradas();
     statusCompartilhamentoSc(true);
   } catch (err) {
@@ -548,7 +589,7 @@ async function toggleRetirada(checkbox) {
 
 function renderRetiradaCell(row){
   const id = idRetirada(row);
-  const checked = Boolean(retiradas[id]);
+  const checked = retiradaMarcada(row);
   return `<td class="text-center">
     <label class="inline-flex items-center gap-2 cursor-pointer" title="${checked ? 'Desmarcar retirada' : 'Marcar como retirado'}">
       <input type="checkbox" data-retirada-id="${encodeURIComponent(id)}" onchange="toggleRetirada(this)"
@@ -560,7 +601,7 @@ function renderRetiradaCell(row){
 }
 
 function getRowClass(row,index){
-  if (currentTab === 'orcamento' && retiradas[idRetirada(row)]) {
+  if (currentTab === 'orcamento' && retiradaMarcada(row)) {
     return 'bg-emerald-50 dark:bg-emerald-950/30';
   }
   return index % 2 === 0 ? 'bg-slate-50/50 dark:bg-[#0b1329]' : 'bg-white dark:bg-[#0f172a]';
@@ -785,8 +826,8 @@ function getRowClass(row,index){
       let filtered = sourceData.filter(config.filter);
       if (currentTab === 'orcamento') {
         const retirada = document.getElementById('filterRetirada').value;
-        if (retirada === 'pendentes') filtered = filtered.filter(i => !retiradas[idRetirada(i)]);
-        if (retirada === 'retirados') filtered = filtered.filter(i => Boolean(retiradas[idRetirada(i)]));
+        if (retirada === 'pendentes') filtered = filtered.filter(i => !retiradaMarcada(i));
+        if (retirada === 'retirados') filtered = filtered.filter(i => retiradaMarcada(i));
       }
 
       const search = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -865,7 +906,7 @@ function getRowClass(row,index){
       const sumsContainer = document.getElementById('footerSums');
       sumsContainer.innerHTML = '';
       if (currentTab === 'orcamento') {
-        const retirados = filtered.filter(i => Boolean(retiradas[idRetirada(i)])).length;
+        const retirados = filtered.filter(i => retiradaMarcada(i)).length;
         sumsContainer.innerHTML = `<span>RETIRADOS: <strong class="text-emerald-600 dark:text-emerald-400">${retirados}</strong></span><span>PENDENTES: <strong class="text-amber-600 dark:text-amber-400">${filtered.length - retirados}</strong></span>`;
       }
       config.cols.filter(c => c.sum).forEach(c => {
